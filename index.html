@@ -56,7 +56,8 @@
   .status-dot.ok{background:var(--success);}
 
   .admin-row{margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:rgba(255,255,255,.92);}
-  .link-btn{background:none;border:none;color:#fff;font-weight:600;font-size:.85rem;padding:0;text-decoration:underline;}
+  .link-btn{background:none;border:none;color:var(--accent-deep);font-weight:600;font-size:.85rem;padding:0;text-decoration:underline;}
+  .admin-row .link-btn{color:#fff;}
   .admin-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .admin-form input{background:rgba(255,255,255,.95);border:1px solid transparent;border-radius:var(--radius-sm);padding:7px 10px;font-size:.85rem;color:var(--ink);}
   .admin-pill{font-size:.78rem;font-weight:700;color:var(--warm-soft-ink);background:var(--warm-soft);border-radius:999px;padding:4px 10px;}
@@ -231,6 +232,20 @@
   var role = "public";
   var moiNom = "";
   var moiUid = null;
+
+  // Identité mémorisée du bénévole sur cet appareil (simple confort, pas une
+  // vraie authentification : ça évite qu'on inscrive quelqu'un d'autre par
+  // erreur ou par curiosité, sans exiger de compte pour chaque bénévole).
+  function chargerMoiBenevoleId(){
+    try{ return localStorage.getItem("benevoles-rancy-moi") || null; }catch(e){ return null; }
+  }
+  function sauvegarderMoiBenevoleId(id){
+    try{
+      if(id){ localStorage.setItem("benevoles-rancy-moi", id); }
+      else { localStorage.removeItem("benevoles-rancy-moi"); }
+    }catch(e){ /* stockage indisponible (navigation privée…) : tant pis */ }
+  }
+  var moiBenevoleId = chargerMoiBenevoleId();
 
   var unsubMoi = null;
   var unsubGestionnaires = null;
@@ -456,11 +471,29 @@
         return b.actif && !inscrits.some(function(a){ return a.benevoleId === b.id; });
       });
 
-      var selectHtml = disponibles.length
-        ? '<div class="inscrire-row"><select id="sel-'+m.id+'">'
-          + disponibles.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</option>'; }).join("")
-          + '</select><button class="btn btn-sm" data-action="inscrire" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>Inscrire</button></div>'
-        : (restantes<=0 ? '' : '<div class="benevole-contact">Tous les bénévoles actifs sont déjà inscrits.</div>');
+      var selectHtml;
+      if(restantes<=0){
+        selectHtml = '';
+      } else if(role !== "public"){
+        // Gestionnaire/Directeur : peut inscrire n'importe quel bénévole
+        // (utile quand quelqu'un s'inscrit par téléphone, par exemple).
+        selectHtml = disponibles.length
+          ? '<div class="inscrire-row"><select id="sel-'+m.id+'">'
+            + disponibles.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</option>'; }).join("")
+            + '</select><button class="btn btn-sm" data-action="inscrire" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>Inscrire</button></div>'
+          : '<div class="benevole-contact">Tous les bénévoles actifs sont déjà inscrits.</div>';
+      } else {
+        // Visiteur public : ne peut s'inscrire que lui-même, une fois identifié.
+        var moi = moiBenevoleId ? benevoleById(moiBenevoleId) : null;
+        var moiDejaInscrit = moi && inscrits.some(function(a){ return a.benevoleId === moi.id; });
+        if(!moi){
+          selectHtml = '<div class="benevole-contact">Indiquez qui vous êtes en haut de la page pour vous inscrire.</div>';
+        } else if(moiDejaInscrit){
+          selectHtml = '';
+        } else {
+          selectHtml = '<div class="inscrire-row"><button class="btn btn-sm btn-primary" data-action="inscrire-moi" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>M\'inscrire ('+escapeHtml(moi.prenom)+')</button></div>';
+        }
+      }
 
       return '<div class="card">'
         + '<div class="mission-head"><div><div class="mission-title">'+escapeHtml(m.titre)+'</div>'
@@ -495,10 +528,29 @@
         + '</form>';
     }
 
+    var identiteHtml = "";
+    if(role === "public"){
+      var moiIdentite = moiBenevoleId ? benevoleById(moiBenevoleId) : null;
+      if(moiIdentite){
+        identiteHtml = '<div class="card" style="margin-bottom:14px;"><div>Vous êtes identifié(e) comme <strong>'+escapeHtml(moiIdentite.prenom)+' '+escapeHtml(moiIdentite.nom)+'</strong>. '
+          + '<button class="link-btn" data-action="changer-identite">Ce n\'est pas vous ?</button></div></div>';
+      } else {
+        var actifs = state.benevoles.filter(function(b){ return b.actif; });
+        identiteHtml = '<div class="card" style="margin-bottom:14px;">'
+          + '<div style="margin-bottom:8px;">Avant de vous inscrire à une mission, indiquez qui vous êtes :</div>'
+          + (actifs.length
+            ? '<form class="inscrire-row" id="form-identite"><select name="benevoleId">'
+              + actifs.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</option>'; }).join("")
+              + '</select><button type="submit" class="btn btn-sm btn-primary">C\'est moi</button></form>'
+            : '<div class="benevole-contact">Aucun bénévole enregistré pour l\'instant — inscrivez-vous d\'abord dans l\'onglet Bénévoles.</div>');
+      }
+    }
+
     document.getElementById("panel-missions").innerHTML =
       '<div class="toolbar"><div><h2>Missions</h2><div class="toolbar-meta">'+state.missions.length+' mission(s) proposée(s)</div></div>'
       + (role !== "public" ? '<button class="btn btn-primary" data-action="open-mission">+ Créer une mission</button>' : '')
       + '</div>'
+      + identiteHtml
       + formHtml
       + (state.missions.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant.</div>');
 
@@ -737,6 +789,17 @@
         addDoc(collection(db,"affectations"), {missionId:missionId, benevoleId:sel.value, statut:"inscrit"}).catch(reportError);
       }
     }
+    else if(action==="inscrire-moi"){
+      var missionIdMoi = el.getAttribute("data-mission");
+      if(moiBenevoleId){
+        addDoc(collection(db,"affectations"), {missionId:missionIdMoi, benevoleId:moiBenevoleId, statut:"inscrit"}).catch(reportError);
+      }
+    }
+    else if(action==="changer-identite"){
+      moiBenevoleId = null;
+      sauvegarderMoiBenevoleId(null);
+      renderMissions();
+    }
     else if(action==="retirer"){
       var aff = state.affectations.find(function(x){ return x.id === el.getAttribute("data-id"); });
       var mm = aff ? missionById(aff.missionId) : null;
@@ -902,6 +965,16 @@
           : (err && err.code === "auth/weak-password" ? "Code trop court (6 caractères minimum)." : "Erreur : " + (err && err.message ? err.message : err));
         renderEquipe();
       });
+      return;
+    }
+    if(e.target.id === "form-identite"){
+      e.preventDefault();
+      var fi = e.target;
+      if(fi.benevoleId.value){
+        moiBenevoleId = fi.benevoleId.value;
+        sauvegarderMoiBenevoleId(moiBenevoleId);
+        renderMissions();
+      }
       return;
     }
     if(e.target.id === "form-benevole"){
