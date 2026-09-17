@@ -32,32 +32,7 @@
     --shadow:0 2px 8px rgba(0,0,0,.08);
     --shadow-sm:0 1px 4px rgba(0,0,0,.06);
   }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --bg:#14161c;
-      --surface:#1c1f27;
-      --surface-2:#232732;
-      --ink:#eceae4;
-      --ink-soft:#aeada7;
-      --ink-faint:#7c7b76;
-      --line:#333640;
-      --accent:#6fa8e8;
-      --accent-deep:#4a86c9;
-      --accent-ink:#0a0e1f;
-      --accent-soft:#22354a;
-      --accent-soft-ink:#a9d0f5;
-      --success:#3fbf94;
-      --success-soft:#12352a;
-      --success-soft-ink:#7fdcb8;
-      --warm:#d99b3f;
-      --warm-soft:#3a2c14;
-      --warm-soft-ink:#f2c584;
-      --danger:#d3776a;
-      --danger-soft:#3a231f;
-      --shadow:0 2px 8px rgba(0,0,0,.35);
-      --shadow-sm:0 1px 4px rgba(0,0,0,.3);
-    }
-  }
+  /* Le site garde toujours ce thème clair, même si le téléphone est en mode sombre. */
 
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -85,7 +60,8 @@
   .admin-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .admin-form input{background:rgba(255,255,255,.95);border:1px solid transparent;border-radius:var(--radius-sm);padding:7px 10px;font-size:.85rem;color:var(--ink);}
   .admin-pill{font-size:.78rem;font-weight:700;color:var(--warm-soft-ink);background:var(--warm-soft);border-radius:999px;padding:4px 10px;}
-  .error-text{color:#ffd7ce;font-size:.82rem;}
+  .error-text{color:var(--danger);font-size:.82rem;}
+  .admin-row .error-text{color:#ffd7ce;}
   .ok-text{color:#dcffe6;font-size:.82rem;}
   .msg-error{color:var(--danger);font-size:.85rem;}
   .msg-ok{color:var(--success-soft-ink);font-size:.85rem;}
@@ -897,8 +873,8 @@
       var fl = e.target;
       signInWithEmailAndPassword(auth, fl.email.value.trim(), fl.code.value).then(function(){
         loginFormOpen = false; loginError = ""; loginInfo = "";
-      }).catch(function(err){
-        loginError = "Email ou code incorrect. [" + (err && err.code ? err.code : "erreur inconnue") + "]";
+      }).catch(function(){
+        loginError = "Email ou code incorrect.";
         renderAdminRow();
       });
       return;
@@ -1043,6 +1019,8 @@
     document.getElementById("status-dot").classList.toggle("ok", authReady);
     document.getElementById("status-text").textContent = authReady ? "Connecté — les données sont partagées en direct." : "Connexion à la base de données…";
 
+    if(authReady){ attachPublicCollections(); }
+
     if(unsubMoi){ unsubMoi(); unsubMoi = null; }
     detachRoleCollections();
     role = "public"; moiNom = ""; moiUid = null;
@@ -1073,27 +1051,36 @@
   function sortBenevoles(){ state.benevoles.sort(function(a,b){ return (a.nom||"").localeCompare(b.nom||"") || (a.prenom||"").localeCompare(b.prenom||""); }); }
   function sortMissions(){ state.missions.sort(function(a,b){ return (a.date||"").localeCompare(b.date||"") || (a.debut||"").localeCompare(b.debut||""); }); }
 
-  onSnapshot(collection(db,"benevoles"), function(snap){
-    state.benevoles = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
-    sortBenevoles();
-    renderAll();
-  }, reportError);
+  var publicCollectionsAttached = false;
+  function attachPublicCollections(){
+    // N'ouvrir ces écoutes qu'une fois la connexion (même anonyme) confirmée :
+    // sinon, sur un réseau lent, Firestore refuse la lecture le temps que la
+    // connexion s'établisse, et une alerte d'erreur apparaît inutilement.
+    if(publicCollectionsAttached) return;
+    publicCollectionsAttached = true;
 
-  onSnapshot(collection(db,"missions"), function(snap){
-    state.missions = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
-    sortMissions();
-    renderAll();
-  }, reportError);
+    onSnapshot(collection(db,"benevoles"), function(snap){
+      state.benevoles = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      sortBenevoles();
+      renderAll();
+    }, reportError);
 
-  onSnapshot(collection(db,"affectations"), function(snap){
-    state.affectations = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
-    renderAll();
-  }, reportError);
+    onSnapshot(collection(db,"missions"), function(snap){
+      state.missions = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      sortMissions();
+      renderAll();
+    }, reportError);
 
-  onSnapshot(doc(db,"parametres","poles"), function(snap){
-    state.poles = (snap.exists() && Array.isArray(snap.data().liste) && snap.data().liste.length) ? snap.data().liste : POLES.slice();
-    renderAll();
-  }, function(){ /* pas encore de liste personnalisée : on garde les valeurs par défaut */ });
+    onSnapshot(collection(db,"affectations"), function(snap){
+      state.affectations = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderAll();
+    }, reportError);
+
+    onSnapshot(doc(db,"parametres","poles"), function(snap){
+      state.poles = (snap.exists() && Array.isArray(snap.data().liste) && snap.data().liste.length) ? snap.data().liste : POLES.slice();
+      renderAll();
+    }, function(){ /* pas encore de liste personnalisée : on garde les valeurs par défaut */ });
+  }
 
   renderAll();
 </script>
