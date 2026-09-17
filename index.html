@@ -897,8 +897,8 @@
       var fl = e.target;
       signInWithEmailAndPassword(auth, fl.email.value.trim(), fl.code.value).then(function(){
         loginFormOpen = false; loginError = ""; loginInfo = "";
-      }).catch(function(){
-        loginError = "Email ou code incorrect.";
+      }).catch(function(err){
+        loginError = "Email ou code incorrect. [" + (err && err.code ? err.code : "erreur inconnue") + "]";
         renderAdminRow();
       });
       return;
