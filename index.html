@@ -394,7 +394,7 @@
       if(role !== "public"){
         actions += '<button class="btn btn-ghost btn-sm" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>';
       }
-      if(role === "directeur"){
+      if(role !== "public"){
         actions += '<button class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'" title="Supprimer">✕</button>';
       }
       return '<div class="card">'
@@ -444,7 +444,15 @@
   var missionFormOpen = false;
 
   function renderMissions(){
-    var cards = state.missions.map(function(m){
+    // Le public ne voit que les missions où il reste de la place (pas d'intérêt
+    // à afficher une mission complète à quelqu'un qui ne peut pas s'y inscrire).
+    // Gestionnaires et Directeur voient tout, pour pouvoir suivre et gérer
+    // les missions déjà complètes (retirer quelqu'un, marquer les heures faites…).
+    var missionsAffichees = role === "public"
+      ? state.missions.filter(function(m){ return placesRestantes(m) > 0; })
+      : state.missions;
+
+    var cards = missionsAffichees.map(function(m){
       var restantes = placesRestantes(m);
       var badgeCls = "places-badge" + (restantes <= 0 ? " low" : "");
       var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
@@ -547,12 +555,12 @@
     }
 
     document.getElementById("panel-missions").innerHTML =
-      '<div class="toolbar"><div><h2>Missions</h2><div class="toolbar-meta">'+state.missions.length+' mission(s) proposée(s)</div></div>'
+      '<div class="toolbar"><div><h2>Missions</h2><div class="toolbar-meta">'+missionsAffichees.length+' mission(s) proposée(s)</div></div>'
       + (role !== "public" ? '<button class="btn btn-primary" data-action="open-mission">+ Créer une mission</button>' : '')
       + '</div>'
       + identiteHtml
       + formHtml
-      + (state.missions.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant.</div>');
+      + (missionsAffichees.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant.</div>');
 
     function field(label, name, required, type){
       return '<div class="field"><label for="f-'+name+'">'+label+'</label>'
