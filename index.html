@@ -467,7 +467,7 @@
         } else if(a.statut === "realise"){
           actionsHtml += '<span class="realise-toggle">✓ réalisé</span>';
         }
-        if(role === "directeur"){
+        if(role !== "public"){
           actionsHtml += '<button class="btn-danger-ghost" data-action="retirer" data-id="'+a.id+'" title="Retirer l\'inscription">✕</button>';
         }
         return '<div class="inscrit-row"><div class="inscrit-name"><span class="avatar">'+initiales(b)+'</span>'
@@ -765,6 +765,7 @@
     else if(action==="cancel-gestionnaire"){ gestionnaireFormOpen = false; renderEquipe(); }
     else if(action==="logout"){
       detachRoleCollections();
+      detachPublicCollections();
       signOut(auth).then(function(){ return signInAnonymously(auth); }).catch(reportError);
     }
     else if(action==="mdp-oublie"){
@@ -1133,6 +1134,8 @@
   function sortMissions(){ state.missions.sort(function(a,b){ return (a.date||"").localeCompare(b.date||"") || (a.debut||"").localeCompare(b.debut||""); }); }
 
   var publicCollectionsAttached = false;
+  var unsubBenevoles = null, unsubMissions = null, unsubAffectations = null, unsubParametres = null;
+
   function attachPublicCollections(){
     // N'ouvrir ces écoutes qu'une fois la connexion (même anonyme) confirmée :
     // sinon, sur un réseau lent, Firestore refuse la lecture le temps que la
@@ -1140,27 +1143,38 @@
     if(publicCollectionsAttached) return;
     publicCollectionsAttached = true;
 
-    onSnapshot(collection(db,"benevoles"), function(snap){
+    unsubBenevoles = onSnapshot(collection(db,"benevoles"), function(snap){
       state.benevoles = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
       sortBenevoles();
       renderAll();
     }, reportError);
 
-    onSnapshot(collection(db,"missions"), function(snap){
+    unsubMissions = onSnapshot(collection(db,"missions"), function(snap){
       state.missions = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
       sortMissions();
       renderAll();
     }, reportError);
 
-    onSnapshot(collection(db,"affectations"), function(snap){
+    unsubAffectations = onSnapshot(collection(db,"affectations"), function(snap){
       state.affectations = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
       renderAll();
     }, reportError);
 
-    onSnapshot(doc(db,"parametres","poles"), function(snap){
+    unsubParametres = onSnapshot(doc(db,"parametres","poles"), function(snap){
       state.poles = (snap.exists() && Array.isArray(snap.data().liste) && snap.data().liste.length) ? snap.data().liste : POLES.slice();
       renderAll();
     }, function(){ /* pas encore de liste personnalisée : on garde les valeurs par défaut */ });
+  }
+
+  function detachPublicCollections(){
+    // À appeler juste avant une déconnexion : le court instant sans session
+    // (entre la déconnexion et la reconnexion anonyme automatique) ferait
+    // sinon échouer ces écoutes déjà ouvertes avec une alerte d'erreur.
+    if(unsubBenevoles){ unsubBenevoles(); unsubBenevoles = null; }
+    if(unsubMissions){ unsubMissions(); unsubMissions = null; }
+    if(unsubAffectations){ unsubAffectations(); unsubAffectations = null; }
+    if(unsubParametres){ unsubParametres(); unsubParametres = null; }
+    publicCollectionsAttached = false;
   }
 
   renderAll();
