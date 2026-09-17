@@ -7,76 +7,97 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap">
 <style>
   :root{
-    --bg:#eef0ec;
+    --bg:#f8f7f4;
     --surface:#ffffff;
-    --surface-2:#f5f6f2;
-    --ink:#1c2622;
-    --ink-soft:#55635c;
-    --ink-faint:#8a958d;
-    --line:#dde0d8;
-    --accent:#0d6e5c;
+    --surface-2:#f1efe8;
+    --ink:#2c2c2a;
+    --ink-soft:#5f5e5a;
+    --ink-faint:#8f8d85;
+    --line:#d3d1c7;
+    --accent:#378ade;
+    --accent-deep:#27639f;
     --accent-ink:#ffffff;
-    --accent-soft:#d9ece7;
-    --accent-soft-ink:#0d5548;
-    --warm:#c97b1f;
-    --warm-soft:#f8e6cd;
-    --warm-soft-ink:#8a5312;
-    --danger:#b3442c;
-    --danger-soft:#f5ded8;
-    --radius:14px;
-    --shadow:0 1px 2px rgba(28,38,34,.06), 0 8px 24px -12px rgba(28,38,34,.18);
+    --accent-soft:#e6f1fb;
+    --accent-soft-ink:#183e63;
+    --success:#1d9e75;
+    --success-soft:#e1f5ee;
+    --success-soft-ink:#085041;
+    --warm:#ba7517;
+    --warm-soft:#faeeda;
+    --warm-soft-ink:#7a5210;
+    --danger:#a32d2d;
+    --danger-soft:#fcebeb;
+    --radius:10px;
+    --radius-sm:6px;
+    --shadow:0 2px 8px rgba(0,0,0,.08);
+    --shadow-sm:0 1px 4px rgba(0,0,0,.06);
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --bg:#11181a;
-      --surface:#182022;
-      --surface-2:#1d2628;
-      --ink:#edf1ee;
-      --ink-soft:#a7b2ac;
-      --ink-faint:#748079;
-      --line:#2b3533;
-      --accent:#49b298;
-      --accent-ink:#0a1a16;
-      --accent-soft:#173a32;
-      --accent-soft-ink:#7fd6bd;
-      --warm:#e3a252;
-      --warm-soft:#3a2c15;
-      --warm-soft-ink:#f0c184;
-      --danger:#e08268;
-      --danger-soft:#3a2420;
-      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+      --bg:#14161c;
+      --surface:#1c1f27;
+      --surface-2:#232732;
+      --ink:#eceae4;
+      --ink-soft:#aeada7;
+      --ink-faint:#7c7b76;
+      --line:#333640;
+      --accent:#6fa8e8;
+      --accent-deep:#4a86c9;
+      --accent-ink:#0a0e1f;
+      --accent-soft:#22354a;
+      --accent-soft-ink:#a9d0f5;
+      --success:#3fbf94;
+      --success-soft:#12352a;
+      --success-soft-ink:#7fdcb8;
+      --warm:#d99b3f;
+      --warm-soft:#3a2c14;
+      --warm-soft-ink:#f2c584;
+      --danger:#d3776a;
+      --danger-soft:#3a231f;
+      --shadow:0 2px 8px rgba(0,0,0,.35);
+      --shadow-sm:0 1px 4px rgba(0,0,0,.3);
     }
   }
 
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
-  body{background:var(--bg);color:var(--ink);font-family:"Work Sans",system-ui,sans-serif;line-height:1.45;}
+  body{background:var(--bg);color:var(--ink);font-family:"Work Sans",system-ui,sans-serif;font-size:15px;line-height:1.45;}
   h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:600;margin:0;}
   button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;}
   button{cursor:pointer;}
   :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important;}}
 
-  .shell{max-width:920px;margin:0 auto;padding:28px 16px 72px;}
+  .shell{max-width:920px;margin:0 auto;padding:0 16px 72px;}
 
-  .eyebrow{font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;}
-  .title{font-size:clamp(1.7rem,4vw,2.4rem);margin-top:6px;}
-  .subtitle{color:var(--ink-soft);max-width:60ch;margin-top:10px;font-size:.98rem;}
+  .hero-wrap{background:var(--accent-deep);color:#fff;}
+  .hero-inner{max-width:920px;margin:0 auto;padding:22px 16px 26px;}
+  .eyebrow{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.75);font-weight:700;}
+  .title{font-size:clamp(1.5rem,3.4vw,2rem);margin-top:6px;color:#fff;}
+  .subtitle{color:rgba(255,255,255,.82);max-width:60ch;margin-top:8px;font-size:.92rem;}
 
-  .status-line{margin-top:14px;font-size:.85rem;color:var(--ink-soft);display:flex;align-items:center;gap:8px;}
+  .status-line{margin-top:14px;font-size:.85rem;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:8px;}
   .status-dot{width:8px;height:8px;border-radius:50%;background:var(--warm);flex:none;}
-  .status-dot.ok{background:var(--accent);}
+  .status-dot.ok{background:var(--success);}
 
-  .banner-info{margin-top:14px;display:flex;gap:10px;align-items:flex-start;background:var(--accent-soft);color:var(--accent-soft-ink);border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);border-radius:var(--radius);padding:12px 14px;font-size:.88rem;}
+  .admin-row{margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:rgba(255,255,255,.92);}
+  .link-btn{background:none;border:none;color:#fff;font-weight:600;font-size:.85rem;padding:0;text-decoration:underline;}
+  .admin-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .admin-form input{background:rgba(255,255,255,.95);border:1px solid transparent;border-radius:var(--radius-sm);padding:7px 10px;font-size:.85rem;color:var(--ink);}
+  .admin-pill{font-size:.78rem;font-weight:700;color:var(--warm-soft-ink);background:var(--warm-soft);border-radius:999px;padding:4px 10px;}
+  .error-text{color:#ffd7ce;font-size:.82rem;}
+  .ok-text{color:#dcffe6;font-size:.82rem;}
+  .msg-error{color:var(--danger);font-size:.85rem;}
+  .msg-ok{color:var(--success-soft-ink);font-size:.85rem;}
 
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:22px;}
-  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
-  .stat-value{font-family:"Fraunces",serif;font-size:1.7rem;font-weight:600;font-variant-numeric:tabular-nums;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:20px;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);border-left:4px solid var(--accent);}
+  .stat-value{font-family:"Fraunces",serif;font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);}
   .stat-label{color:var(--ink-soft);font-size:.82rem;margin-top:2px;}
 
-  .tabs{display:flex;gap:6px;margin-top:28px;border-bottom:1px solid var(--line);overflow-x:auto;}
-  .tab{background:none;border:none;padding:10px 14px;font-weight:600;color:var(--ink-soft);border-bottom:2px solid transparent;white-space:nowrap;}
-  .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);}
+  .tabs{display:flex;gap:18px;margin-top:26px;border-bottom:1px solid var(--line);overflow-x:auto;}
+  .tab{background:none;border:none;border-bottom:3px solid transparent;padding:10px 2px;font-weight:600;color:var(--ink-soft);white-space:nowrap;}
+  .tab[aria-selected="true"]{color:var(--accent-deep);border-bottom-color:var(--accent);}
 
   .panel{padding-top:20px;}
 
@@ -84,7 +105,7 @@
   .toolbar h2{font-size:1.25rem;}
   .toolbar-meta{color:var(--ink-soft);font-size:.86rem;}
 
-  .btn{border-radius:999px;padding:9px 16px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:.88rem;display:inline-flex;align-items:center;gap:6px;}
+  .btn{border-radius:var(--radius-sm);padding:9px 16px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:.88rem;display:inline-flex;align-items:center;gap:6px;}
   .btn:hover{border-color:var(--ink-faint);}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
@@ -97,14 +118,14 @@
   .field-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
   .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
   .field label{font-size:.82rem;font-weight:600;color:var(--ink-soft);}
-  .field input,.field select,.field textarea{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 10px;}
+  .field input,.field select,.field textarea{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:9px 10px;}
   .checkbox-group{display:flex;flex-wrap:wrap;gap:8px;}
   .checkbox-chip{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.84rem;background:var(--surface);}
-  .form-actions{display:flex;gap:10px;margin-top:6px;align-items:center;}
+  .form-actions{display:flex;gap:10px;margin-top:6px;align-items:center;flex-wrap:wrap;}
   .form-hint{color:var(--ink-faint);font-size:.8rem;}
 
-  .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;}
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:10px;}
 
   .benevole-name{font-family:"Fraunces",serif;font-size:1.08rem;font-weight:600;}
   .benevole-contact{color:var(--ink-soft);font-size:.84rem;}
@@ -116,6 +137,7 @@
   .mission-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
   .mission-title{font-family:"Fraunces",serif;font-size:1.1rem;font-weight:600;}
   .mission-when{color:var(--ink-soft);font-size:.85rem;margin-top:2px;}
+  .mission-meta{color:var(--ink-faint);font-size:.78rem;}
   .places-badge{font-variant-numeric:tabular-nums;font-size:.78rem;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent-soft-ink);white-space:nowrap;}
   .places-badge.low{background:var(--danger-soft);color:var(--danger);}
   .mission-desc{color:var(--ink-soft);font-size:.88rem;}
@@ -125,10 +147,10 @@
   .inscrit-name{display:flex;align-items:center;gap:8px;}
   .avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex:none;}
   .realise-toggle{display:flex;align-items:center;gap:5px;font-size:.78rem;color:var(--ink-soft);}
-  .inscrit-actions{display:flex;align-items:center;gap:4px;}
+  .inscrit-actions{display:flex;align-items:center;gap:8px;}
 
   .inscrire-row{display:flex;gap:8px;margin-top:2px;}
-  .inscrire-row select{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 10px;}
+  .inscrire-row select{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 10px;}
 
   .heures-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
   .heures-table th,.heures-table td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);font-size:.9rem;}
@@ -139,6 +161,13 @@
   .bar-fill{height:100%;background:var(--accent);}
   .table-scroll{overflow-x:auto;}
 
+  .list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px;}
+  .list-row-main{display:flex;flex-direction:column;gap:2px;}
+  .list-row-title{font-weight:600;}
+  .list-row-meta{color:var(--ink-soft);font-size:.82rem;}
+  .role-pill{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-soft-ink);}
+  .role-pill.directeur{background:var(--warm-soft);color:var(--warm-soft-ink);}
+
   .empty-state{color:var(--ink-faint);font-size:.9rem;padding:30px 10px;text-align:center;border:1px dashed var(--line);border-radius:var(--radius);}
 
   .footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:.8rem;}
@@ -148,32 +177,51 @@
 </head>
 <body>
 
+<div class="hero-wrap">
+  <div class="hero-inner">
+    <div class="eyebrow">Maison Pour Tous des Rancy</div>
+    <h1 class="title">Bénévoles &amp; missions</h1>
+    <p class="subtitle">Consultez les missions proposées, inscrivez-vous, et suivez les heures données par les bénévoles. Ce que vous ajoutez ici est visible en direct par tout le monde.</p>
+
+    <div class="status-line"><span class="status-dot" id="status-dot"></span><span id="status-text">Connexion à la base de données…</span></div>
+
+    <div class="admin-row" id="admin-row"></div>
+  </div>
+</div>
+
 <div class="shell">
-  <div class="eyebrow">Maison Pour Tous des Rancy</div>
-  <h1 class="title">Bénévoles &amp; missions</h1>
-  <p class="subtitle">Consultez les missions proposées, inscrivez-vous, et suivez les heures données par les bénévoles. Ce que vous ajoutez ici est visible en direct par tout le monde.</p>
-
-  <div class="status-line"><span class="status-dot" id="status-dot"></span><span id="status-text">Connexion à la base de données…</span></div>
-
   <div class="stats" id="stats"></div>
 
   <div class="tabs" role="tablist" aria-label="Sections">
     <button class="tab" role="tab" data-tab="benevoles" aria-selected="true">Bénévoles</button>
     <button class="tab" role="tab" data-tab="missions" aria-selected="false">Missions</button>
     <button class="tab" role="tab" data-tab="heures" aria-selected="false">Heures données</button>
+    <button class="tab" role="tab" data-tab="historique" aria-selected="false" hidden>Historique</button>
+    <button class="tab" role="tab" data-tab="equipe" aria-selected="false" hidden>Équipe</button>
+    <button class="tab" role="tab" data-tab="parametres" aria-selected="false" hidden>Paramètres</button>
+    <button class="tab" role="tab" data-tab="donnees" aria-selected="false" hidden>Données</button>
   </div>
 
   <section class="panel" id="panel-benevoles" role="tabpanel"></section>
   <section class="panel" id="panel-missions" role="tabpanel" hidden></section>
   <section class="panel" id="panel-heures" role="tabpanel" hidden></section>
+  <section class="panel" id="panel-historique" role="tabpanel" hidden></section>
+  <section class="panel" id="panel-equipe" role="tabpanel" hidden></section>
+  <section class="panel" id="panel-parametres" role="tabpanel" hidden></section>
+  <section class="panel" id="panel-donnees" role="tabpanel" hidden></section>
 
   <div class="footer">Maison Pour Tous des Rancy — gestion des bénévoles.</div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-  import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+  import {
+    getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+    sendPasswordResetEmail, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+  import {
+    getFirestore, collection, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, doc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBSyVjgKuvlbmY87m9w8UyCQuaTIVZrZ0A",
@@ -188,12 +236,35 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // Seconde instance Firebase utilisée uniquement pour que le Directeur puisse
+  // créer un compte "gestionnaire" sans être déconnecté de sa propre session.
+  const secondaryApp = initializeApp(firebaseConfig, "secondary");
+  const secondaryAuth = getAuth(secondaryApp);
+
   var POLES = ["Accueil","Ateliers","Numérique (EPN)","Événements","Communication","Logistique"];
   var POLE_HUES = {"Accueil":150,"Ateliers":28,"Numérique (EPN)":205,"Événements":340,"Communication":260,"Logistique":45};
 
-  var state = { benevoles: [], missions: [], affectations: [] };
+  var state = { benevoles: [], missions: [], affectations: [], gestionnaires: [], historique: [], poles: POLES.slice() };
   var currentTab = "benevoles";
   var authReady = false;
+  var importStatus = "";
+  var importError = false;
+
+  // role: "public" | "gestionnaire" | "directeur"
+  var role = "public";
+  var moiNom = "";
+  var moiUid = null;
+
+  var unsubMoi = null;
+  var unsubGestionnaires = null;
+  var unsubHistorique = null;
+
+  var loginFormOpen = false;
+  var loginError = "";
+  var loginInfo = "";
+
+  var gestionnaireFormOpen = false;
+  var gestionnaireError = "";
 
   function escapeHtml(s){
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
@@ -207,6 +278,13 @@
       var s = d.toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
       return s.charAt(0).toUpperCase() + s.slice(1);
     }catch(e){ return iso; }
+  }
+
+  function fmtDateTime(ts){
+    try{
+      if(!ts || !ts.toDate) return "";
+      return ts.toDate().toLocaleDateString("fr-FR") + " à " + ts.toDate().toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+    }catch(e){ return ""; }
   }
 
   function dureeHeures(mission){
@@ -237,8 +315,15 @@
     return ((b.prenom[0]||"") + (b.nom[0]||"")).toUpperCase();
   }
 
+  function hueForPole(pole){
+    if(POLE_HUES[pole] != null) return POLE_HUES[pole];
+    var hash = 0;
+    for(var i=0; i<pole.length; i++){ hash = (hash * 31 + pole.charCodeAt(i)) % 360; }
+    return hash < 0 ? hash + 360 : hash;
+  }
+
   function poleTag(pole){
-    var hue = POLE_HUES[pole] != null ? POLE_HUES[pole] : 200;
+    var hue = hueForPole(pole);
     return '<span class="tag"><span class="dot" style="background:hsl('+hue+',55%,45%)"></span>'+escapeHtml(pole)+'</span>';
   }
 
@@ -252,6 +337,36 @@
       }
     });
     return map;
+  }
+
+  function logHistorique(action, cible){
+    addDoc(collection(db,"historique"), {
+      action: action, cible: cible, parNom: moiNom, parRole: role, date: serverTimestamp()
+    }).catch(function(e){ console.error("historique:", e); });
+  }
+
+  // ---------- render: connexion / mode gestion ----------
+  function renderAdminRow(){
+    var el = document.getElementById("admin-row");
+    if(role !== "public"){
+      var pillCls = role === "directeur" ? "admin-pill" : "admin-pill";
+      el.innerHTML = '<span class="'+pillCls+'">Connecté : '+escapeHtml(moiNom)+' ('+(role==="directeur"?"Directeur":"Gestionnaire")+')</span>'
+        + '<button class="link-btn" data-action="logout">Se déconnecter</button>';
+      return;
+    }
+    if(!loginFormOpen){
+      el.innerHTML = '<button class="link-btn" data-action="open-login">Connexion gestionnaire / Directeur</button>';
+      return;
+    }
+    el.innerHTML = '<form class="admin-form" id="form-login">'
+      + '<input type="email" name="email" placeholder="Email" autocomplete="username" required>'
+      + '<input type="password" name="code" placeholder="Code secret" autocomplete="current-password" required>'
+      + '<button type="submit" class="btn btn-sm">Se connecter</button>'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-action="cancel-login">Annuler</button>'
+      + '<button type="button" class="link-btn" data-action="mdp-oublie">Code oublié ?</button>'
+      + (loginError ? '<span class="error-text">'+escapeHtml(loginError)+'</span>' : '')
+      + (loginInfo ? '<span class="ok-text">'+escapeHtml(loginInfo)+'</span>' : '')
+      + '</form>';
   }
 
   // ---------- render: stats ----------
@@ -276,18 +391,27 @@
 
   // ---------- render: bénévoles ----------
   var benevoleFormOpen = false;
+  var benevoleError = "";
 
   function renderBenevoles(){
     var heuresMap = heuresParBenevole();
     var cards = state.benevoles.map(function(b){
       var tags = (b.poles||[]).map(poleTag).join("");
       var h = Math.round((heuresMap[b.id]||0)*10)/10;
+      var actions = "";
+      if(role !== "public"){
+        actions += '<button class="btn btn-ghost btn-sm" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>';
+      }
+      if(role === "directeur"){
+        actions += '<button class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'" title="Supprimer">✕</button>';
+      }
       return '<div class="card">'
         + '<div><div class="benevole-name">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
         + '<div class="benevole-contact">'+escapeHtml(b.email)+'<br>'+escapeHtml(b.tel)+'</div></div>'
         + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun pôle renseigné</span>')+'</div>'
-        + '<div class="card-footrow"><span>'+h+' h données</span>'
-        + '<button class="btn btn-ghost btn-sm" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button></div>'
+        + '<div class="card-footrow"><span><strong>'+h+' h</strong> données au total</span>'
+        + (actions ? '<span style="display:flex;gap:6px;">'+actions+'</span>' : '')
+        + '</div>'
         + (b.actif ? '' : '<div class="benevole-contact" style="color:var(--danger)">Inactif</div>')
         + '</div>';
     }).join("");
@@ -298,21 +422,22 @@
         + '<div class="field-row">'
         + field("Prénom","prenom",true)
         + field("Nom","nom",true)
-        + field("Email","email",false,"email")
+        + field("Email","email",true,"email")
         + field("Téléphone","tel",false,"tel")
         + '</div>'
         + '<div class="field"><label>Pôles / domaines</label><div class="checkbox-group">'
-        + POLES.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'"> '+escapeHtml(p)+'</label>'; }).join("")
+        + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'"> '+escapeHtml(p)+'</label>'; }).join("")
         + '</div></div>'
         + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>Ajouter le bénévole</button>'
         + '<button type="button" class="btn btn-ghost" data-action="cancel-benevole">Annuler</button>'
         + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
+        + (benevoleError ? '<span class="error-text">'+escapeHtml(benevoleError)+'</span>' : '')
         + '</div>'
         + '</form>';
     }
 
     document.getElementById("panel-benevoles").innerHTML =
-      '<div class="toolbar"><div><h2>Bénévoles</h2><div class="toolbar-meta">'+state.benevoles.length+' bénévole(s) enregistré(s)</div></div>'
+      '<div class="toolbar"><div><h2>Bénévoles</h2><div class="toolbar-meta">'+state.benevoles.length+' bénévole(s) enregistré(s) · une seule fiche par email</div></div>'
       + '<button class="btn btn-primary" data-action="open-benevole">+ Ajouter un bénévole</button></div>'
       + formHtml
       + (state.benevoles.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucun bénévole enregistré pour l\'instant. Utilisez le bouton ci-dessus pour ajouter le premier.</div>');
@@ -336,12 +461,18 @@
       var inscritsHtml = inscrits.map(function(a){
         var b = benevoleById(a.benevoleId);
         if(!b) return "";
+        var actionsHtml = "";
+        if(role !== "public"){
+          actionsHtml += '<label class="realise-toggle"><input type="checkbox" data-action="toggle-realise" data-id="'+a.id+'" '+(a.statut==="realise"?"checked":"")+'> réalisé</label>';
+        } else if(a.statut === "realise"){
+          actionsHtml += '<span class="realise-toggle">✓ réalisé</span>';
+        }
+        if(role === "directeur"){
+          actionsHtml += '<button class="btn-danger-ghost" data-action="retirer" data-id="'+a.id+'" title="Retirer l\'inscription">✕</button>';
+        }
         return '<div class="inscrit-row"><div class="inscrit-name"><span class="avatar">'+initiales(b)+'</span>'
           + escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
-          + '<div class="inscrit-actions">'
-          + '<label class="realise-toggle"><input type="checkbox" data-action="toggle-realise" data-id="'+a.id+'" '+(a.statut==="realise"?"checked":"")+'> réalisé</label>'
-          + '<button class="btn-danger-ghost" data-action="retirer" data-id="'+a.id+'" title="Retirer l\'inscription">✕</button>'
-          + '</div></div>';
+          + '<div class="inscrit-actions">'+actionsHtml+'</div></div>';
       }).join("");
 
       var disponibles = state.benevoles.filter(function(b){
@@ -360,8 +491,10 @@
         + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>'
         + '<div class="tags">'+poleTag(m.pole)+'</div>'
         + '<div class="mission-desc">'+escapeHtml(m.description)+'</div>'
+        + (m.creePar ? '<div class="mission-meta">Proposée par '+escapeHtml(m.creePar)+'</div>' : '')
         + '<div class="inscrits-list">'+(inscritsHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>'
         + selectHtml
+        + (role === "directeur" ? '<div><button class="btn-danger-ghost" data-action="delete-mission" data-id="'+m.id+'">Supprimer la mission</button></div>' : '')
         + '</div>';
     }).join("");
 
@@ -370,7 +503,7 @@
       formHtml = '<form class="form" id="form-mission">'
         + '<div class="field-row">'
         + field("Titre de la mission","titre",true)
-        + selectField("Pôle","pole",POLES)
+        + selectField("Pôle","pole",state.poles)
         + field("Date","date",true,"date")
         + field("Lieu","lieu",true)
         + field("Heure de début","debut",true,"time")
@@ -387,9 +520,10 @@
 
     document.getElementById("panel-missions").innerHTML =
       '<div class="toolbar"><div><h2>Missions</h2><div class="toolbar-meta">'+state.missions.length+' mission(s) proposée(s)</div></div>'
-      + '<button class="btn btn-primary" data-action="open-mission">+ Créer une mission</button></div>'
+      + (role !== "public" ? '<button class="btn btn-primary" data-action="open-mission">+ Créer une mission</button>' : '')
+      + '</div>'
       + formHtml
-      + (state.missions.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant. Utilisez le bouton ci-dessus pour en créer une.</div>');
+      + (state.missions.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant.</div>');
 
     function field(label, name, required, type){
       return '<div class="field"><label for="f-'+name+'">'+label+'</label>'
@@ -415,7 +549,7 @@
       return '<tr><td>'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</td>'
         + '<td>'+((b.poles||[]).map(poleTag).join(" ") || '—')+'</td>'
         + '<td class="num">'+missionsRealisees+'</td>'
-        + '<td class="num"><span class="bar-wrap"><span class="bar-fill" style="width:'+pct+'%"></span></span>'+h+' h</td></tr>';
+        + '<td class="num"><span class="bar-wrap"><span class="bar-fill" style="width:'+pct+'%"></span></span><strong>'+h+' h</strong></td></tr>';
     }).join("");
 
     var total = Math.round(rows.reduce(function(s,b){ return s + (heuresMap[b.id]||0); },0)*10)/10;
@@ -423,25 +557,157 @@
     document.getElementById("panel-heures").innerHTML =
       '<div class="toolbar"><div><h2>Heures données</h2><div class="toolbar-meta">Total cumulé : '+total+' h · basé sur les missions marquées « réalisé »</div></div>'
       + '<button class="btn btn-ghost btn-sm" data-action="copier-recap">Copier le récapitulatif</button></div>'
-      + (rows.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr><th>Bénévole</th><th>Pôles</th><th>Missions réalisées</th><th>Heures</th></tr></thead><tbody>'+trs+'</tbody></table></div>'
+      + (rows.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr><th>Bénévole</th><th>Pôles</th><th>Missions réalisées</th><th>Total d\'heures</th></tr></thead><tbody>'+trs+'</tbody></table></div>'
         : '<div class="empty-state">Aucun bénévole pour l\'instant.</div>');
   }
 
+  // ---------- render: historique ----------
+  var ACTION_LABELS = {
+    creation_mission: "Mission créée",
+    suppression_mission: "Mission supprimée",
+    validation: "Mission marquée réalisée",
+    annulation_validation: "Validation annulée",
+    suppression_inscription: "Inscription supprimée",
+    suppression_benevole: "Bénévole supprimé",
+    ajout_gestionnaire: "Gestionnaire ajouté",
+    desactivation_gestionnaire: "Gestionnaire désactivé",
+    reactivation_gestionnaire: "Gestionnaire réactivé"
+  };
+
+  function renderHistorique(){
+    var rows = state.historique.slice().sort(function(a,b){
+      var ta = a.date && a.date.toMillis ? a.date.toMillis() : 0;
+      var tb = b.date && b.date.toMillis ? b.date.toMillis() : 0;
+      return tb - ta;
+    });
+    var trs = rows.map(function(h){
+      return '<tr><td>'+fmtDateTime(h.date)+'</td><td>'+escapeHtml(ACTION_LABELS[h.action]||h.action)+'</td>'
+        + '<td>'+escapeHtml(h.cible||"")+'</td><td>'+escapeHtml(h.parNom||"")+' ('+(h.parRole==="directeur"?"Directeur":"Gestionnaire")+')</td></tr>';
+    }).join("");
+
+    document.getElementById("panel-historique").innerHTML =
+      '<div class="toolbar"><div><h2>Historique</h2><div class="toolbar-meta">Visible par les gestionnaires et le Directeur uniquement</div></div></div>'
+      + (rows.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr><th>Date</th><th>Action</th><th>Concerne</th><th>Par</th></tr></thead><tbody>'+trs+'</tbody></table></div>'
+        : '<div class="empty-state">Aucune action enregistrée pour l\'instant.</div>');
+  }
+
+  // ---------- render: équipe (gestionnaires) ----------
+  function renderEquipe(){
+    var rows = state.gestionnaires.map(function(g){
+      var pillCls = "role-pill" + (g.role==="directeur" ? " directeur" : "");
+      var actionsHtml = "";
+      if(role === "directeur" && g.role !== "directeur"){
+        actionsHtml = '<button class="btn btn-ghost btn-sm" data-action="toggle-gestionnaire" data-id="'+g.id+'">'+(g.actif ? "Désactiver" : "Réactiver")+'</button>';
+      }
+      return '<div class="list-row"><div class="list-row-main"><span class="list-row-title">'+escapeHtml(g.nom)+'</span>'
+        + '<span class="list-row-meta">'+(g.actif ? "Actif" : "Inactif")+'</span></div>'
+        + '<div style="display:flex;align-items:center;gap:10px;"><span class="'+pillCls+'">'+(g.role==="directeur"?"Directeur":"Gestionnaire")+'</span>'+actionsHtml+'</div></div>';
+    }).join("");
+
+    var formHtml = "";
+    if(role === "directeur" && gestionnaireFormOpen){
+      formHtml = '<form class="form" id="form-gestionnaire">'
+        + '<div class="field-row">'
+        + '<div class="field"><label for="g-nom">Nom complet</label><input id="g-nom" name="nom" required></div>'
+        + '<div class="field"><label for="g-email">Email (réel, pour la récupération du code)</label><input id="g-email" name="email" type="email" required></div>'
+        + '<div class="field"><label for="g-code">Code initial (6 caractères min.)</label><input id="g-code" name="code" type="text" minlength="6" required></div>'
+        + '</div>'
+        + '<div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter ce gestionnaire</button>'
+        + '<button type="button" class="btn btn-ghost" data-action="cancel-gestionnaire">Annuler</button>'
+        + (gestionnaireError ? '<span class="error-text">'+escapeHtml(gestionnaireError)+'</span>' : '')
+        + '</div></form>';
+    }
+
+    document.getElementById("panel-equipe").innerHTML =
+      '<div class="toolbar"><div><h2>Équipe</h2><div class="toolbar-meta">Personnes habilitées à créer des missions et à valider les présences</div></div>'
+      + (role === "directeur" ? '<button class="btn btn-primary" data-action="open-gestionnaire">+ Ajouter un gestionnaire</button>' : '')
+      + '</div>'
+      + formHtml
+      + (rows || '<div class="empty-state">Aucun gestionnaire pour l\'instant.</div>');
+  }
+
+  // ---------- render: paramètres (pôles) ----------
+  function renderParametres(){
+    var lignesPoles = state.poles.map(function(p){
+      return '<div class="list-row"><div class="list-row-main"><span class="list-row-title">'+escapeHtml(p)+'</span></div>'
+        + '<button class="btn-danger-ghost" data-action="delete-pole" data-pole="'+escapeHtml(p)+'" title="Retirer">✕</button></div>';
+    }).join("");
+
+    document.getElementById("panel-parametres").innerHTML =
+      '<div class="toolbar"><div><h2>Paramètres</h2><div class="toolbar-meta">Pôles / domaines proposés dans les formulaires bénévoles et missions</div></div></div>'
+      + '<form class="form" id="form-pole"><div class="field-row">'
+      + '<div class="field"><label for="p-nom">Nouveau pôle</label><input id="p-nom" name="nom" required placeholder="Ex : Jardinage"></div>'
+      + '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter ce pôle</button></div></form>'
+      + (lignesPoles || '<div class="empty-state">Aucun pôle défini.</div>')
+      + '<div class="form-hint" style="margin-top:10px;">Retirer un pôle ne modifie pas les bénévoles ou missions qui l\'utilisent déjà — seuls les nouveaux formulaires ne le proposeront plus.</div>';
+  }
+
+  // ---------- render: données (export / import) ----------
+  function renderDonnees(){
+    document.getElementById("panel-donnees").innerHTML =
+      '<div class="toolbar"><div><h2>Données</h2><div class="toolbar-meta">Exporter une copie des données, ou restaurer depuis un fichier exporté précédemment</div></div></div>'
+      + '<div class="card" style="max-width:520px;">'
+      + '<div class="benevole-name">Exporter</div>'
+      + '<div class="benevole-contact">Télécharge un instantané horodaté des bénévoles, missions, inscriptions et de l\'historique. À faire avant toute suppression importante.</div>'
+      + '<div><button class="btn btn-primary" data-action="export-json">Exporter horodaté (JSON)</button></div>'
+      + '</div>'
+      + '<div class="card" style="max-width:520px;margin-top:14px;">'
+      + '<div class="benevole-name">Importer</div>'
+      + '<div class="benevole-contact">Restaure des bénévoles / missions / inscriptions à partir d\'un fichier exporté avec le bouton ci-dessus. '
+      + 'Un enregistrement du fichier qui existe déjà en ligne (même identifiant) est mis à jour avec le contenu du fichier ; les enregistrements en ligne absents du fichier ne sont jamais supprimés. '
+      + 'Les gestionnaires ne sont pas concernés par l\'import : ce sont de vrais comptes de connexion, à recréer via l\'onglet Équipe.</div>'
+      + '<div><input type="file" id="import-file-input" accept="application/json" hidden>'
+      + '<button class="btn" data-action="import-json">Importer des données (JSON)</button></div>'
+      + (importStatus ? '<div class="'+(importError?"msg-error":"msg-ok")+'" style="margin-top:6px;">'+escapeHtml(importStatus)+'</div>' : '')
+      + '</div>';
+  }
+
   function renderAll(){
+    updateTabsVisibility();
+    renderAdminRow();
     renderStats();
     if(currentTab==="benevoles") renderBenevoles();
     if(currentTab==="missions") renderMissions();
     if(currentTab==="heures") renderHeures();
+    if(currentTab==="historique") renderHistorique();
+    if(currentTab==="equipe") renderEquipe();
+    if(currentTab==="parametres") renderParametres();
+    if(currentTab==="donnees") renderDonnees();
+  }
+
+  function updateTabsVisibility(){
+    var histTab = document.querySelector('[data-tab="historique"]');
+    var equipeTab = document.querySelector('[data-tab="equipe"]');
+    var paramTab = document.querySelector('[data-tab="parametres"]');
+    var donneesTab = document.querySelector('[data-tab="donnees"]');
+    var visible = role !== "public";
+    var directeurSeul = role === "directeur";
+    histTab.hidden = !visible;
+    equipeTab.hidden = !visible;
+    paramTab.hidden = !directeurSeul;
+    donneesTab.hidden = !directeurSeul;
+    if(!visible && (currentTab === "historique" || currentTab === "equipe")){
+      switchTab("benevoles");
+    }
+    if(!directeurSeul && (currentTab === "parametres" || currentTab === "donnees")){
+      switchTab("benevoles");
+    }
+  }
+
+  function switchTab(name){
+    currentTab = name;
+    document.querySelectorAll(".tab").forEach(function(b){
+      b.setAttribute("aria-selected", b.getAttribute("data-tab")===name ? "true" : "false");
+    });
+    ["benevoles","missions","heures","historique","equipe","parametres","donnees"].forEach(function(t){
+      document.getElementById("panel-"+t).hidden = (t !== name);
+    });
   }
 
   // ---------- tabs ----------
   document.querySelectorAll(".tab").forEach(function(btn){
     btn.addEventListener("click", function(){
-      currentTab = btn.getAttribute("data-tab");
-      document.querySelectorAll(".tab").forEach(function(b){ b.setAttribute("aria-selected", b===btn ? "true" : "false"); });
-      ["benevoles","missions","heures"].forEach(function(t){
-        document.getElementById("panel-"+t).hidden = (t !== currentTab);
-      });
+      switchTab(btn.getAttribute("data-tab"));
       renderAll();
     });
   });
@@ -452,13 +718,40 @@
     if(!el) return;
     var action = el.getAttribute("data-action");
 
-    if(action==="open-benevole"){ benevoleFormOpen = true; renderBenevoles(); }
+    if(action==="open-benevole"){ benevoleFormOpen = true; benevoleError=""; renderBenevoles(); }
     else if(action==="cancel-benevole"){ benevoleFormOpen = false; renderBenevoles(); }
     else if(action==="open-mission"){ missionFormOpen = true; renderMissions(); }
     else if(action==="cancel-mission"){ missionFormOpen = false; renderMissions(); }
+    else if(action==="open-login"){ loginFormOpen = true; loginError=""; loginInfo=""; renderAdminRow(); }
+    else if(action==="cancel-login"){ loginFormOpen = false; loginError=""; loginInfo=""; renderAdminRow(); }
+    else if(action==="open-gestionnaire"){ gestionnaireFormOpen = true; gestionnaireError=""; renderEquipe(); }
+    else if(action==="cancel-gestionnaire"){ gestionnaireFormOpen = false; renderEquipe(); }
+    else if(action==="logout"){
+      detachRoleCollections();
+      signOut(auth).then(function(){ return signInAnonymously(auth); }).catch(reportError);
+    }
+    else if(action==="mdp-oublie"){
+      var form = document.getElementById("form-login");
+      var email = form && form.email.value.trim();
+      if(!email){ loginError = "Indique ton email d'abord."; renderAdminRow(); return; }
+      sendPasswordResetEmail(auth, email).then(function(){
+        loginError = ""; loginInfo = "Email envoyé si ce compte existe.";
+        renderAdminRow();
+      }).catch(function(){
+        loginInfo = "Email envoyé si ce compte existe.";
+        renderAdminRow();
+      });
+    }
     else if(action==="toggle-actif"){
       var b = benevoleById(el.getAttribute("data-id"));
       if(b){ updateDoc(doc(db,"benevoles",b.id), {actif: !b.actif}).catch(reportError); }
+    }
+    else if(action==="delete-benevole"){
+      var bd = benevoleById(el.getAttribute("data-id"));
+      if(!confirm("Supprimer définitivement " + (bd ? (bd.prenom+" "+bd.nom) : "ce bénévole") + " ? Cette action est irréversible.")) return;
+      deleteDoc(doc(db,"benevoles", el.getAttribute("data-id"))).then(function(){
+        logHistorique("suppression_benevole", bd ? (bd.prenom+" "+bd.nom) : "");
+      }).catch(reportError);
     }
     else if(action==="inscrire"){
       var missionId = el.getAttribute("data-mission");
@@ -468,7 +761,81 @@
       }
     }
     else if(action==="retirer"){
-      deleteDoc(doc(db,"affectations", el.getAttribute("data-id"))).catch(reportError);
+      var aff = state.affectations.find(function(x){ return x.id === el.getAttribute("data-id"); });
+      var mm = aff ? missionById(aff.missionId) : null;
+      var bb = aff ? benevoleById(aff.benevoleId) : null;
+      if(!confirm("Retirer l'inscription de " + (bb?(bb.prenom+" "+bb.nom):"ce bénévole") + (mm?(" à la mission « "+mm.titre+" »"):"") + " ?")) return;
+      deleteDoc(doc(db,"affectations", el.getAttribute("data-id"))).then(function(){
+        logHistorique("suppression_inscription", (bb?bb.prenom+" "+bb.nom:"") + (mm?" — "+mm.titre:""));
+      }).catch(reportError);
+    }
+    else if(action==="delete-mission"){
+      var mDel = missionById(el.getAttribute("data-id"));
+      if(!confirm("Supprimer définitivement la mission « " + (mDel?mDel.titre:"") + " » ? Cette action est irréversible.")) return;
+      deleteDoc(doc(db,"missions", el.getAttribute("data-id"))).then(function(){
+        logHistorique("suppression_mission", mDel ? mDel.titre : "");
+      }).catch(reportError);
+    }
+    else if(action==="export-json"){
+      var exportData = {
+        exporteLe: new Date().toISOString(),
+        benevoles: state.benevoles,
+        missions: state.missions,
+        affectations: state.affectations,
+        gestionnaires: state.gestionnaires.map(function(g){ return {nom:g.nom, role:g.role, actif:g.actif}; }),
+        historique: state.historique
+      };
+      var jsonStr = JSON.stringify(exportData, null, 2);
+      var blob = new Blob([jsonStr], {type: "application/json"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      var dateStr = new Date().toISOString().slice(0,10);
+      a.href = url;
+      a.download = "benevoles-rancy-export-" + dateStr + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    else if(action==="toggle-gestionnaire"){
+      var g = state.gestionnaires.find(function(x){ return x.id === el.getAttribute("data-id"); });
+      if(g){
+        updateDoc(doc(db,"gestionnaires", g.id), {actif: !g.actif}).then(function(){
+          logHistorique(g.actif ? "desactivation_gestionnaire" : "reactivation_gestionnaire", g.nom);
+        }).catch(reportError);
+      }
+    }
+    else if(action==="delete-pole"){
+      var poleNom = el.getAttribute("data-pole");
+      if(!confirm("Retirer le pôle « "+poleNom+" » de la liste proposée ? Les bénévoles/missions qui l'ont déjà ne seront pas modifiés.")) return;
+      var nouvelleListe = state.poles.filter(function(p){ return p !== poleNom; });
+      setDoc(doc(db,"parametres","poles"), {liste: nouvelleListe}).catch(reportError);
+    }
+    else if(action==="export-json"){
+      var exportData = {
+        exporteLe: new Date().toISOString(),
+        poles: state.poles,
+        benevoles: state.benevoles,
+        missions: state.missions,
+        affectations: state.affectations,
+        gestionnaires: state.gestionnaires.map(function(g){ return {nom:g.nom, role:g.role, actif:g.actif}; }),
+        historique: state.historique
+      };
+      var jsonStr = JSON.stringify(exportData, null, 2);
+      var blob = new Blob([jsonStr], {type: "application/json"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      var dateStr = new Date().toISOString().slice(0,10);
+      a.href = url;
+      a.download = "benevoles-rancy-export-" + dateStr + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    else if(action==="import-json"){
+      var fileInput = document.getElementById("import-file-input");
+      if(fileInput) fileInput.click();
     }
     else if(action==="copier-recap"){
       var heuresMap = heuresParBenevole();
@@ -489,43 +856,184 @@
   document.addEventListener("change", function(e){
     if(e.target.matches('[data-action="toggle-realise"]')){
       var id = e.target.getAttribute("data-id");
-      updateDoc(doc(db,"affectations",id), {statut: e.target.checked ? "realise" : "inscrit"}).catch(reportError);
+      var aff = state.affectations.find(function(x){ return x.id === id; });
+      var mm = aff ? missionById(aff.missionId) : null;
+      var bb = aff ? benevoleById(aff.benevoleId) : null;
+      var checked = e.target.checked;
+      updateDoc(doc(db,"affectations",id), {statut: checked ? "realise" : "inscrit"}).then(function(){
+        logHistorique(checked ? "validation" : "annulation_validation", (bb?bb.prenom+" "+bb.nom:"") + (mm?" — "+mm.titre:""));
+      }).catch(reportError);
+    }
+    if(e.target.id === "import-file-input"){
+      var file = e.target.files[0];
+      if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(){
+        var data;
+        try{
+          data = JSON.parse(reader.result);
+        }catch(err){
+          importStatus = "Fichier invalide : ce n'est pas un export JSON valide.";
+          importError = true;
+          renderDonnees();
+          return;
+        }
+        var nbB = (data.benevoles||[]).length, nbM = (data.missions||[]).length, nbA = (data.affectations||[]).length;
+        if(!confirm("Importer ce fichier ? " + nbB + " bénévole(s), " + nbM + " mission(s) et " + nbA + " inscription(s) du fichier remplaceront ceux qui portent le même identifiant en ligne. Rien d'autre ne sera supprimé.")){
+          e.target.value = "";
+          return;
+        }
+        importerDonnees(data);
+        e.target.value = "";
+      };
+      reader.readAsText(file);
     }
   });
 
   document.addEventListener("submit", function(e){
+    if(e.target.id === "form-login"){
+      e.preventDefault();
+      var fl = e.target;
+      signInWithEmailAndPassword(auth, fl.email.value.trim(), fl.code.value).then(function(){
+        loginFormOpen = false; loginError = ""; loginInfo = "";
+      }).catch(function(){
+        loginError = "Email ou code incorrect.";
+        renderAdminRow();
+      });
+      return;
+    }
+    if(e.target.id === "form-gestionnaire"){
+      e.preventDefault();
+      var fg = e.target;
+      var nom = fg.nom.value.trim();
+      var email = fg.email.value.trim();
+      var code = fg.code.value;
+      createUserWithEmailAndPassword(secondaryAuth, email, code).then(function(cred){
+        var newUid = cred.user.uid;
+        return setDoc(doc(db,"gestionnaires", newUid), {
+          nom: nom, actif: true, role: "gestionnaire", creeLe: serverTimestamp()
+        }).then(function(){
+          return signOut(secondaryAuth);
+        }).then(function(){
+          logHistorique("ajout_gestionnaire", nom);
+          gestionnaireFormOpen = false; gestionnaireError = "";
+          renderEquipe();
+        });
+      }).catch(function(err){
+        gestionnaireError = err && err.code === "auth/email-already-in-use"
+          ? "Cet email est déjà utilisé par un compte."
+          : (err && err.code === "auth/weak-password" ? "Code trop court (6 caractères minimum)." : "Erreur : " + (err && err.message ? err.message : err));
+        renderEquipe();
+      });
+      return;
+    }
     if(e.target.id === "form-benevole"){
       e.preventDefault();
       var f = e.target;
+      var emailId = f.email.value.trim().toLowerCase();
       var poles = Array.prototype.slice.call(f.querySelectorAll('input[name="pole"]:checked')).map(function(i){ return i.value; });
-      addDoc(collection(db,"benevoles"), {
+      setDoc(doc(db,"benevoles", emailId), {
         prenom: f.prenom.value.trim(),
         nom: f.nom.value.trim(),
         email: f.email.value.trim(),
         tel: f.tel.value.trim(),
         poles: poles,
         actif: true
-      }).then(function(){ benevoleFormOpen = false; renderBenevoles(); }).catch(reportError);
+      }).then(function(){ benevoleFormOpen = false; benevoleError=""; renderBenevoles(); }).catch(function(err){
+        benevoleError = (err && err.code === "permission-denied")
+          ? "Cette adresse email est déjà enregistrée."
+          : "Erreur, réessayez.";
+        renderBenevoles();
+      });
     }
     if(e.target.id === "form-mission"){
       e.preventDefault();
       var f2 = e.target;
+      var titre = f2.titre.value.trim();
       addDoc(collection(db,"missions"), {
-        titre: f2.titre.value.trim(),
+        titre: titre,
         pole: f2.pole.value,
         date: f2.date.value,
         lieu: f2.lieu.value.trim(),
         debut: f2.debut.value,
         fin: f2.fin.value,
         placesTotal: Math.max(1, parseInt(f2.placesTotal.value,10) || 1),
-        description: f2.description.value.trim()
-      }).then(function(){ missionFormOpen = false; renderMissions(); }).catch(reportError);
+        description: f2.description.value.trim(),
+        creePar: moiNom,
+        creeLe: serverTimestamp()
+      }).then(function(){
+        logHistorique("creation_mission", titre);
+        missionFormOpen = false; renderMissions();
+      }).catch(reportError);
+    }
+    if(e.target.id === "form-pole"){
+      e.preventDefault();
+      var fp = e.target;
+      var nomPole = fp.nom.value.trim();
+      if(!nomPole) return;
+      var nouvelleListePoles = state.poles.concat([nomPole]).filter(function(v,i,arr){ return arr.indexOf(v) === i; });
+      setDoc(doc(db,"parametres","poles"), {liste: nouvelleListePoles}).then(function(){
+        fp.reset();
+      }).catch(reportError);
     }
   });
+
+  function importerDonnees(data){
+    var promesses = [];
+    (data.benevoles||[]).forEach(function(b){
+      if(!b || !b.id) return;
+      var copie = Object.assign({}, b);
+      delete copie.id;
+      promesses.push(setDoc(doc(db,"benevoles", b.id), copie));
+    });
+    (data.missions||[]).forEach(function(m){
+      if(!m || !m.id) return;
+      var copie = Object.assign({}, m);
+      delete copie.id;
+      promesses.push(setDoc(doc(db,"missions", m.id), copie));
+    });
+    (data.affectations||[]).forEach(function(a){
+      if(!a || !a.id) return;
+      var copie = Object.assign({}, a);
+      delete copie.id;
+      promesses.push(setDoc(doc(db,"affectations", a.id), copie));
+    });
+    Promise.all(promesses).then(function(){
+      importStatus = "Import terminé : " + (data.benevoles||[]).length + " bénévole(s), " + (data.missions||[]).length + " mission(s), " + (data.affectations||[]).length + " inscription(s) traité(s).";
+      importError = false;
+      logHistorique("import_donnees", importStatus);
+      renderDonnees();
+    }).catch(function(err){
+      importStatus = "Erreur pendant l'import : " + (err && err.message ? err.message : err);
+      importError = true;
+      renderDonnees();
+    });
+  }
 
   function reportError(err){
     console.error(err);
     alert("Une erreur est survenue, réessayez dans un instant : " + (err && err.message ? err.message : err));
+  }
+
+  // ---------- collections réservées gestionnaires/Directeur ----------
+  function attachRoleCollections(){
+    if(unsubGestionnaires) return;
+    unsubGestionnaires = onSnapshot(collection(db,"gestionnaires"), function(snap){
+      state.gestionnaires = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); })
+        .sort(function(a,b){ return (a.nom||"").localeCompare(b.nom||""); });
+      renderAll();
+    }, function(){ /* accès révoqué : silencieux */ });
+    unsubHistorique = onSnapshot(collection(db,"historique"), function(snap){
+      state.historique = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderAll();
+    }, function(){ /* accès révoqué : silencieux */ });
+  }
+
+  function detachRoleCollections(){
+    if(unsubGestionnaires){ unsubGestionnaires(); unsubGestionnaires = null; }
+    if(unsubHistorique){ unsubHistorique(); unsubHistorique = null; }
+    state.gestionnaires = [];
+    state.historique = [];
   }
 
   // ---------- Firebase wiring ----------
@@ -533,8 +1041,30 @@
     authReady = !!user;
     document.getElementById("status-dot").classList.toggle("ok", authReady);
     document.getElementById("status-text").textContent = authReady ? "Connecté — les données sont partagées en direct." : "Connexion à la base de données…";
+
+    if(unsubMoi){ unsubMoi(); unsubMoi = null; }
+    detachRoleCollections();
+    role = "public"; moiNom = ""; moiUid = null;
+
+    var isPasswordUser = !!(user && user.providerData.some(function(p){ return p.providerId === "password"; }));
+    if(user && isPasswordUser){
+      moiUid = user.uid;
+      unsubMoi = onSnapshot(doc(db,"gestionnaires", user.uid), function(snap){
+        if(snap.exists() && snap.data().actif){
+          role = snap.data().role === "directeur" ? "directeur" : "gestionnaire";
+          moiNom = snap.data().nom || "";
+          attachRoleCollections();
+        } else {
+          role = "public"; moiNom = "";
+          detachRoleCollections();
+        }
+        renderAll();
+      }, function(){ role = "public"; moiNom = ""; renderAll(); });
+    }
+
     renderAll();
   });
+
   signInAnonymously(auth).catch(function(err){
     document.getElementById("status-text").textContent = "Connexion impossible : " + (err && err.message ? err.message : err);
   });
@@ -558,6 +1088,11 @@
     state.affectations = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
     renderAll();
   }, reportError);
+
+  onSnapshot(doc(db,"parametres","poles"), function(snap){
+    state.poles = (snap.exists() && Array.isArray(snap.data().liste) && snap.data().liste.length) ? snap.data().liste : POLES.slice();
+    renderAll();
+  }, function(){ /* pas encore de liste personnalisée : on garde les valeurs par défaut */ });
 
   renderAll();
 </script>
