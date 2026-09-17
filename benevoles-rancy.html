@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bénévoles Rancy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#eef0ec;
+    --surface:#ffffff;
+    --surface-2:#f5f6f2;
+    --ink:#1c2622;
+    --ink-soft:#55635c;
+    --ink-faint:#8a958d;
+    --line:#dde0d8;
+    --accent:#0d6e5c;
+    --accent-ink:#ffffff;
+    --accent-soft:#d9ece7;
+    --accent-soft-ink:#0d5548;
+    --warm:#c97b1f;
+    --warm-soft:#f8e6cd;
+    --warm-soft-ink:#8a5312;
+    --danger:#b3442c;
+    --danger-soft:#f5ded8;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(28,38,34,.06), 0 8px 24px -12px rgba(28,38,34,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#11181a;
+      --surface:#182022;
+      --surface-2:#1d2628;
+      --ink:#edf1ee;
+      --ink-soft:#a7b2ac;
+      --ink-faint:#748079;
+      --line:#2b3533;
+      --accent:#49b298;
+      --accent-ink:#0a1a16;
+      --accent-soft:#173a32;
+      --accent-soft-ink:#7fd6bd;
+      --warm:#e3a252;
+      --warm-soft:#3a2c15;
+      --warm-soft-ink:#f0c184;
+      --danger:#e08268;
+      --danger-soft:#3a2420;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:"Work Sans",system-ui,sans-serif;line-height:1.45;}
+  h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:600;margin:0;}
+  button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;}
+  button{cursor:pointer;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important;}}
+
+  .shell{max-width:920px;margin:0 auto;padding:28px 16px 72px;}
+
+  .eyebrow{font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;}
+  .title{font-size:clamp(1.7rem,4vw,2.4rem);margin-top:6px;}
+  .subtitle{color:var(--ink-soft);max-width:60ch;margin-top:10px;font-size:.98rem;}
+
+  .status-line{margin-top:14px;font-size:.85rem;color:var(--ink-soft);display:flex;align-items:center;gap:8px;}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--warm);flex:none;}
+  .status-dot.ok{background:var(--accent);}
+
+  .banner-info{margin-top:14px;display:flex;gap:10px;align-items:flex-start;background:var(--accent-soft);color:var(--accent-soft-ink);border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);border-radius:var(--radius);padding:12px 14px;font-size:.88rem;}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:22px;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
+  .stat-value{font-family:"Fraunces",serif;font-size:1.7rem;font-weight:600;font-variant-numeric:tabular-nums;}
+  .stat-label{color:var(--ink-soft);font-size:.82rem;margin-top:2px;}
+
+  .tabs{display:flex;gap:6px;margin-top:28px;border-bottom:1px solid var(--line);overflow-x:auto;}
+  .tab{background:none;border:none;padding:10px 14px;font-weight:600;color:var(--ink-soft);border-bottom:2px solid transparent;white-space:nowrap;}
+  .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);}
+
+  .panel{padding-top:20px;}
+
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  .toolbar h2{font-size:1.25rem;}
+  .toolbar-meta{color:var(--ink-soft);font-size:.86rem;}
+
+  .btn{border-radius:999px;padding:9px 16px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:.88rem;display:inline-flex;align-items:center;gap:6px;}
+  .btn:hover{border-color:var(--ink-faint);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+  .btn-primary:hover{filter:brightness(1.05);}
+  .btn-ghost{background:none;border-color:transparent;color:var(--ink-soft);padding:8px 10px;}
+  .btn-danger-ghost{background:none;border-color:transparent;color:var(--danger);padding:6px 8px;font-size:.82rem;}
+  .btn-sm{padding:6px 12px;font-size:.82rem;}
+
+  .form{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:18px;}
+  .field-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+  .field label{font-size:.82rem;font-weight:600;color:var(--ink-soft);}
+  .field input,.field select,.field textarea{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px 10px;}
+  .checkbox-group{display:flex;flex-wrap:wrap;gap:8px;}
+  .checkbox-chip{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.84rem;background:var(--surface);}
+  .form-actions{display:flex;gap:10px;margin-top:6px;align-items:center;}
+  .form-hint{color:var(--ink-faint);font-size:.8rem;}
+
+  .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;}
+
+  .benevole-name{font-family:"Fraunces",serif;font-size:1.08rem;font-weight:600;}
+  .benevole-contact{color:var(--ink-soft);font-size:.84rem;}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;}
+  .tag{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:var(--accent-soft-ink);border-radius:999px;padding:4px 10px;font-size:.76rem;font-weight:600;}
+  .tag .dot{width:7px;height:7px;border-radius:50%;flex:none;}
+  .card-footrow{display:flex;justify-content:space-between;align-items:center;margin-top:auto;font-size:.82rem;color:var(--ink-soft);}
+
+  .mission-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+  .mission-title{font-family:"Fraunces",serif;font-size:1.1rem;font-weight:600;}
+  .mission-when{color:var(--ink-soft);font-size:.85rem;margin-top:2px;}
+  .places-badge{font-variant-numeric:tabular-nums;font-size:.78rem;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent-soft-ink);white-space:nowrap;}
+  .places-badge.low{background:var(--danger-soft);color:var(--danger);}
+  .mission-desc{color:var(--ink-soft);font-size:.88rem;}
+
+  .inscrits-list{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px;}
+  .inscrit-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.86rem;}
+  .inscrit-name{display:flex;align-items:center;gap:8px;}
+  .avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex:none;}
+  .realise-toggle{display:flex;align-items:center;gap:5px;font-size:.78rem;color:var(--ink-soft);}
+  .inscrit-actions{display:flex;align-items:center;gap:4px;}
+
+  .inscrire-row{display:flex;gap:8px;margin-top:2px;}
+  .inscrire-row select{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 10px;}
+
+  .heures-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  .heures-table th,.heures-table td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);font-size:.9rem;}
+  .heures-table th{background:var(--surface-2);color:var(--ink-soft);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;}
+  .heures-table td.num{font-variant-numeric:tabular-nums;text-align:right;}
+  .heures-table tr:last-child td{border-bottom:none;}
+  .bar-wrap{width:100px;height:7px;background:var(--surface-2);border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px;}
+  .bar-fill{height:100%;background:var(--accent);}
+  .table-scroll{overflow-x:auto;}
+
+  .empty-state{color:var(--ink-faint);font-size:.9rem;padding:30px 10px;text-align:center;border:1px dashed var(--line);border-radius:var(--radius);}
+
+  .footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:.8rem;}
+
+  [hidden]{display:none !important;}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="eyebrow">Maison Pour Tous des Rancy</div>
+  <h1 class="title">Bénévoles &amp; missions</h1>
+  <p class="subtitle">Consultez les missions proposées, inscrivez-vous, et suivez les heures données par les bénévoles. Ce que vous ajoutez ici est visible en direct par tout le monde.</p>
+
+  <div class="status-line"><span class="status-dot" id="status-dot"></span><span id="status-text">Connexion à la base de données…</span></div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" data-tab="benevoles" aria-selected="true">Bénévoles</button>
+    <button class="tab" role="tab" data-tab="missions" aria-selected="false">Missions</button>
+    <button class="tab" role="tab" data-tab="heures" aria-selected="false">Heures données</button>
+  </div>
+
+  <section class="panel" id="panel-benevoles" role="tabpanel"></section>
+  <section class="panel" id="panel-missions" role="tabpanel" hidden></section>
+  <section class="panel" id="panel-heures" role="tabpanel" hidden></section>
+
+  <div class="footer">Maison Pour Tous des Rancy — gestion des bénévoles.</div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+  import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBSyVjgKuvlbmY87m9w8UyCQuaTIVZrZ0A",
+    authDomain: "benevoles-rancy.firebaseapp.com",
+    projectId: "benevoles-rancy",
+    storageBucket: "benevoles-rancy.firebasestorage.app",
+    messagingSenderId: "553595557970",
+    appId: "1:553595557970:web:2be7c210ba7383811ea78b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  var POLES = ["Accueil","Ateliers","Numérique (EPN)","Événements","Communication","Logistique"];
+  var POLE_HUES = {"Accueil":150,"Ateliers":28,"Numérique (EPN)":205,"Événements":340,"Communication":260,"Logistique":45};
+
+  var state = { benevoles: [], missions: [], affectations: [] };
+  var currentTab = "benevoles";
+  var authReady = false;
+
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function fmtDate(iso){
+    try{
+      var d = new Date(iso + "T00:00:00");
+      var s = d.toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }catch(e){ return iso; }
+  }
+
+  function dureeHeures(mission){
+    var a = mission.debut.split(":").map(Number);
+    var b = mission.fin.split(":").map(Number);
+    var d = (b[0]+b[1]/60) - (a[0]+a[1]/60);
+    if(d < 0) d += 24;
+    return Math.round(d*10)/10;
+  }
+
+  function inscritsDe(missionId){
+    return state.affectations.filter(function(a){ return a.missionId === missionId; });
+  }
+
+  function placesRestantes(mission){
+    return mission.placesTotal - inscritsDe(mission.id).length;
+  }
+
+  function benevoleById(id){
+    return state.benevoles.find(function(b){ return b.id === id; });
+  }
+
+  function missionById(id){
+    return state.missions.find(function(m){ return m.id === id; });
+  }
+
+  function initiales(b){
+    return ((b.prenom[0]||"") + (b.nom[0]||"")).toUpperCase();
+  }
+
+  function poleTag(pole){
+    var hue = POLE_HUES[pole] != null ? POLE_HUES[pole] : 200;
+    return '<span class="tag"><span class="dot" style="background:hsl('+hue+',55%,45%)"></span>'+escapeHtml(pole)+'</span>';
+  }
+
+  function heuresParBenevole(){
+    var map = {};
+    state.benevoles.forEach(function(b){ map[b.id] = 0; });
+    state.affectations.forEach(function(a){
+      if(a.statut === "realise"){
+        var m = missionById(a.missionId);
+        if(m && map[a.benevoleId] != null) map[a.benevoleId] += dureeHeures(m);
+      }
+    });
+    return map;
+  }
+
+  // ---------- render: stats ----------
+  function renderStats(){
+    var actifs = state.benevoles.filter(function(b){ return b.actif; }).length;
+    var aVenir = state.missions.length;
+    var places = state.missions.reduce(function(s,m){ return s + Math.max(0, placesRestantes(m)); }, 0);
+    var heuresMap = heuresParBenevole();
+    var totalHeures = Object.keys(heuresMap).reduce(function(s,k){ return s + heuresMap[k]; }, 0);
+
+    document.getElementById("stats").innerHTML = [
+      stat(actifs, "Bénévoles actifs"),
+      stat(aVenir, "Missions proposées"),
+      stat(places, "Places disponibles"),
+      stat((Math.round(totalHeures*10)/10) + " h", "Heures données")
+    ].join("");
+
+    function stat(v,l){
+      return '<div class="stat"><div class="stat-value">'+v+'</div><div class="stat-label">'+l+'</div></div>';
+    }
+  }
+
+  // ---------- render: bénévoles ----------
+  var benevoleFormOpen = false;
+
+  function renderBenevoles(){
+    var heuresMap = heuresParBenevole();
+    var cards = state.benevoles.map(function(b){
+      var tags = (b.poles||[]).map(poleTag).join("");
+      var h = Math.round((heuresMap[b.id]||0)*10)/10;
+      return '<div class="card">'
+        + '<div><div class="benevole-name">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
+        + '<div class="benevole-contact">'+escapeHtml(b.email)+'<br>'+escapeHtml(b.tel)+'</div></div>'
+        + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun pôle renseigné</span>')+'</div>'
+        + '<div class="card-footrow"><span>'+h+' h données</span>'
+        + '<button class="btn btn-ghost btn-sm" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button></div>'
+        + (b.actif ? '' : '<div class="benevole-contact" style="color:var(--danger)">Inactif</div>')
+        + '</div>';
+    }).join("");
+
+    var formHtml = "";
+    if(benevoleFormOpen){
+      formHtml = '<form class="form" id="form-benevole">'
+        + '<div class="field-row">'
+        + field("Prénom","prenom",true)
+        + field("Nom","nom",true)
+        + field("Email","email",false,"email")
+        + field("Téléphone","tel",false,"tel")
+        + '</div>'
+        + '<div class="field"><label>Pôles / domaines</label><div class="checkbox-group">'
+        + POLES.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'"> '+escapeHtml(p)+'</label>'; }).join("")
+        + '</div></div>'
+        + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>Ajouter le bénévole</button>'
+        + '<button type="button" class="btn btn-ghost" data-action="cancel-benevole">Annuler</button>'
+        + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
+        + '</div>'
+        + '</form>';
+    }
+
+    document.getElementById("panel-benevoles").innerHTML =
+      '<div class="toolbar"><div><h2>Bénévoles</h2><div class="toolbar-meta">'+state.benevoles.length+' bénévole(s) enregistré(s)</div></div>'
+      + '<button class="btn btn-primary" data-action="open-benevole">+ Ajouter un bénévole</button></div>'
+      + formHtml
+      + (state.benevoles.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucun bénévole enregistré pour l\'instant. Utilisez le bouton ci-dessus pour ajouter le premier.</div>');
+
+    function field(label, name, required, type){
+      return '<div class="field"><label for="f-'+name+'">'+label+'</label>'
+        + '<input id="f-'+name+'" name="'+name+'" type="'+(type||"text")+'" '+(required ? "required" : "")+'></div>';
+    }
+  }
+
+  // ---------- render: missions ----------
+  var missionFormOpen = false;
+
+  function renderMissions(){
+    var cards = state.missions.map(function(m){
+      var restantes = placesRestantes(m);
+      var badgeCls = "places-badge" + (restantes <= 0 ? " low" : "");
+      var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
+      var inscrits = inscritsDe(m.id);
+
+      var inscritsHtml = inscrits.map(function(a){
+        var b = benevoleById(a.benevoleId);
+        if(!b) return "";
+        return '<div class="inscrit-row"><div class="inscrit-name"><span class="avatar">'+initiales(b)+'</span>'
+          + escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
+          + '<div class="inscrit-actions">'
+          + '<label class="realise-toggle"><input type="checkbox" data-action="toggle-realise" data-id="'+a.id+'" '+(a.statut==="realise"?"checked":"")+'> réalisé</label>'
+          + '<button class="btn-danger-ghost" data-action="retirer" data-id="'+a.id+'" title="Retirer l\'inscription">✕</button>'
+          + '</div></div>';
+      }).join("");
+
+      var disponibles = state.benevoles.filter(function(b){
+        return b.actif && !inscrits.some(function(a){ return a.benevoleId === b.id; });
+      });
+
+      var selectHtml = disponibles.length
+        ? '<div class="inscrire-row"><select id="sel-'+m.id+'">'
+          + disponibles.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</option>'; }).join("")
+          + '</select><button class="btn btn-sm" data-action="inscrire" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>Inscrire</button></div>'
+        : (restantes<=0 ? '' : '<div class="benevole-contact">Tous les bénévoles actifs sont déjà inscrits.</div>');
+
+      return '<div class="card">'
+        + '<div class="mission-head"><div><div class="mission-title">'+escapeHtml(m.titre)+'</div>'
+        + '<div class="mission-when">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+' · '+escapeHtml(m.lieu)+'</div></div>'
+        + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>'
+        + '<div class="tags">'+poleTag(m.pole)+'</div>'
+        + '<div class="mission-desc">'+escapeHtml(m.description)+'</div>'
+        + '<div class="inscrits-list">'+(inscritsHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>'
+        + selectHtml
+        + '</div>';
+    }).join("");
+
+    var formHtml = "";
+    if(missionFormOpen){
+      formHtml = '<form class="form" id="form-mission">'
+        + '<div class="field-row">'
+        + field("Titre de la mission","titre",true)
+        + selectField("Pôle","pole",POLES)
+        + field("Date","date",true,"date")
+        + field("Lieu","lieu",true)
+        + field("Heure de début","debut",true,"time")
+        + field("Heure de fin","fin",true,"time")
+        + field("Places proposées","placesTotal",true,"number")
+        + '</div>'
+        + '<div class="field"><label for="f-description">Description</label><textarea id="f-description" name="description" rows="2"></textarea></div>'
+        + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>Créer la mission</button>'
+        + '<button type="button" class="btn btn-ghost" data-action="cancel-mission">Annuler</button>'
+        + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
+        + '</div>'
+        + '</form>';
+    }
+
+    document.getElementById("panel-missions").innerHTML =
+      '<div class="toolbar"><div><h2>Missions</h2><div class="toolbar-meta">'+state.missions.length+' mission(s) proposée(s)</div></div>'
+      + '<button class="btn btn-primary" data-action="open-mission">+ Créer une mission</button></div>'
+      + formHtml
+      + (state.missions.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant. Utilisez le bouton ci-dessus pour en créer une.</div>');
+
+    function field(label, name, required, type){
+      return '<div class="field"><label for="f-'+name+'">'+label+'</label>'
+        + '<input id="f-'+name+'" name="'+name+'" type="'+(type||"text")+'" '+(type==="number"?'min="1"':'')+' '+(required ? "required" : "")+'></div>';
+    }
+    function selectField(label,name,options){
+      return '<div class="field"><label for="f-'+name+'">'+label+'</label><select id="f-'+name+'" name="'+name+'">'
+        + options.map(function(o){ return '<option value="'+escapeHtml(o)+'">'+escapeHtml(o)+'</option>'; }).join("")
+        + '</select></div>';
+    }
+  }
+
+  // ---------- render: heures ----------
+  function renderHeures(){
+    var heuresMap = heuresParBenevole();
+    var rows = state.benevoles.slice().sort(function(a,b){ return (heuresMap[b.id]||0) - (heuresMap[a.id]||0); });
+    var max = Math.max.apply(null, [1].concat(rows.map(function(b){ return heuresMap[b.id]||0; })));
+
+    var trs = rows.map(function(b){
+      var h = Math.round((heuresMap[b.id]||0)*10)/10;
+      var missionsRealisees = state.affectations.filter(function(a){ return a.benevoleId===b.id && a.statut==="realise"; }).length;
+      var pct = Math.round(((heuresMap[b.id]||0)/max)*100);
+      return '<tr><td>'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</td>'
+        + '<td>'+((b.poles||[]).map(poleTag).join(" ") || '—')+'</td>'
+        + '<td class="num">'+missionsRealisees+'</td>'
+        + '<td class="num"><span class="bar-wrap"><span class="bar-fill" style="width:'+pct+'%"></span></span>'+h+' h</td></tr>';
+    }).join("");
+
+    var total = Math.round(rows.reduce(function(s,b){ return s + (heuresMap[b.id]||0); },0)*10)/10;
+
+    document.getElementById("panel-heures").innerHTML =
+      '<div class="toolbar"><div><h2>Heures données</h2><div class="toolbar-meta">Total cumulé : '+total+' h · basé sur les missions marquées « réalisé »</div></div>'
+      + '<button class="btn btn-ghost btn-sm" data-action="copier-recap">Copier le récapitulatif</button></div>'
+      + (rows.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr><th>Bénévole</th><th>Pôles</th><th>Missions réalisées</th><th>Heures</th></tr></thead><tbody>'+trs+'</tbody></table></div>'
+        : '<div class="empty-state">Aucun bénévole pour l\'instant.</div>');
+  }
+
+  function renderAll(){
+    renderStats();
+    if(currentTab==="benevoles") renderBenevoles();
+    if(currentTab==="missions") renderMissions();
+    if(currentTab==="heures") renderHeures();
+  }
+
+  // ---------- tabs ----------
+  document.querySelectorAll(".tab").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      currentTab = btn.getAttribute("data-tab");
+      document.querySelectorAll(".tab").forEach(function(b){ b.setAttribute("aria-selected", b===btn ? "true" : "false"); });
+      ["benevoles","missions","heures"].forEach(function(t){
+        document.getElementById("panel-"+t).hidden = (t !== currentTab);
+      });
+      renderAll();
+    });
+  });
+
+  // ---------- delegated actions ----------
+  document.addEventListener("click", function(e){
+    var el = e.target.closest("[data-action]");
+    if(!el) return;
+    var action = el.getAttribute("data-action");
+
+    if(action==="open-benevole"){ benevoleFormOpen = true; renderBenevoles(); }
+    else if(action==="cancel-benevole"){ benevoleFormOpen = false; renderBenevoles(); }
+    else if(action==="open-mission"){ missionFormOpen = true; renderMissions(); }
+    else if(action==="cancel-mission"){ missionFormOpen = false; renderMissions(); }
+    else if(action==="toggle-actif"){
+      var b = benevoleById(el.getAttribute("data-id"));
+      if(b){ updateDoc(doc(db,"benevoles",b.id), {actif: !b.actif}).catch(reportError); }
+    }
+    else if(action==="inscrire"){
+      var missionId = el.getAttribute("data-mission");
+      var sel = document.getElementById("sel-"+missionId);
+      if(sel && sel.value){
+        addDoc(collection(db,"affectations"), {missionId:missionId, benevoleId:sel.value, statut:"inscrit"}).catch(reportError);
+      }
+    }
+    else if(action==="retirer"){
+      deleteDoc(doc(db,"affectations", el.getAttribute("data-id"))).catch(reportError);
+    }
+    else if(action==="copier-recap"){
+      var heuresMap = heuresParBenevole();
+      var lines = ["Bénévole;Heures données"];
+      state.benevoles.forEach(function(b){
+        lines.push(b.prenom+" "+b.nom+";"+(Math.round((heuresMap[b.id]||0)*10)/10));
+      });
+      var text = lines.join("\n");
+      try{
+        navigator.clipboard.writeText(text).then(function(){
+          el.textContent = "Copié ✓";
+          setTimeout(function(){ el.textContent = "Copier le récapitulatif"; }, 1800);
+        });
+      }catch(err){}
+    }
+  });
+
+  document.addEventListener("change", function(e){
+    if(e.target.matches('[data-action="toggle-realise"]')){
+      var id = e.target.getAttribute("data-id");
+      updateDoc(doc(db,"affectations",id), {statut: e.target.checked ? "realise" : "inscrit"}).catch(reportError);
+    }
+  });
+
+  document.addEventListener("submit", function(e){
+    if(e.target.id === "form-benevole"){
+      e.preventDefault();
+      var f = e.target;
+      var poles = Array.prototype.slice.call(f.querySelectorAll('input[name="pole"]:checked')).map(function(i){ return i.value; });
+      addDoc(collection(db,"benevoles"), {
+        prenom: f.prenom.value.trim(),
+        nom: f.nom.value.trim(),
+        email: f.email.value.trim(),
+        tel: f.tel.value.trim(),
+        poles: poles,
+        actif: true
+      }).then(function(){ benevoleFormOpen = false; renderBenevoles(); }).catch(reportError);
+    }
+    if(e.target.id === "form-mission"){
+      e.preventDefault();
+      var f2 = e.target;
+      addDoc(collection(db,"missions"), {
+        titre: f2.titre.value.trim(),
+        pole: f2.pole.value,
+        date: f2.date.value,
+        lieu: f2.lieu.value.trim(),
+        debut: f2.debut.value,
+        fin: f2.fin.value,
+        placesTotal: Math.max(1, parseInt(f2.placesTotal.value,10) || 1),
+        description: f2.description.value.trim()
+      }).then(function(){ missionFormOpen = false; renderMissions(); }).catch(reportError);
+    }
+  });
+
+  function reportError(err){
+    console.error(err);
+    alert("Une erreur est survenue, réessayez dans un instant : " + (err && err.message ? err.message : err));
+  }
+
+  // ---------- Firebase wiring ----------
+  onAuthStateChanged(auth, function(user){
+    authReady = !!user;
+    document.getElementById("status-dot").classList.toggle("ok", authReady);
+    document.getElementById("status-text").textContent = authReady ? "Connecté — les données sont partagées en direct." : "Connexion à la base de données…";
+    renderAll();
+  });
+  signInAnonymously(auth).catch(function(err){
+    document.getElementById("status-text").textContent = "Connexion impossible : " + (err && err.message ? err.message : err);
+  });
+
+  function sortBenevoles(){ state.benevoles.sort(function(a,b){ return (a.nom||"").localeCompare(b.nom||"") || (a.prenom||"").localeCompare(b.prenom||""); }); }
+  function sortMissions(){ state.missions.sort(function(a,b){ return (a.date||"").localeCompare(b.date||"") || (a.debut||"").localeCompare(b.debut||""); }); }
+
+  onSnapshot(collection(db,"benevoles"), function(snap){
+    state.benevoles = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+    sortBenevoles();
+    renderAll();
+  }, reportError);
+
+  onSnapshot(collection(db,"missions"), function(snap){
+    state.missions = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+    sortMissions();
+    renderAll();
+  }, reportError);
+
+  onSnapshot(collection(db,"affectations"), function(snap){
+    state.affectations = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+    renderAll();
+  }, reportError);
+
+  renderAll();
+</script>
+</body>
+</html>
