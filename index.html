@@ -92,6 +92,18 @@
   .btn-danger-ghost{background:none;border-color:transparent;color:var(--danger);padding:6px 8px;font-size:.82rem;}
   .btn-sm{padding:6px 12px;font-size:.82rem;}
 
+  /* Badges-boutons : "Imprimer la sélection", "Vider la sélection", "Vue cartes/tableau".
+     Un fond plein et arrondi (comme .places-badge/.role-pill) pour bien les
+     distinguer du texte simple, une couleur par type d'action, la même
+     couleur partout où ce bouton apparaît. */
+  .btn-badge{border-radius:999px;border-color:transparent;font-weight:700;}
+  .badge-imprimer{background:var(--accent-soft);color:var(--accent-soft-ink);}
+  .badge-imprimer:hover{background:var(--accent);color:var(--accent-ink);}
+  .badge-vider{background:var(--warm-soft);color:var(--warm-soft-ink);}
+  .badge-vider:hover{background:var(--warm);color:#fff;}
+  .badge-vue{background:var(--success-soft);color:var(--success-soft-ink);}
+  .badge-vue:hover{background:var(--success);color:#fff;}
+
   .form{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:18px;}
   .field-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
   .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
@@ -107,6 +119,40 @@
 
   .benevole-name{font-family:"Fraunces",serif;font-size:1.08rem;font-weight:600;}
   .benevole-contact{color:var(--ink-soft);font-size:.84rem;}
+  .mission-creele{color:var(--ink-soft);font-size:.8rem;margin-top:2px;}
+  .mission-date-detail{color:var(--ink-soft);font-size:.86rem;margin-top:2px;}
+  .badge-inactif{color:var(--danger);font-size:.8rem;}
+  .missions-table{table-layout:fixed;}
+  .missions-table th:nth-child(1),.missions-table td:nth-child(1){width:4%;}
+  .missions-table th:nth-child(2),.missions-table td:nth-child(2){width:22%;}
+  .missions-table th:nth-child(3),.missions-table td:nth-child(3){width:20%;}
+  .missions-table th:nth-child(4),.missions-table td:nth-child(4){width:11%;}
+  .missions-table th:nth-child(5),.missions-table td:nth-child(5){width:17%;}
+  .missions-table th:nth-child(6),.missions-table td:nth-child(6){width:15%;}
+  .missions-table th:nth-child(7),.missions-table td:nth-child(7){width:11%;}
+  .col-select{width:4%;text-align:center;}
+
+  /* Impression des lignes sélectionnées (Bénévoles / Missions) : le
+     contenu de #impression est construit en JS juste avant window.print(),
+     et n'est affiché que sur papier (voir @media print ci-dessous). Mise en
+     page calquée sur celle de PICS (entête, trait bleu, tableau, signature
+     horodatée en pied de page). */
+  #impression{display:none;}
+  #impression .impression-entete{display:flex;justify-content:space-between;align-items:flex-start;}
+  #impression .impression-titre-app{font-family:"Fraunces",serif;font-weight:700;font-size:1.4rem;color:var(--accent-deep);}
+  #impression .impression-soustitre{color:var(--ink-soft);font-size:.85rem;margin-top:2px;}
+  #impression .impression-date{font-size:.95rem;color:var(--ink);white-space:nowrap;}
+  #impression .impression-trait{height:3px;background:var(--accent);margin:10px 0 20px;border:none;}
+  #impression h2{margin:0 0 14px;font-size:1.05rem;color:var(--ink);}
+  #impression table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  #impression thead th{background:#f4f2ee;color:var(--ink-faint);text-transform:uppercase;font-size:.7rem;letter-spacing:.03em;text-align:left;padding:8px 10px;border-bottom:2px solid #ddd;}
+  #impression tbody td{padding:9px 10px;border-bottom:1px solid #eee;text-align:left;}
+  #impression .impression-pied{display:flex;justify-content:space-between;align-items:flex-end;margin-top:32px;padding-top:12px;border-top:1px solid #ddd;font-size:.8rem;color:var(--ink-soft);}
+  @media print{
+    body *{visibility:hidden;}
+    #impression,#impression *{visibility:visible;}
+    #impression{display:block;position:absolute;top:0;left:0;width:100%;padding:20px 24px;}
+  }
   .tags{display:flex;flex-wrap:wrap;gap:6px;}
   .tag{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:var(--accent-soft-ink);border-radius:999px;padding:4px 10px;font-size:.76rem;font-weight:600;}
   .tag .dot{width:7px;height:7px;border-radius:50%;flex:none;}
@@ -135,9 +181,19 @@
   .heures-table th{background:var(--surface-2);color:var(--ink-soft);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;}
   .heures-table td.num{font-variant-numeric:tabular-nums;text-align:right;}
   .heures-table tr:last-child td{border-bottom:none;}
+  .th-tri{background:none;border:none;padding:0;margin:0;font:inherit;text-transform:inherit;letter-spacing:inherit;color:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:4px;}
+  .th-tri:hover{color:var(--accent-deep);}
+  .th-tri.active{color:var(--accent-deep);font-weight:700;}
+  .th-tri .tri-arrow{font-size:.7em;}
   .bar-wrap{width:100px;height:7px;background:var(--surface-2);border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px;}
   .bar-fill{height:100%;background:var(--accent);}
   .table-scroll{overflow-x:auto;}
+  .mission-row{cursor:pointer;}
+  .mission-row:hover td{background:var(--surface-2);}
+  .mission-row.active td{background:var(--accent-soft);}
+  .mission-row .tri-arrow{color:var(--ink-soft);display:inline-block;width:.9em;}
+  .mission-row-detail td{padding:14px;background:var(--surface-2);}
+  .mission-row-detail .card{border:none;box-shadow:none;padding:0;}
 
   .list-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px;}
   .list-row-main{display:flex;flex-direction:column;gap:2px;}
@@ -171,25 +227,29 @@
   <div class="stats" id="stats"></div>
 
   <div class="tabs" role="tablist" aria-label="Sections">
-    <button class="tab" role="tab" data-tab="benevoles" aria-selected="true">Bénévoles</button>
-    <button class="tab" role="tab" data-tab="missions" aria-selected="false">Missions</button>
+    <button class="tab" role="tab" data-tab="benevoles" aria-selected="false">Bénévoles</button>
+    <button class="tab" role="tab" data-tab="missions" aria-selected="true">Missions</button>
     <button class="tab" role="tab" data-tab="heures" aria-selected="false">Heures données</button>
     <button class="tab" role="tab" data-tab="historique" aria-selected="false" hidden>Historique</button>
     <button class="tab" role="tab" data-tab="equipe" aria-selected="false" hidden>Équipe</button>
+    <button class="tab" role="tab" data-tab="candidatures" aria-selected="false" hidden>Candidatures</button>
     <button class="tab" role="tab" data-tab="parametres" aria-selected="false" hidden>Paramètres</button>
     <button class="tab" role="tab" data-tab="donnees" aria-selected="false" hidden>Données</button>
   </div>
 
-  <section class="panel" id="panel-benevoles" role="tabpanel"></section>
-  <section class="panel" id="panel-missions" role="tabpanel" hidden></section>
+  <section class="panel" id="panel-benevoles" role="tabpanel" hidden></section>
+  <section class="panel" id="panel-missions" role="tabpanel"></section>
   <section class="panel" id="panel-heures" role="tabpanel" hidden></section>
   <section class="panel" id="panel-historique" role="tabpanel" hidden></section>
   <section class="panel" id="panel-equipe" role="tabpanel" hidden></section>
+  <section class="panel" id="panel-candidatures" role="tabpanel" hidden></section>
   <section class="panel" id="panel-parametres" role="tabpanel" hidden></section>
   <section class="panel" id="panel-donnees" role="tabpanel" hidden></section>
 
   <div class="footer">Maison Pour Tous des Rancy — gestion des bénévoles.</div>
 </div>
+
+<div id="impression"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
@@ -222,8 +282,8 @@
   var POLES = ["Accueil","Ateliers","Numérique (EPN)","Événements","Communication","Logistique"];
   var POLE_HUES = {"Accueil":150,"Ateliers":28,"Numérique (EPN)":205,"Événements":340,"Communication":260,"Logistique":45};
 
-  var state = { benevoles: [], missions: [], affectations: [], gestionnaires: [], historique: [], poles: POLES.slice() };
-  var currentTab = "benevoles";
+  var state = { benevoles: [], missions: [], affectations: [], gestionnaires: [], historique: [], candidatures: [], poles: POLES.slice(), emailCandidature: "" };
+  var currentTab = "missions";
   var authReady = false;
   var importStatus = "";
   var importError = false;
@@ -246,10 +306,12 @@
     }catch(e){ /* stockage indisponible (navigation privée…) : tant pis */ }
   }
   var moiBenevoleId = chargerMoiBenevoleId();
+  var identiteError = "";
 
   var unsubMoi = null;
   var unsubGestionnaires = null;
   var unsubHistorique = null;
+  var unsubCandidatures = null;
 
   var loginFormOpen = false;
   var loginError = "";
@@ -269,6 +331,16 @@
       var d = new Date(iso + "T00:00:00");
       var s = d.toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
       return s.charAt(0).toUpperCase() + s.slice(1);
+    }catch(e){ return iso; }
+  }
+
+  // Format court JJ/MM/AAAA : utilisé là où la date complète en toutes
+  // lettres ("Dimanche 20 septembre 2026") ne tient pas sur une ligne,
+  // par exemple dans une colonne de tableau.
+  function fmtDateCourt(iso){
+    try{
+      var d = new Date(iso + "T00:00:00");
+      return d.toLocaleDateString("fr-FR", {day:"2-digit", month:"2-digit", year:"numeric"});
     }catch(e){ return iso; }
   }
 
@@ -319,6 +391,16 @@
     return '<span class="tag"><span class="dot" style="background:hsl('+hue+',55%,45%)"></span>'+escapeHtml(pole)+'</span>';
   }
 
+  // Liste déroulante de filtrage par pôle, construite à partir de la liste
+  // des pôles définie dans Paramètres (state.poles) — utilisée à l'identique
+  // dans Bénévoles et Missions pour rester cohérent.
+  function selectFiltrePoleHtml(id, valeurActuelle){
+    return '<div class="field" style="max-width:220px;margin-bottom:14px;"><label for="'+id+'">Filtrer par pôle</label>'
+      + '<select id="'+id+'"><option value="">Tous les pôles</option>'
+      + state.poles.map(function(p){ return '<option value="'+escapeHtml(p)+'"'+(p===valeurActuelle?' selected':'')+'>'+escapeHtml(p)+'</option>'; }).join("")
+      + '</select></div>';
+  }
+
   function heuresParBenevole(){
     var map = {};
     state.benevoles.forEach(function(b){ map[b.id] = 0; });
@@ -334,6 +416,19 @@
   function logHistorique(action, cible){
     addDoc(collection(db,"historique"), {
       action: action, cible: cible, parNom: moiNom, parRole: role, date: serverTimestamp()
+    }).catch(function(e){ console.error("historique:", e); });
+  }
+
+  // Filet de sécurité léger : trace dans l'historique les inscriptions faites
+  // par un visiteur public (non connecté par mot de passe), pour qu'un
+  // gestionnaire puisse repérer après coup une inscription suspecte. Le nom
+  // enregistré est celui déclaré par le visiteur lui-même (identification
+  // prénom/nom/email) — ce n'est qu'une trace de consultation, pas une preuve
+  // d'identité : ça n'empêche pas une inscription frauduleuse faite en
+  // contournant complètement le site.
+  function logHistoriquePublic(action, cible, nomDeclare){
+    addDoc(collection(db,"historique"), {
+      action: action, cible: cible, parNom: nomDeclare || "Visiteur non identifié", parRole: "public", date: serverTimestamp()
     }).catch(function(e){ console.error("historique:", e); });
   }
 
@@ -364,14 +459,14 @@
   // ---------- render: stats ----------
   function renderStats(){
     var actifs = state.benevoles.filter(function(b){ return b.actif; }).length;
-    var aVenir = state.missions.length;
+    var aVenir = state.missions.filter(function(m){ return placesRestantes(m) > 0; }).length;
     var places = state.missions.reduce(function(s,m){ return s + Math.max(0, placesRestantes(m)); }, 0);
     var heuresMap = heuresParBenevole();
     var totalHeures = Object.keys(heuresMap).reduce(function(s,k){ return s + heuresMap[k]; }, 0);
 
     document.getElementById("stats").innerHTML = [
       stat(actifs, "Bénévoles actifs"),
-      stat(aVenir, "Missions proposées"),
+      stat(aVenir, "Missions proposées incomplètes"),
       stat(places, "Places disponibles"),
       stat((Math.round(totalHeures*10)/10) + " h", "Heures données")
     ].join("");
@@ -384,30 +479,132 @@
   // ---------- render: bénévoles ----------
   var benevoleFormOpen = false;
   var benevoleError = "";
+  var benevolesRecherche = "";
+  var benevolesFiltrePole = "";
+  // Même fonctionnement que l'onglet Missions : bascule Vue cartes / Vue
+  // tableau (ouverture par défaut sur le tableau), tri par colonne, ligne
+  // dépliable pour voir la fiche complète.
+  var benevolesVue = "tableau"; // "cartes" | "tableau"
+  var benevolesTri = "nom";
+  var benevolesDepliees = {};
+  var benevolesSelection = {}; // { [benevoleId]: true } — cases cochées pour l'impression
+
+  // Contenu détaillé d'une fiche bénévole (carte), utilisé à la fois dans
+  // la vue "cartes" et dans la ligne dépliée de la vue "tableau" — comme
+  // missionCardHtml() pour les missions.
+  function benevoleCardHtml(b, heuresMap){
+    var tags = (b.poles||[]).map(poleTag).join("");
+    var h = Math.round((heuresMap[b.id]||0)*10)/10;
+    var actions = "";
+    if(role !== "public"){
+      actions += '<button class="btn btn-ghost btn-sm" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>';
+    }
+    if(role !== "public"){
+      actions += '<button class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'" title="Supprimer">✕</button>';
+    }
+    return '<div class="card">'
+      + '<div><div class="benevole-name">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
+      + '<div class="benevole-contact">'+escapeHtml(b.email)+'<br>'+escapeHtml(b.tel)+'</div></div>'
+      + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun pôle renseigné</span>')+'</div>'
+      + '<div class="card-footrow"><span><strong>'+h+' h</strong> données au total</span>'
+      + (actions ? '<span style="display:flex;gap:6px;">'+actions+'</span>' : '')
+      + '</div>'
+      + (b.dateCreation ? '<div class="benevole-contact">Fiche créée le '+fmtDateTime(b.dateCreation)+'</div>' : '')
+      + (b.actif ? '' : '<div class="benevole-contact" style="color:var(--danger)">Inactif</div>')
+      + '</div>';
+  }
+
+  // Formulaire public de candidature (envoyé pour validation, ne crée pas
+  // directement de fiche bénévole — voir renderCandidatures()).
+  var candidatureFormOpen = false;
+  var candidatureError = "";
+  var candidatureEnvoyee = false;
 
   function renderBenevoles(){
     var heuresMap = heuresParBenevole();
-    var cards = state.benevoles.map(function(b){
-      var tags = (b.poles||[]).map(poleTag).join("");
-      var h = Math.round((heuresMap[b.id]||0)*10)/10;
-      var actions = "";
-      if(role !== "public"){
-        actions += '<button class="btn btn-ghost btn-sm" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>';
-      }
-      if(role !== "public"){
-        actions += '<button class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'" title="Supprimer">✕</button>';
-      }
-      return '<div class="card">'
-        + '<div><div class="benevole-name">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
-        + '<div class="benevole-contact">'+escapeHtml(b.email)+'<br>'+escapeHtml(b.tel)+'</div></div>'
-        + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun pôle renseigné</span>')+'</div>'
-        + '<div class="card-footrow"><span><strong>'+h+' h</strong> données au total</span>'
-        + (actions ? '<span style="display:flex;gap:6px;">'+actions+'</span>' : '')
-        + '</div>'
-        + (b.actif ? '' : '<div class="benevole-contact" style="color:var(--danger)">Inactif</div>')
-        + '</div>';
-    }).join("");
+    var recherche = benevolesRecherche.trim().toLowerCase();
 
+    // Recherche générale : nom, prénom, email, téléphone ou pôle. Filtre en
+    // plus, si choisi, par un pôle précis (liste déroulante basée sur les
+    // pôles définis dans Paramètres).
+    var listeFiltree = state.benevoles.filter(function(b){
+      if(benevolesFiltrePole && (b.poles||[]).indexOf(benevolesFiltrePole) === -1) return false;
+      if(!recherche) return true;
+      var poles = (b.poles||[]).join(" ").toLowerCase();
+      return (b.nom||"").toLowerCase().indexOf(recherche) >= 0
+        || (b.prenom||"").toLowerCase().indexOf(recherche) >= 0
+        || (b.email||"").toLowerCase().indexOf(recherche) >= 0
+        || (b.tel||"").toLowerCase().indexOf(recherche) >= 0
+        || poles.indexOf(recherche) >= 0;
+    });
+
+    // Tri : par défaut Nom (ordre alphabétique), comme avant. Les autres
+    // tris sont accessibles depuis les en-têtes de colonne de la vue
+    // tableau, exactement comme pour Missions.
+    listeFiltree.sort(function(a,b){
+      if(benevolesTri === "prenom"){
+        var cmpP = (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
+        if(cmpP !== 0) return cmpP;
+      } else if(benevolesTri === "poles"){
+        var pa = (a.poles||[]).join(", "), pb = (b.poles||[]).join(", ");
+        var cmpPo = pa.localeCompare(pb, "fr", {sensitivity:"base"});
+        if(cmpPo !== 0) return cmpPo;
+      } else if(benevolesTri === "heures"){
+        var cmpH = (heuresMap[b.id]||0) - (heuresMap[a.id]||0);
+        if(cmpH !== 0) return cmpH;
+      }
+      return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
+        || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
+    });
+
+    var cards = listeFiltree.map(function(b){ return benevoleCardHtml(b, heuresMap); }).join("");
+
+    // Vue tableau : même principe que la vue tableau de Missions — 1 ligne
+    // par bénévole, colonnes triables, ligne dépliable sur place pour
+    // retrouver la fiche complète (email, téléphone, actions).
+    var tableauHtml = "";
+    if(role !== "public" && benevolesVue === "tableau"){
+      var lignesHtml = listeFiltree.map(function(b){
+        var h = Math.round((heuresMap[b.id]||0)*10)/10;
+        var tags = (b.poles||[]).map(poleTag).join("");
+        var ouverte = !!benevolesDepliees[b.id];
+        var coche = !!benevolesSelection[b.id];
+        var ligne = '<tr class="mission-row'+(ouverte?" active":"")+'" data-action="toggle-ligne-benevole" data-id="'+b.id+'">'
+          + '<td class="col-select"><input type="checkbox" data-action="toggle-select-benevole" data-id="'+b.id+'" '+(coche?"checked":"")+'></td>'
+          + '<td><span class="tri-arrow">'+(ouverte?"▾":"▸")+'</span> '+escapeHtml(b.nom)
+          + (b.actif ? '' : ' <span class="badge-inactif">Inactif</span>') + '</td>'
+          + '<td>'+escapeHtml(b.prenom)+'</td>'
+          + '<td>'+(tags || '—')+'</td>'
+          + '<td class="num">'+h+' h</td>'
+          + '</tr>';
+        if(ouverte){
+          ligne += '<tr class="mission-row-detail"><td colspan="5">'+benevoleCardHtml(b, heuresMap)+'</td></tr>';
+        }
+        return ligne;
+      }).join("");
+
+      function thTriBenevole(label, triKey, alignRight){
+        var active = benevolesTri === triKey;
+        return '<th'+(alignRight?' class="num"':'')+'><button type="button" class="th-tri'+(active?" active":"")+'" data-action="trier-benevoles" data-tri="'+triKey+'">'
+          + label + (active ? ' <span class="tri-arrow">▼</span>' : '')
+          + '</button></th>';
+      }
+
+      var touTochesB = listeFiltree.length > 0 && listeFiltree.every(function(b){ return benevolesSelection[b.id]; });
+
+      tableauHtml = listeFiltree.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr>'
+          + '<th class="col-select"><input type="checkbox" data-action="toggle-select-all-benevoles" '+(touTochesB?"checked":"")+'></th>'
+          + thTriBenevole("Nom","nom") + thTriBenevole("Prénom","prenom") + thTriBenevole("Pôles","poles")
+          + thTriBenevole("Heures données","heures",true)
+          + '</tr></thead><tbody>'+lignesHtml+'</tbody></table></div>'
+        : '<div class="empty-state">'+(state.benevoles.length ? 'Aucune fiche ne correspond.' : 'Aucun bénévole enregistré pour l\'instant.')+'</div>';
+    }
+
+    // Le public n'a plus accès à cet onglet (voir updateTabsVisibility) :
+    // l'envoi de candidature se fait désormais depuis l'onglet Missions, pour
+    // que le visiteur voie d'abord les missions à pourvoir. Cet onglet ne
+    // sert donc plus qu'aux gestionnaires/Directeur pour gérer les fiches
+    // bénévoles déjà validées.
     var formHtml = "";
     if(benevoleFormOpen){
       formHtml = '<form class="form" id="form-benevole">'
@@ -428,11 +625,39 @@
         + '</form>';
     }
 
+    var vueToggleBtnB = role !== "public"
+      ? '<button class="btn btn-badge badge-vue btn-sm" data-action="basculer-vue-benevoles">'+(benevolesVue==="tableau" ? "Vue cartes" : "Vue tableau")+'</button>'
+      : '';
+
+    // Boutons Imprimer/Vider : toujours affichés (avec Vue cartes/tableau)
+    // pour que la barre d'outils ne saute plus d'une ligne à l'autre — ils
+    // sont juste désactivés tant qu'il n'y a rien à imprimer ou à vider
+    // (rien coché, ou vue cartes où il n'y a pas de case à cocher). Compte
+    // toutes les fiches cochées même si un filtre les cache momentanément.
+    var nbSelectionnesB = state.benevoles.filter(function(b){ return benevolesSelection[b.id]; }).length;
+    var selectionActiveB = benevolesVue === "tableau" && nbSelectionnesB > 0;
+    var imprimerBtnB = role !== "public"
+      ? '<button class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-selection-benevoles"'+(selectionActiveB?"":" disabled")+'>Imprimer la sélection ('+nbSelectionnesB+')</button>'
+        + '<button class="btn btn-badge badge-vider btn-sm" data-action="vider-selection-benevoles"'+(selectionActiveB?"":" disabled")+'>Vider la sélection</button>'
+      : '';
+
+    var rechercheHtml = '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
+      + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="benevoles-recherche">Recherche</label>'
+      + '<input type="search" id="benevoles-recherche" placeholder="Nom, prénom, email, téléphone ou pôle…" value="'+escapeHtml(benevolesRecherche)+'"></div>'
+      + selectFiltrePoleHtml("benevoles-filtre-pole", benevolesFiltrePole)
+      + '</div>';
+
+    var listeBenevolesHtml = listeFiltree.length ? '<div class="card-grid">'+cards+'</div>'
+      : '<div class="empty-state">'+(state.benevoles.length ? 'Aucune fiche ne correspond.' : 'Aucun bénévole enregistré pour l\'instant.')+'</div>';
+
     document.getElementById("panel-benevoles").innerHTML =
-      '<div class="toolbar"><div><h2>Bénévoles</h2><div class="toolbar-meta">'+state.benevoles.length+' bénévole(s) enregistré(s) · une seule fiche par email</div></div>'
-      + '<button class="btn btn-primary" data-action="open-benevole">+ Ajouter un bénévole</button></div>'
+      '<div class="toolbar"><h2>Bénévoles</h2>'
+      + '<div style="display:flex;gap:8px;">'+imprimerBtnB+vueToggleBtnB
+      + '<button class="btn btn-primary" data-action="open-benevole">+ Ajouter un bénévole</button>'
+      + '</div></div>'
+      + rechercheHtml
       + formHtml
-      + (state.benevoles.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucun bénévole enregistré pour l\'instant. Utilisez le bouton ci-dessus pour ajouter le premier.</div>');
+      + (role !== "public" && benevolesVue === "tableau" ? tableauHtml : listeBenevolesHtml);
 
     function field(label, name, required, type){
       return '<div class="field"><label for="f-'+name+'">'+label+'</label>'
@@ -440,81 +665,220 @@
     }
   }
 
+  // ---------- render: candidatures (visible gestionnaires + Directeur) ----------
+  function renderCandidatures(){
+    var liste = state.candidatures.slice().sort(function(a,b){
+      var da = a.dateEnvoi && a.dateEnvoi.toMillis ? a.dateEnvoi.toMillis() : 0;
+      var db2 = b.dateEnvoi && b.dateEnvoi.toMillis ? b.dateEnvoi.toMillis() : 0;
+      return da - db2;
+    });
+
+    var cards = liste.map(function(c){
+      var tags = (c.poles||[]).map(poleTag).join("");
+      return '<div class="card">'
+        + '<div><div class="benevole-name">'+escapeHtml(c.prenom)+' '+escapeHtml(c.nom)+'</div>'
+        + (c.dateEnvoi ? '<div class="benevole-contact">Reçue le '+fmtDateTime(c.dateEnvoi)+'</div>' : '')
+        + '</div>'
+        + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun pôle renseigné</span>')+'</div>'
+        + '<div class="card-footrow"><span></span><span style="display:flex;gap:6px;">'
+        + '<button class="btn btn-primary btn-sm" data-action="valider-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Valider</button>'
+        + '<button class="btn-danger-ghost" data-action="refuser-candidature" data-id="'+c.id+'" title="Refuser">✕</button>'
+        + '</span></div>'
+        + '</div>';
+    }).join("");
+
+    document.getElementById("panel-candidatures").innerHTML =
+      '<div class="toolbar"><div><h2>Candidatures</h2><div class="toolbar-meta">'+liste.length+' candidature(s) en attente de validation</div></div></div>'
+      + '<div class="form-hint" style="margin-bottom:14px;">Email et téléphone ne sont pas demandés ici : retrouvez-les dans le dossier d\'adhésion, "Valider" vous les demandera.</div>'
+      + (liste.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune candidature en attente.</div>');
+  }
+
   // ---------- render: missions ----------
   var missionFormOpen = false;
+  // Vue tableau (gestionnaires/Directeur uniquement) : utile dès que la
+  // liste de missions grandit, pour trier/rechercher au lieu de faire
+  // défiler des dizaines de cartes. Le public garde uniquement les cartes.
+  var missionsVue = "tableau"; // "cartes" | "tableau" — ouverture par défaut sur le tableau pour les Gestionnaires/Directeur (le public voit toujours les cartes)
+  var missionsRecherche = "";
+  var missionsTri = "date"; // "date"(plus proche d'abord) | "titre" | "pole" | "lieu" | "places" | "inscrits"
+  var missionsDepliees = {}; // { [missionId]: true } — lignes du tableau ouvertes
+  var missionsFiltrePole = "";
+  var missionsSelection = {}; // { [missionId]: true } — cases cochées pour l'impression
+
+  // Construit la carte détaillée d'une mission (titre, inscrits, actions).
+  // Réutilisée telle quelle dans la vue cartes ET repliée dans une ligne du
+  // tableau récapitulatif (vue tableau), pour ne pas dupliquer la logique.
+  function missionCardHtml(m){
+    var restantes = placesRestantes(m);
+    var badgeCls = "places-badge" + (restantes <= 0 ? " low" : "");
+    var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
+    var inscrits = inscritsDe(m.id);
+    var moiEstInscrit = role === "public" && moiBenevoleId && inscrits.some(function(a){ return a.benevoleId === moiBenevoleId; });
+
+    var inscritsHtml = inscrits.map(function(a){
+      var b = benevoleById(a.benevoleId);
+      if(!b) return "";
+      var actionsHtml = "";
+      if(role !== "public"){
+        actionsHtml += '<label class="realise-toggle"><input type="checkbox" data-action="toggle-realise" data-id="'+a.id+'" '+(a.statut==="realise"?"checked":"")+'> réalisé</label>';
+      } else if(a.statut === "realise"){
+        actionsHtml += '<span class="realise-toggle">✓ réalisé</span>';
+      }
+      if(role !== "public"){
+        actionsHtml += '<button class="btn-danger-ghost" data-action="retirer" data-id="'+a.id+'" title="Retirer l\'inscription">✕</button>';
+      }
+      return '<div class="inscrit-row"><div class="inscrit-name"><span class="avatar">'+initiales(b)+'</span>'
+        + escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
+        + '<div class="inscrit-actions">'+actionsHtml+'</div></div>';
+    }).join("");
+
+    var disponibles = state.benevoles.filter(function(b){
+      return b.actif && !inscrits.some(function(a){ return a.benevoleId === b.id; });
+    });
+
+    var selectHtml;
+    if(restantes<=0){
+      selectHtml = '';
+    } else if(role !== "public"){
+      // Gestionnaire/Directeur : peut inscrire n'importe quel bénévole
+      // (utile quand quelqu'un s'inscrit par téléphone, par exemple).
+      selectHtml = disponibles.length
+        ? '<div class="inscrire-row"><select id="sel-'+m.id+'">'
+          + disponibles.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</option>'; }).join("")
+          + '</select><button class="btn btn-sm" data-action="inscrire" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>Inscrire</button></div>'
+        : '<div class="benevole-contact">Tous les bénévoles actifs sont déjà inscrits.</div>';
+    } else {
+      // Visiteur public : ne peut s'inscrire que lui-même, une fois identifié.
+      var moi = moiBenevoleId ? benevoleById(moiBenevoleId) : null;
+      var moiDejaInscrit = moi && inscrits.some(function(a){ return a.benevoleId === moi.id; });
+      if(!moi){
+        selectHtml = '<div class="benevole-contact">Indiquez qui vous êtes en haut de la page pour vous inscrire.</div>';
+      } else if(moiDejaInscrit){
+        selectHtml = '';
+      } else {
+        selectHtml = '<div class="inscrire-row"><button class="btn btn-sm btn-primary" data-action="inscrire-moi" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>M\'inscrire ('+escapeHtml(moi.prenom)+')</button></div>';
+      }
+    }
+
+    return '<div class="card">'
+      + '<div class="mission-head"><div><div class="mission-title">'+escapeHtml(m.titre)+'</div>'
+      + '<div class="mission-when">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+' · '+escapeHtml(m.lieu)+'</div></div>'
+      + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>'
+      + '<div class="tags">'+poleTag(m.pole)
+      + (moiEstInscrit ? '<span class="tag" style="background:var(--success-soft);color:var(--success-soft-ink);">✓ Vous êtes inscrit·e</span>' : '')
+      + '</div>'
+      + '<div class="mission-desc">'+escapeHtml(m.description)+'</div>'
+      + (m.creePar ? '<div class="mission-meta">Proposée par '+escapeHtml(m.creePar)+'</div>' : '')
+      + '<div class="inscrits-list">'+(inscritsHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>'
+      + selectHtml
+      + (role === "directeur" ? '<div><button class="btn-danger-ghost" data-action="delete-mission" data-id="'+m.id+'">Supprimer la mission</button></div>' : '')
+      + '</div>';
+  }
 
   function renderMissions(){
-    // Le public ne voit que les missions où il reste de la place (pas d'intérêt
-    // à afficher une mission complète à quelqu'un qui ne peut pas s'y inscrire).
+    // Le public voit les missions où il reste de la place (pas d'intérêt à
+    // afficher une mission complète à quelqu'un qui ne peut pas s'y inscrire),
+    // PLUS les missions où le visiteur identifié est déjà inscrit — même
+    // complètes — pour qu'il retrouve toujours ses propres missions.
     // Gestionnaires et Directeur voient tout, pour pouvoir suivre et gérer
     // les missions déjà complètes (retirer quelqu'un, marquer les heures faites…).
     var missionsAffichees = role === "public"
-      ? state.missions.filter(function(m){ return placesRestantes(m) > 0; })
+      ? state.missions.filter(function(m){
+          if(placesRestantes(m) > 0) return true;
+          return moiBenevoleId && inscritsDe(m.id).some(function(a){ return a.benevoleId === moiBenevoleId; });
+        })
       : state.missions;
 
-    var cards = missionsAffichees.map(function(m){
-      var restantes = placesRestantes(m);
-      var badgeCls = "places-badge" + (restantes <= 0 ? " low" : "");
-      var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
-      var inscrits = inscritsDe(m.id);
+    var cards = missionsAffichees.map(missionCardHtml).join("");
 
-      var inscritsHtml = inscrits.map(function(a){
-        var b = benevoleById(a.benevoleId);
-        if(!b) return "";
-        var actionsHtml = "";
-        if(role !== "public"){
-          actionsHtml += '<label class="realise-toggle"><input type="checkbox" data-action="toggle-realise" data-id="'+a.id+'" '+(a.statut==="realise"?"checked":"")+'> réalisé</label>';
-        } else if(a.statut === "realise"){
-          actionsHtml += '<span class="realise-toggle">✓ réalisé</span>';
-        }
-        if(role !== "public"){
-          actionsHtml += '<button class="btn-danger-ghost" data-action="retirer" data-id="'+a.id+'" title="Retirer l\'inscription">✕</button>';
-        }
-        return '<div class="inscrit-row"><div class="inscrit-name"><span class="avatar">'+initiales(b)+'</span>'
-          + escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
-          + '<div class="inscrit-actions">'+actionsHtml+'</div></div>';
-      }).join("");
-
-      var disponibles = state.benevoles.filter(function(b){
-        return b.actif && !inscrits.some(function(a){ return a.benevoleId === b.id; });
+    // Vue tableau (gestionnaires/Directeur) : recherche + tri, une ligne par
+    // mission, pour rester lisible même avec beaucoup de missions.
+    var tableauHtml = "";
+    if(role !== "public" && missionsVue === "tableau"){
+      var rechercheM = missionsRecherche.trim().toLowerCase();
+      var lignes = missionsAffichees.filter(function(m){
+        if(missionsFiltrePole && m.pole !== missionsFiltrePole) return false;
+        if(!rechercheM) return true;
+        return (m.titre||"").toLowerCase().indexOf(rechercheM) >= 0
+          || (m.pole||"").toLowerCase().indexOf(rechercheM) >= 0
+          || (m.lieu||"").toLowerCase().indexOf(rechercheM) >= 0
+          || (m.description||"").toLowerCase().indexOf(rechercheM) >= 0
+          || (m.creePar||"").toLowerCase().indexOf(rechercheM) >= 0;
       });
 
-      var selectHtml;
-      if(restantes<=0){
-        selectHtml = '';
-      } else if(role !== "public"){
-        // Gestionnaire/Directeur : peut inscrire n'importe quel bénévole
-        // (utile quand quelqu'un s'inscrit par téléphone, par exemple).
-        selectHtml = disponibles.length
-          ? '<div class="inscrire-row"><select id="sel-'+m.id+'">'
-            + disponibles.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</option>'; }).join("")
-            + '</select><button class="btn btn-sm" data-action="inscrire" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>Inscrire</button></div>'
-          : '<div class="benevole-contact">Tous les bénévoles actifs sont déjà inscrits.</div>';
-      } else {
-        // Visiteur public : ne peut s'inscrire que lui-même, une fois identifié.
-        var moi = moiBenevoleId ? benevoleById(moiBenevoleId) : null;
-        var moiDejaInscrit = moi && inscrits.some(function(a){ return a.benevoleId === moi.id; });
-        if(!moi){
-          selectHtml = '<div class="benevole-contact">Indiquez qui vous êtes en haut de la page pour vous inscrire.</div>';
-        } else if(moiDejaInscrit){
-          selectHtml = '';
-        } else {
-          selectHtml = '<div class="inscrire-row"><button class="btn btn-sm btn-primary" data-action="inscrire-moi" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>M\'inscrire ('+escapeHtml(moi.prenom)+')</button></div>';
+      lignes.sort(function(a,b){
+        if(missionsTri === "titre"){
+          var cmpT = (a.titre||"").localeCompare(b.titre||"", "fr", {sensitivity:"base"});
+          if(cmpT !== 0) return cmpT;
+        } else if(missionsTri === "pole"){
+          var cmpP = (a.pole||"").localeCompare(b.pole||"", "fr", {sensitivity:"base"});
+          if(cmpP !== 0) return cmpP;
+        } else if(missionsTri === "lieu"){
+          var cmpL = (a.lieu||"").localeCompare(b.lieu||"", "fr", {sensitivity:"base"});
+          if(cmpL !== 0) return cmpL;
+        } else if(missionsTri === "places"){
+          // Les moins de places restantes d'abord : ce sont celles qui ont
+          // le plus besoin de bénévoles en urgence.
+          var cmpPl = placesRestantes(a) - placesRestantes(b);
+          if(cmpPl !== 0) return cmpPl;
+        } else if(missionsTri === "inscrits"){
+          var cmpI = inscritsDe(b.id).length - inscritsDe(a.id).length;
+          if(cmpI !== 0) return cmpI;
         }
+        // Par défaut (Date), et à égalité sur les autres tris : la mission
+        // la plus proche dans le temps d'abord.
+        var da = (a.date||"") + " " + (a.debut||"");
+        var db = (b.date||"") + " " + (b.debut||"");
+        if(da !== db) return da < db ? -1 : 1;
+        return (a.titre||"").localeCompare(b.titre||"", "fr", {sensitivity:"base"});
+      });
+
+      var lignesHtml = lignes.map(function(m){
+        var restantes = placesRestantes(m);
+        var badgeCls = "places-badge" + (restantes <= 0 ? " low" : "");
+        var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
+        var nbInscrits = inscritsDe(m.id).length;
+        var ouverte = !!missionsDepliees[m.id];
+        var coche = !!missionsSelection[m.id];
+        var ligne = '<tr class="mission-row'+(ouverte?" active":"")+'" data-action="toggle-ligne-mission" data-id="'+m.id+'">'
+          + '<td class="col-select"><input type="checkbox" data-action="toggle-select-mission" data-id="'+m.id+'" '+(coche?"checked":"")+'></td>'
+          + '<td><span class="tri-arrow">'+(ouverte?"▾":"▸")+'</span> <strong>'+fmtDateCourt(m.date)+'</strong>'
+          + '<div class="mission-date-detail">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</div>'
+          + (m.creeLe ? '<div class="mission-creele">Mission créée le '+fmtDateTime(m.creeLe)+'</div>' : '')
+          + '</td>'
+          + '<td>'+escapeHtml(m.titre)+'</td>'
+          + '<td>'+poleTag(m.pole)+'</td>'
+          + '<td>'+escapeHtml(m.lieu)+'</td>'
+          + '<td><span class="'+badgeCls+'">'+badgeTxt+'</span></td>'
+          + '<td class="num">'+nbInscrits+'</td>'
+          + '</tr>';
+        if(ouverte){
+          ligne += '<tr class="mission-row-detail"><td colspan="7">'+missionCardHtml(m)+'</td></tr>';
+        }
+        return ligne;
+      }).join("");
+
+      function thTriMission(label, triKey, alignRight){
+        var active = missionsTri === triKey;
+        return '<th'+(alignRight?' class="num"':'')+'><button type="button" class="th-tri'+(active?" active":"")+'" data-action="trier-missions" data-tri="'+triKey+'">'
+          + label + (active ? ' <span class="tri-arrow">▼</span>' : '')
+          + '</button></th>';
       }
 
-      return '<div class="card">'
-        + '<div class="mission-head"><div><div class="mission-title">'+escapeHtml(m.titre)+'</div>'
-        + '<div class="mission-when">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+' · '+escapeHtml(m.lieu)+'</div></div>'
-        + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>'
-        + '<div class="tags">'+poleTag(m.pole)+'</div>'
-        + '<div class="mission-desc">'+escapeHtml(m.description)+'</div>'
-        + (m.creePar ? '<div class="mission-meta">Proposée par '+escapeHtml(m.creePar)+'</div>' : '')
-        + '<div class="inscrits-list">'+(inscritsHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>'
-        + selectHtml
-        + (role === "directeur" ? '<div><button class="btn-danger-ghost" data-action="delete-mission" data-id="'+m.id+'">Supprimer la mission</button></div>' : '')
-        + '</div>';
-    }).join("");
+      var touTochesM = lignes.length > 0 && lignes.every(function(m){ return missionsSelection[m.id]; });
+
+      tableauHtml = '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
+        + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="missions-recherche">Recherche</label>'
+        + '<input type="search" id="missions-recherche" placeholder="Titre, pôle, lieu, description…" value="'+escapeHtml(missionsRecherche)+'"></div>'
+        + selectFiltrePoleHtml("missions-filtre-pole", missionsFiltrePole)
+        + '</div>'
+        + (lignes.length ? '<div class="table-scroll"><table class="heures-table missions-table"><thead><tr>'
+            + '<th class="col-select"><input type="checkbox" data-action="toggle-select-all-missions" '+(touTochesM?"checked":"")+'></th>'
+            + thTriMission("Date","date") + thTriMission("Titre","titre") + thTriMission("Pôle","pole")
+            + thTriMission("Lieu","lieu") + thTriMission("Places","places") + thTriMission("Inscrits","inscrits",true)
+            + '</tr></thead><tbody>'+lignesHtml+'</tbody></table></div>'
+          : '<div class="empty-state">'+(missionsAffichees.length ? 'Aucune mission ne correspond.' : 'Aucune mission proposée pour l\'instant.')+'</div>');
+    }
 
     var formHtml = "";
     if(missionFormOpen){
@@ -536,6 +900,48 @@
         + '</form>';
     }
 
+    // La candidature ("Envoyer ma candidature") est affichée ici, en tête de
+    // l'onglet Missions, plutôt que dans un onglet Bénévoles à part : le
+    // visiteur voit d'abord les missions à pourvoir, ce qui donne envie de
+    // s'inscrire, et peut candidater dans la foulée. Les autres fiches
+    // bénévoles restent invisibles au public (voir renderBenevoles()).
+    // Un visiteur déjà identifié (voir identiteHtml ci-dessous) est déjà un
+    // bénévole inscrit : pas de sens à lui proposer d'envoyer une
+    // candidature, donc tout le bloc candidature disparaît dans ce cas.
+    var candidatureHtml = "";
+    if(role === "public" && !moiBenevoleId){
+      if(candidatureEnvoyee){
+        candidatureHtml = '<div class="card" style="max-width:560px;margin-bottom:14px;">'
+          + '<div class="msg-ok">Candidature envoyée. '
+          + (state.emailCandidature ? "Un message vient de s'ouvrir dans votre messagerie : pensez à cliquer sur Envoyer pour qu'elle soit transmise. " : "")
+          + 'Elle sera examinée par le Directeur ou un·e gestionnaire avant de devenir une fiche bénévole.</div></div>';
+      } else if(candidatureFormOpen){
+        // Pas d'email/téléphone demandés ici : ce sont des coordonnées déjà
+        // connues de l'association via le dossier d'adhésion (le bénévole
+        // doit être inscrit à l'association). Le/la gestionnaire les
+        // complètera à la validation — voir action "valider-candidature".
+        candidatureHtml = '<form class="form" id="form-candidature" style="margin-bottom:14px;">'
+          + '<div class="field-row">'
+          + field("Prénom","prenom",true)
+          + field("Nom","nom",true)
+          + '</div>'
+          + '<div class="field"><label>Pôles / domaines</label><div class="checkbox-group">'
+          + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'"> '+escapeHtml(p)+'</label>'; }).join("")
+          + '</div></div>'
+          + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>Envoyer ma candidature</button>'
+          + '<button type="button" class="btn btn-ghost" data-action="cancel-candidature">Annuler</button>'
+          + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
+          + (candidatureError ? '<span class="error-text">'+escapeHtml(candidatureError)+'</span>' : '')
+          + '</div>'
+          + '</form>';
+      } else {
+        candidatureHtml = '<div class="card" style="max-width:560px;margin-bottom:14px;">'
+          + '<div style="margin-bottom:8px;">Envie de rejoindre les bénévoles des Rancy ?</div>'
+          + '<button class="btn btn-primary" data-action="open-candidature">+ Envoyer ma candidature</button>'
+          + '</div>';
+      }
+    }
+
     var identiteHtml = "";
     if(role === "public"){
       var moiIdentite = moiBenevoleId ? benevoleById(moiBenevoleId) : null;
@@ -543,24 +949,51 @@
         identiteHtml = '<div class="card" style="margin-bottom:14px;"><div>Vous êtes identifié(e) comme <strong>'+escapeHtml(moiIdentite.prenom)+' '+escapeHtml(moiIdentite.nom)+'</strong>. '
           + '<button class="link-btn" data-action="changer-identite">Ce n\'est pas vous ?</button></div></div>';
       } else {
-        var actifs = state.benevoles.filter(function(b){ return b.actif; });
+        // Avant : une liste déroulante de tous les bénévoles actifs — donc
+        // n'importe qui pouvait s'inscrire sous le nom de n'importe qui.
+        // Désormais il faut saisir prénom + nom + email correspondant
+        // exactement à une fiche bénévole déjà validée. L'email n'étant plus
+        // affiché nulle part publiquement (voir onglet Bénévoles), ce n'est
+        // plus une information à la portée de n'importe quel visiteur.
         identiteHtml = '<div class="card" style="margin-bottom:14px;">'
-          + '<div style="margin-bottom:8px;">Avant de vous inscrire à une mission, indiquez qui vous êtes :</div>'
-          + (actifs.length
-            ? '<form class="inscrire-row" id="form-identite"><select name="benevoleId">'
-              + actifs.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</option>'; }).join("")
-              + '</select><button type="submit" class="btn btn-sm btn-primary">C\'est moi</button></form>'
-            : '<div class="benevole-contact">Aucun bénévole enregistré pour l\'instant — inscrivez-vous d\'abord dans l\'onglet Bénévoles.</div>');
+          + '<div style="margin-bottom:8px;">Avant de vous inscrire à une mission, identifiez-vous (les informations doivent correspondre à votre fiche bénévole validée) :</div>'
+          + '<form class="form" id="form-identite"><div class="field-row">'
+          + field("Prénom","prenom",true)
+          + field("Nom","nom",true)
+          + field("Email","email",true,"email")
+          + '</div><div class="form-actions"><button type="submit" class="btn btn-sm btn-primary">C\'est moi</button>'
+          + (identiteError ? '<span class="error-text">'+escapeHtml(identiteError)+'</span>' : '')
+          + '</div></form>';
       }
     }
 
+    var vueToggleBtn = role !== "public"
+      ? '<button class="btn btn-badge badge-vue btn-sm" data-action="basculer-vue-missions">'+(missionsVue==="tableau" ? "Vue cartes" : "Vue tableau")+'</button>'
+      : '';
+
+    // Boutons Imprimer/Vider : toujours affichés, juste désactivés tant
+    // qu'il n'y a rien à imprimer ou à vider (rien coché, ou vue cartes où
+    // il n'y a pas de case à cocher) — même logique que pour Bénévoles, pour
+    // que la barre d'outils ne saute plus. Compte toutes les missions
+    // cochées même si un filtre les cache momentanément.
+    var nbSelectionnesM = state.missions.filter(function(m){ return missionsSelection[m.id]; }).length;
+    var selectionActiveM = missionsVue === "tableau" && nbSelectionnesM > 0;
+    var imprimerBtnM = role !== "public"
+      ? '<button class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-selection-missions"'+(selectionActiveM?"":" disabled")+'>Imprimer la sélection ('+nbSelectionnesM+')</button>'
+        + '<button class="btn btn-badge badge-vider btn-sm" data-action="vider-selection-missions"'+(selectionActiveM?"":" disabled")+'>Vider la sélection</button>'
+      : '';
+
     document.getElementById("panel-missions").innerHTML =
-      '<div class="toolbar"><div><h2>Missions</h2><div class="toolbar-meta">'+missionsAffichees.length+' mission(s) proposée(s)</div></div>'
+      '<div class="toolbar"><h2>Missions</h2>'
+      + '<div style="display:flex;gap:8px;">'+imprimerBtnM+vueToggleBtn
       + (role !== "public" ? '<button class="btn btn-primary" data-action="open-mission">+ Créer une mission</button>' : '')
-      + '</div>'
+      + '</div></div>'
+      + candidatureHtml
       + identiteHtml
       + formHtml
-      + (missionsAffichees.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant.</div>');
+      + (role !== "public" && missionsVue === "tableau"
+          ? tableauHtml
+          : (missionsAffichees.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant.</div>'));
 
     function field(label, name, required, type){
       return '<div class="field"><label for="f-'+name+'">'+label+'</label>'
@@ -574,16 +1007,59 @@
   }
 
   // ---------- render: heures ----------
+  var heuresRecherche = "";
+  var heuresFiltrePole = "";
+  var heuresTri = "nom"; // "nom" | "poles" | "missions" | "heures" — tri secondaire toujours par Nom
+  var heuresSelection = {}; // { [benevoleId]: true } — cases cochées pour l'impression, propre à cet onglet
+
   function renderHeures(){
     var heuresMap = heuresParBenevole();
-    var rows = state.benevoles.slice().sort(function(a,b){ return (heuresMap[b.id]||0) - (heuresMap[a.id]||0); });
+    var missionsMap = {};
+    state.affectations.forEach(function(a){
+      if(a.statut === "realise") missionsMap[a.benevoleId] = (missionsMap[a.benevoleId]||0) + 1;
+    });
+    var recherche = heuresRecherche.trim().toLowerCase();
+
+    // Recherche générale : nom, prénom ou pôle. Filtre en plus, si choisi,
+    // par un pôle précis (même liste déroulante que Bénévoles et Missions).
+    var rows = state.benevoles.filter(function(b){
+      if(heuresFiltrePole && (b.poles||[]).indexOf(heuresFiltrePole) === -1) return false;
+      if(!recherche) return true;
+      var poles = (b.poles||[]).join(" ").toLowerCase();
+      return (b.nom||"").toLowerCase().indexOf(recherche) >= 0
+        || (b.prenom||"").toLowerCase().indexOf(recherche) >= 0
+        || poles.indexOf(recherche) >= 0;
+    });
+
+    // Tri par Nom (par défaut, alphabétique), par Pôles, par Missions
+    // réalisées ou par Total d'heures (ces deux derniers du plus grand au
+    // plus petit) ; à égalité, on retombe sur l'ordre alphabétique du Nom.
+    rows.sort(function(a,b){
+      if(heuresTri === "poles"){
+        var pa = (a.poles && a.poles[0]) || "";
+        var pb = (b.poles && b.poles[0]) || "";
+        var cmpPoles = pa.localeCompare(pb, "fr", {sensitivity:"base"});
+        if(cmpPoles !== 0) return cmpPoles;
+      } else if(heuresTri === "missions"){
+        var cmpMissions = (missionsMap[b.id]||0) - (missionsMap[a.id]||0);
+        if(cmpMissions !== 0) return cmpMissions;
+      } else if(heuresTri === "heures"){
+        var cmpHeures = (heuresMap[b.id]||0) - (heuresMap[a.id]||0);
+        if(cmpHeures !== 0) return cmpHeures;
+      }
+      return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
+        || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
+    });
+
     var max = Math.max.apply(null, [1].concat(rows.map(function(b){ return heuresMap[b.id]||0; })));
 
     var trs = rows.map(function(b){
       var h = Math.round((heuresMap[b.id]||0)*10)/10;
-      var missionsRealisees = state.affectations.filter(function(a){ return a.benevoleId===b.id && a.statut==="realise"; }).length;
+      var missionsRealisees = missionsMap[b.id]||0;
       var pct = Math.round(((heuresMap[b.id]||0)/max)*100);
-      return '<tr><td>'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</td>'
+      var coche = !!heuresSelection[b.id];
+      return '<tr><td class="col-select"><input type="checkbox" data-action="toggle-select-heure" data-id="'+b.id+'" '+(coche?"checked":"")+'></td>'
+        + '<td>'+escapeHtml(b.nom)+'</td><td>'+escapeHtml(b.prenom)+'</td>'
         + '<td>'+((b.poles||[]).map(poleTag).join(" ") || '—')+'</td>'
         + '<td class="num">'+missionsRealisees+'</td>'
         + '<td class="num"><span class="bar-wrap"><span class="bar-fill" style="width:'+pct+'%"></span></span><strong>'+h+' h</strong></td></tr>';
@@ -591,11 +1067,35 @@
 
     var total = Math.round(rows.reduce(function(s,b){ return s + (heuresMap[b.id]||0); },0)*10)/10;
 
+    // En-têtes cliquables : le tri se déclenche directement au-dessus de la
+    // colonne concernée, pas besoin d'une rangée de boutons séparée.
+    function thTri(label, triKey, alignRight){
+      var active = heuresTri === triKey;
+      return '<th'+(alignRight?' class="num"':'')+'><button type="button" class="th-tri'+(active?" active":"")+'" data-action="trier-heures" data-tri="'+triKey+'">'
+        + label + (active ? ' <span class="tri-arrow">▼</span>' : '')
+        + '</button></th>';
+    }
+
+    var touTochesH = rows.length > 0 && rows.every(function(b){ return heuresSelection[b.id]; });
+    var nbSelectionnesH = state.benevoles.filter(function(b){ return heuresSelection[b.id]; }).length;
+    // Toujours affichés, juste désactivés si rien n'est coché.
+    var imprimerBtnH = '<button class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-selection-heures"'+(nbSelectionnesH>0?"":" disabled")+'>Imprimer la sélection ('+nbSelectionnesH+')</button>'
+      + '<button class="btn btn-badge badge-vider btn-sm" data-action="vider-selection-heures"'+(nbSelectionnesH>0?"":" disabled")+'>Vider la sélection</button>';
+
     document.getElementById("panel-heures").innerHTML =
-      '<div class="toolbar"><div><h2>Heures données</h2><div class="toolbar-meta">Total cumulé : '+total+' h · basé sur les missions marquées « réalisé »</div></div>'
-      + '<button class="btn btn-ghost btn-sm" data-action="copier-recap">Copier le récapitulatif</button></div>'
-      + (rows.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr><th>Bénévole</th><th>Pôles</th><th>Missions réalisées</th><th>Total d\'heures</th></tr></thead><tbody>'+trs+'</tbody></table></div>'
-        : '<div class="empty-state">Aucun bénévole pour l\'instant.</div>');
+      '<div class="toolbar"><h2>Heures données</h2>'
+      + '<div style="display:flex;gap:8px;">'+imprimerBtnH+'</div></div>'
+      + '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
+      + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="heures-recherche">Recherche</label>'
+      + '<input type="search" id="heures-recherche" placeholder="Nom, prénom ou pôle…" value="'+escapeHtml(heuresRecherche)+'"></div>'
+      + selectFiltrePoleHtml("heures-filtre-pole", heuresFiltrePole)
+      + '</div>'
+      + (rows.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr>'
+          + '<th class="col-select"><input type="checkbox" data-action="toggle-select-all-heures" '+(touTochesH?"checked":"")+'></th>'
+          + thTri("Nom","nom") + '<th>Prénom</th>' + thTri("Pôles","poles")
+          + thTri("Missions réalisées","missions",true) + thTri("Total d\'heures","heures",true)
+          + '</tr></thead><tbody>'+trs+'</tbody></table></div>'
+        : '<div class="empty-state">Aucun·e bénévole ne correspond.</div>');
   }
 
   // ---------- render: historique ----------
@@ -605,27 +1105,98 @@
     validation: "Mission marquée réalisée",
     annulation_validation: "Validation annulée",
     suppression_inscription: "Inscription supprimée",
+    creation_benevole: "Bénévole ajouté",
     suppression_benevole: "Bénévole supprimé",
+    validation_candidature: "Candidature validée",
+    refus_candidature: "Candidature refusée",
     ajout_gestionnaire: "Gestionnaire ajouté",
     desactivation_gestionnaire: "Gestionnaire désactivé",
-    reactivation_gestionnaire: "Gestionnaire réactivé"
+    reactivation_gestionnaire: "Gestionnaire réactivé",
+    modification_email_candidature: "Email de candidature modifié",
+    import_donnees: "Données importées",
+    inscription_publique: "Inscription publique à une mission"
   };
 
+  // Libellé du rôle affiché dans la colonne "Par" de l'historique. Ajouté
+  // avec la trace des inscriptions publiques : sans ça, un visiteur non
+  // connecté (parRole "public") s'affichait à tort comme "Gestionnaire".
+  function libelleRoleHistorique(parRole){
+    if(parRole === "directeur") return "Directeur";
+    if(parRole === "public") return "Visiteur";
+    return "Gestionnaire";
+  }
+
+  var historiqueRecherche = "";
+  var historiqueTri = "date"; // "date" (plus récent d'abord) | "action" | "cible" | "par"
+  var historiqueSelection = {}; // { [historiqueId]: true } — cases cochées pour l'impression
+
   function renderHistorique(){
-    var rows = state.historique.slice().sort(function(a,b){
+    var recherche = historiqueRecherche.trim().toLowerCase();
+
+    // Recherche générale : date, action, concerne ou personne.
+    var rows = state.historique.filter(function(h){
+      if(!recherche) return true;
+      var actionLabel = (ACTION_LABELS[h.action]||h.action||"").toLowerCase();
+      var parLabel = (h.parNom||"") + " " + (h.parRole==="directeur"?"directeur":"gestionnaire");
+      var dateTxt = fmtDateTime(h.date).toLowerCase();
+      return actionLabel.indexOf(recherche) >= 0
+        || (h.cible||"").toLowerCase().indexOf(recherche) >= 0
+        || parLabel.toLowerCase().indexOf(recherche) >= 0
+        || dateTxt.indexOf(recherche) >= 0;
+    });
+
+    // Tri par Date (par défaut, le plus récent d'abord) ou par Action,
+    // Concerne, Par (ordre alphabétique) ; à égalité, les plus récents
+    // d'abord.
+    rows.sort(function(a,b){
       var ta = a.date && a.date.toMillis ? a.date.toMillis() : 0;
       var tb = b.date && b.date.toMillis ? b.date.toMillis() : 0;
+      if(historiqueTri === "action"){
+        var la = ACTION_LABELS[a.action]||a.action||"";
+        var lb = ACTION_LABELS[b.action]||b.action||"";
+        var cmpAction = la.localeCompare(lb, "fr", {sensitivity:"base"});
+        if(cmpAction !== 0) return cmpAction;
+      } else if(historiqueTri === "cible"){
+        var cmpCible = (a.cible||"").localeCompare(b.cible||"", "fr", {sensitivity:"base"});
+        if(cmpCible !== 0) return cmpCible;
+      } else if(historiqueTri === "par"){
+        var cmpPar = (a.parNom||"").localeCompare(b.parNom||"", "fr", {sensitivity:"base"});
+        if(cmpPar !== 0) return cmpPar;
+      }
       return tb - ta;
     });
+
     var trs = rows.map(function(h){
-      return '<tr><td>'+fmtDateTime(h.date)+'</td><td>'+escapeHtml(ACTION_LABELS[h.action]||h.action)+'</td>'
-        + '<td>'+escapeHtml(h.cible||"")+'</td><td>'+escapeHtml(h.parNom||"")+' ('+(h.parRole==="directeur"?"Directeur":"Gestionnaire")+')</td></tr>';
+      var coche = !!historiqueSelection[h.id];
+      return '<tr><td class="col-select"><input type="checkbox" data-action="toggle-select-historique" data-id="'+h.id+'" '+(coche?"checked":"")+'></td>'
+        + '<td>'+fmtDateTime(h.date)+'</td><td>'+escapeHtml(ACTION_LABELS[h.action]||h.action)+'</td>'
+        + '<td>'+escapeHtml(h.cible||"")+'</td><td>'+escapeHtml(h.parNom||"")+' ('+libelleRoleHistorique(h.parRole)+')</td></tr>';
     }).join("");
 
+    // En-têtes cliquables, même principe que pour "Heures données".
+    function thTri(label, triKey){
+      var active = historiqueTri === triKey;
+      return '<th><button type="button" class="th-tri'+(active?" active":"")+'" data-action="trier-historique" data-tri="'+triKey+'">'
+        + label + (active ? ' <span class="tri-arrow">▼</span>' : '')
+        + '</button></th>';
+    }
+
+    var touTochesHi = rows.length > 0 && rows.every(function(h){ return historiqueSelection[h.id]; });
+    var nbSelectionnesHi = state.historique.filter(function(h){ return historiqueSelection[h.id]; }).length;
+    // Toujours affichés, juste désactivés si rien n'est coché.
+    var imprimerBtnHi = '<button class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-selection-historique"'+(nbSelectionnesHi>0?"":" disabled")+'>Imprimer la sélection ('+nbSelectionnesHi+')</button>'
+      + '<button class="btn btn-badge badge-vider btn-sm" data-action="vider-selection-historique"'+(nbSelectionnesHi>0?"":" disabled")+'>Vider la sélection</button>';
+
     document.getElementById("panel-historique").innerHTML =
-      '<div class="toolbar"><div><h2>Historique</h2><div class="toolbar-meta">Visible par les gestionnaires et le Directeur uniquement</div></div></div>'
-      + (rows.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr><th>Date</th><th>Action</th><th>Concerne</th><th>Par</th></tr></thead><tbody>'+trs+'</tbody></table></div>'
-        : '<div class="empty-state">Aucune action enregistrée pour l\'instant.</div>');
+      '<div class="toolbar"><h2>Historique</h2>'
+      + '<div style="display:flex;gap:8px;">'+imprimerBtnHi+'</div></div>'
+      + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="historique-recherche">Recherche</label>'
+      + '<input type="search" id="historique-recherche" placeholder="Date, action, concerne ou personne…" value="'+escapeHtml(historiqueRecherche)+'"></div>'
+      + (rows.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr>'
+          + '<th class="col-select"><input type="checkbox" data-action="toggle-select-all-historique" '+(touTochesHi?"checked":"")+'></th>'
+          + thTri("Date","date") + thTri("Action","action") + thTri("Concerne","cible") + thTri("Par","par")
+          + '</tr></thead><tbody>'+trs+'</tbody></table></div>'
+        : '<div class="empty-state">'+(state.historique.length ? 'Aucune entrée ne correspond.' : 'Aucune action enregistrée pour l\'instant.')+'</div>');
   }
 
   // ---------- render: équipe (gestionnaires) ----------
@@ -671,7 +1242,12 @@
     }).join("");
 
     document.getElementById("panel-parametres").innerHTML =
-      '<div class="toolbar"><div><h2>Paramètres</h2><div class="toolbar-meta">Pôles / domaines proposés dans les formulaires bénévoles et missions</div></div></div>'
+      '<div class="toolbar"><div><h2>Paramètres</h2><div class="toolbar-meta">Email de réception des candidatures, et pôles / domaines proposés dans les formulaires</div></div></div>'
+      + '<form class="form" id="form-email-candidature"><div class="field-row">'
+      + '<div class="field"><label for="p-email-candidature">Email de réception des candidatures</label>'
+      + '<input id="p-email-candidature" name="emailCandidature" type="email" placeholder="ex : accueil@monassociation.fr" value="'+escapeHtml(state.emailCandidature)+'"></div>'
+      + '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer cette adresse</button></div></form>'
+      + '<div class="form-hint" style="margin-bottom:18px;">Quand un visiteur envoie une candidature, son client mail lui propose d\'envoyer un message à cette adresse. Elle doit aussi être validée ici (onglet Candidatures) pour devenir une fiche bénévole.</div>'
       + '<form class="form" id="form-pole"><div class="field-row">'
       + '<div class="field"><label for="p-nom">Nouveau pôle</label><input id="p-nom" name="nom" required placeholder="Ex : Jardinage"></div>'
       + '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter ce pôle</button></div></form>'
@@ -690,8 +1266,8 @@
       + '</div>'
       + '<div class="card" style="max-width:520px;margin-top:14px;">'
       + '<div class="benevole-name">Importer</div>'
-      + '<div class="benevole-contact">Restaure des bénévoles / missions / inscriptions à partir d\'un fichier exporté avec le bouton ci-dessus. '
-      + 'Un enregistrement du fichier qui existe déjà en ligne (même identifiant) est mis à jour avec le contenu du fichier ; les enregistrements en ligne absents du fichier ne sont jamais supprimés. '
+      + '<div class="benevole-contact">Restaure des bénévoles / missions / inscriptions / pôles à partir d\'un fichier exporté avec le bouton ci-dessus. '
+      + 'Un enregistrement du fichier qui existe déjà en ligne (même identifiant) est mis à jour avec le contenu du fichier ; les enregistrements en ligne absents du fichier ne sont jamais supprimés. Pour les pôles, ceux du fichier sont ajoutés à la liste actuelle, sans rien retirer. '
       + 'Les gestionnaires ne sont pas concernés par l\'import : ce sont de vrais comptes de connexion, à recréer via l\'onglet Équipe.</div>'
       + '<div><input type="file" id="import-file-input" accept="application/json" hidden>'
       + '<button class="btn" data-action="import-json">Importer des données (JSON)</button></div>'
@@ -708,26 +1284,37 @@
     if(currentTab==="heures") renderHeures();
     if(currentTab==="historique") renderHistorique();
     if(currentTab==="equipe") renderEquipe();
+    if(currentTab==="candidatures") renderCandidatures();
     if(currentTab==="parametres") renderParametres();
     if(currentTab==="donnees") renderDonnees();
   }
 
   function updateTabsVisibility(){
+    var benevolesTab = document.querySelector('[data-tab="benevoles"]');
+    var heuresTab = document.querySelector('[data-tab="heures"]');
     var histTab = document.querySelector('[data-tab="historique"]');
     var equipeTab = document.querySelector('[data-tab="equipe"]');
+    var candidaturesTab = document.querySelector('[data-tab="candidatures"]');
     var paramTab = document.querySelector('[data-tab="parametres"]');
     var donneesTab = document.querySelector('[data-tab="donnees"]');
     var visible = role !== "public";
     var directeurSeul = role === "directeur";
+    // Le public n'a plus d'usage de l'onglet Bénévoles : les autres fiches
+    // ne lui sont pas montrées et l'envoi de candidature se fait depuis
+    // l'onglet Missions (voir renderMissions()). "Heures données" ne
+    // concerne que le suivi interne, réservé aux gestionnaires/Directeur.
+    benevolesTab.hidden = !visible;
+    heuresTab.hidden = !visible;
     histTab.hidden = !visible;
     equipeTab.hidden = !visible;
+    candidaturesTab.hidden = !visible;
     paramTab.hidden = !directeurSeul;
     donneesTab.hidden = !directeurSeul;
-    if(!visible && (currentTab === "historique" || currentTab === "equipe")){
-      switchTab("benevoles");
+    if(!visible && (currentTab === "benevoles" || currentTab === "heures" || currentTab === "historique" || currentTab === "equipe" || currentTab === "candidatures")){
+      switchTab("missions");
     }
     if(!directeurSeul && (currentTab === "parametres" || currentTab === "donnees")){
-      switchTab("benevoles");
+      switchTab("missions");
     }
   }
 
@@ -736,7 +1323,7 @@
     document.querySelectorAll(".tab").forEach(function(b){
       b.setAttribute("aria-selected", b.getAttribute("data-tab")===name ? "true" : "false");
     });
-    ["benevoles","missions","heures","historique","equipe","parametres","donnees"].forEach(function(t){
+    ["benevoles","missions","heures","historique","equipe","candidatures","parametres","donnees"].forEach(function(t){
       document.getElementById("panel-"+t).hidden = (t !== name);
     });
   }
@@ -749,6 +1336,117 @@
     });
   });
 
+  // ---------- impression des lignes sélectionnées (Bénévoles / Missions) ----------
+  // Construit une page condensée (mêmes colonnes que le tableau à l'écran,
+  // une ligne par élément coché) dans #impression, puis lance l'impression
+  // du navigateur. Le CSS @media print masque tout le reste de la page (voir
+  // la balise <style> en haut du fichier) : aucune bibliothèque externe.
+  // Mise en page calquée sur celle de PICS : entête (nom + sous-titre à
+  // gauche, date du jour à droite), trait bleu, titre avec le nombre de
+  // lignes, tableau, puis en pied de page une signature horodatée (la
+  // personne connectée qui imprime, avec la date et l'heure) à gauche et le
+  // nom de l'association à droite.
+  function fmtAujourdhui(){
+    return new Date().toLocaleDateString("fr-FR");
+  }
+  function fmtMaintenant(){
+    var d = new Date();
+    return d.toLocaleDateString("fr-FR") + " à " + d.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+  }
+
+  function impressionEnteteHtml(){
+    return '<div class="impression-entete">'
+      + '<div><div class="impression-titre-app">Maison Pour Tous des Rancy</div>'
+      + '<div class="impression-soustitre">Gestion des bénévoles</div></div>'
+      + '<div class="impression-date">'+fmtAujourdhui()+'</div>'
+      + '</div>'
+      + '<div class="impression-trait"></div>';
+  }
+
+  // Signature horodatée : le nom de la personne connectée qui imprime (avec
+  // son rôle), suivi de la date et l'heure d'impression — moiNom est le nom
+  // de la personne actuellement connectée (voir écoute onAuthStateChanged).
+  function impressionPiedHtml(section){
+    var signataire = moiNom ? (moiNom + ' — ' + (role==="directeur" ? "Directeur" : "Gestionnaire")) : "Maison Pour Tous des Rancy";
+    return '<div class="impression-pied">'
+      + '<div>'+escapeHtml(signataire)+'<br>Imprimé le '+fmtMaintenant()+'</div>'
+      + '<div>Maison Pour Tous des Rancy — '+section+'</div>'
+      + '</div>';
+  }
+
+  function imprimerSelectionBenevoles(){
+    var heuresMap = heuresParBenevole();
+    var liste = state.benevoles.filter(function(b){ return benevolesSelection[b.id]; });
+    var lignes = liste.map(function(b){
+      var h = Math.round((heuresMap[b.id]||0)*10)/10;
+      return '<tr><td>'+escapeHtml(b.nom)+'</td><td>'+escapeHtml(b.prenom)+'</td>'
+        + '<td>'+escapeHtml((b.poles||[]).join(", "))+'</td><td>'+h+' h</td></tr>';
+    }).join("");
+    document.getElementById("impression").innerHTML =
+      impressionEnteteHtml()
+      + '<h2>Bénévoles ('+liste.length+')</h2>'
+      + '<table><thead><tr><th>Nom</th><th>Prénom</th><th>Pôles</th><th>Heures données</th></tr></thead>'
+      + '<tbody>'+lignes+'</tbody></table>'
+      + impressionPiedHtml("Bénévoles");
+    window.print();
+  }
+
+  function imprimerSelectionMissions(){
+    var liste = state.missions.filter(function(m){ return missionsSelection[m.id]; });
+    var lignes = liste.map(function(m){
+      var restantes = placesRestantes(m);
+      var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
+      var nbInscrits = inscritsDe(m.id).length;
+      return '<tr><td>'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</td><td>'+escapeHtml(m.titre)+'</td>'
+        + '<td>'+escapeHtml(m.pole||"")+'</td><td>'+escapeHtml(m.lieu)+'</td>'
+        + '<td>'+badgeTxt+'</td><td>'+nbInscrits+'</td></tr>';
+    }).join("");
+    document.getElementById("impression").innerHTML =
+      impressionEnteteHtml()
+      + '<h2>Missions ('+liste.length+')</h2>'
+      + '<table><thead><tr><th>Date</th><th>Titre</th><th>Pôle</th><th>Lieu</th><th>Places</th><th>Inscrits</th></tr></thead>'
+      + '<tbody>'+lignes+'</tbody></table>'
+      + impressionPiedHtml("Missions");
+    window.print();
+  }
+
+  function imprimerSelectionHeures(){
+    var heuresMap = heuresParBenevole();
+    var missionsMap = {};
+    state.affectations.forEach(function(a){
+      if(a.statut === "realise") missionsMap[a.benevoleId] = (missionsMap[a.benevoleId]||0) + 1;
+    });
+    var liste = state.benevoles.filter(function(b){ return heuresSelection[b.id]; });
+    var lignes = liste.map(function(b){
+      var h = Math.round((heuresMap[b.id]||0)*10)/10;
+      return '<tr><td>'+escapeHtml(b.nom)+'</td><td>'+escapeHtml(b.prenom)+'</td>'
+        + '<td>'+escapeHtml((b.poles||[]).join(", "))+'</td>'
+        + '<td>'+(missionsMap[b.id]||0)+'</td><td>'+h+' h</td></tr>';
+    }).join("");
+    document.getElementById("impression").innerHTML =
+      impressionEnteteHtml()
+      + '<h2>Heures données ('+liste.length+')</h2>'
+      + '<table><thead><tr><th>Nom</th><th>Prénom</th><th>Pôles</th><th>Missions réalisées</th><th>Total d\'heures</th></tr></thead>'
+      + '<tbody>'+lignes+'</tbody></table>'
+      + impressionPiedHtml("Heures données");
+    window.print();
+  }
+
+  function imprimerSelectionHistorique(){
+    var liste = state.historique.filter(function(h){ return historiqueSelection[h.id]; });
+    var lignes = liste.map(function(h){
+      return '<tr><td>'+fmtDateTime(h.date)+'</td><td>'+escapeHtml(ACTION_LABELS[h.action]||h.action)+'</td>'
+        + '<td>'+escapeHtml(h.cible||"")+'</td><td>'+escapeHtml(h.parNom||"")+' ('+libelleRoleHistorique(h.parRole)+')</td></tr>';
+    }).join("");
+    document.getElementById("impression").innerHTML =
+      impressionEnteteHtml()
+      + '<h2>Historique ('+liste.length+')</h2>'
+      + '<table><thead><tr><th>Date</th><th>Action</th><th>Concerne</th><th>Par</th></tr></thead>'
+      + '<tbody>'+lignes+'</tbody></table>'
+      + impressionPiedHtml("Historique");
+    window.print();
+  }
+
   // ---------- delegated actions ----------
   document.addEventListener("click", function(e){
     var el = e.target.closest("[data-action]");
@@ -757,6 +1455,8 @@
 
     if(action==="open-benevole"){ benevoleFormOpen = true; benevoleError=""; renderBenevoles(); }
     else if(action==="cancel-benevole"){ benevoleFormOpen = false; renderBenevoles(); }
+    else if(action==="open-candidature"){ candidatureFormOpen = true; candidatureError=""; candidatureEnvoyee=false; renderMissions(); }
+    else if(action==="cancel-candidature"){ candidatureFormOpen = false; renderMissions(); }
     else if(action==="open-mission"){ missionFormOpen = true; renderMissions(); }
     else if(action==="cancel-mission"){ missionFormOpen = false; renderMissions(); }
     else if(action==="open-login"){ loginFormOpen = true; loginError=""; loginInfo=""; renderAdminRow(); }
@@ -791,6 +1491,36 @@
         logHistorique("suppression_benevole", bd ? (bd.prenom+" "+bd.nom) : "");
       }).catch(reportError);
     }
+    else if(action==="valider-candidature"){
+      var cId = el.getAttribute("data-id");
+      var cand = state.candidatures.find(function(x){ return x.id === cId; });
+      if(!cand) return;
+      // Email/téléphone ne sont pas demandés dans le formulaire de
+      // candidature (déjà connus via le dossier d'adhésion) : on les
+      // demande ici, au moment de créer la fiche bénévole. L'email sert
+      // d'identifiant unique de la fiche, il est donc obligatoire.
+      var emailValide = prompt("Email de " + cand.prenom + " " + cand.nom + " (d'après son dossier d'adhésion) :");
+      if(emailValide == null) return;
+      emailValide = emailValide.trim();
+      if(!emailValide){ alert("Email obligatoire pour créer la fiche bénévole."); return; }
+      var telValide = prompt("Téléphone (facultatif, laisser vide si inconnu) :") || "";
+      setDoc(doc(db,"benevoles", emailValide.toLowerCase()), {
+        prenom: cand.prenom, nom: cand.nom, email: emailValide, tel: telValide.trim(), poles: cand.poles || [], actif: true,
+        dateCreation: serverTimestamp()
+      }).then(function(){
+        return deleteDoc(doc(db,"candidatures", cId));
+      }).then(function(){
+        logHistorique("validation_candidature", cand.prenom + " " + cand.nom);
+      }).catch(reportError);
+    }
+    else if(action==="refuser-candidature"){
+      var cId2 = el.getAttribute("data-id");
+      var cand2 = state.candidatures.find(function(x){ return x.id === cId2; });
+      if(!confirm("Refuser et supprimer la candidature de " + (cand2 ? cand2.prenom+" "+cand2.nom : "cette personne") + " ? Cette action est irréversible.")) return;
+      deleteDoc(doc(db,"candidatures", cId2)).then(function(){
+        logHistorique("refus_candidature", cand2 ? (cand2.prenom + " " + cand2.nom) : "");
+      }).catch(reportError);
+    }
     else if(action==="inscrire"){
       var missionId = el.getAttribute("data-mission");
       var sel = document.getElementById("sel-"+missionId);
@@ -801,7 +1531,15 @@
     else if(action==="inscrire-moi"){
       var missionIdMoi = el.getAttribute("data-mission");
       if(moiBenevoleId){
-        addDoc(collection(db,"affectations"), {missionId:missionIdMoi, benevoleId:moiBenevoleId, statut:"inscrit"}).catch(reportError);
+        var moiPourLog = benevoleById(moiBenevoleId);
+        var missionPourLog = missionById(missionIdMoi);
+        addDoc(collection(db,"affectations"), {missionId:missionIdMoi, benevoleId:moiBenevoleId, statut:"inscrit"}).then(function(){
+          logHistoriquePublic(
+            "inscription_publique",
+            missionPourLog ? missionPourLog.titre : missionIdMoi,
+            moiPourLog ? (moiPourLog.prenom+" "+moiPourLog.nom) : ""
+          );
+        }).catch(reportError);
       }
     }
     else if(action==="changer-identite"){
@@ -826,8 +1564,12 @@
       }).catch(reportError);
     }
     else if(action==="export-json"){
+      // Corrigé : il y avait deux blocs "export-json" identiques (un mort,
+      // jamais exécuté) — celui qui s'exécutait réellement oubliait les
+      // pôles. Un seul bloc désormais, qui inclut bien la liste des pôles.
       var exportData = {
         exporteLe: new Date().toISOString(),
+        poles: state.poles,
         benevoles: state.benevoles,
         missions: state.missions,
         affectations: state.affectations,
@@ -858,47 +1600,175 @@
       var poleNom = el.getAttribute("data-pole");
       if(!confirm("Retirer le pôle « "+poleNom+" » de la liste proposée ? Les bénévoles/missions qui l'ont déjà ne seront pas modifiés.")) return;
       var nouvelleListe = state.poles.filter(function(p){ return p !== poleNom; });
-      setDoc(doc(db,"parametres","poles"), {liste: nouvelleListe}).catch(reportError);
-    }
-    else if(action==="export-json"){
-      var exportData = {
-        exporteLe: new Date().toISOString(),
-        poles: state.poles,
-        benevoles: state.benevoles,
-        missions: state.missions,
-        affectations: state.affectations,
-        gestionnaires: state.gestionnaires.map(function(g){ return {nom:g.nom, role:g.role, actif:g.actif}; }),
-        historique: state.historique
-      };
-      var jsonStr = JSON.stringify(exportData, null, 2);
-      var blob = new Blob([jsonStr], {type: "application/json"});
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
-      var dateStr = new Date().toISOString().slice(0,10);
-      a.href = url;
-      a.download = "benevoles-rancy-export-" + dateStr + ".json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setDoc(doc(db,"parametres","poles"), {liste: nouvelleListe}, {merge:true}).catch(reportError);
     }
     else if(action==="import-json"){
       var fileInput = document.getElementById("import-file-input");
       if(fileInput) fileInput.click();
     }
-    else if(action==="copier-recap"){
-      var heuresMap = heuresParBenevole();
-      var lines = ["Bénévole;Heures données"];
-      state.benevoles.forEach(function(b){
-        lines.push(b.prenom+" "+b.nom+";"+(Math.round((heuresMap[b.id]||0)*10)/10));
+    else if(action==="trier-heures"){
+      heuresTri = el.getAttribute("data-tri");
+      renderHeures();
+    }
+    else if(action==="trier-historique"){
+      historiqueTri = el.getAttribute("data-tri");
+      renderHistorique();
+    }
+    else if(action==="basculer-vue-missions"){
+      missionsVue = missionsVue === "tableau" ? "cartes" : "tableau";
+      renderMissions();
+    }
+    else if(action==="trier-missions"){
+      missionsTri = el.getAttribute("data-tri");
+      renderMissions();
+    }
+    else if(action==="toggle-ligne-mission"){
+      var mId = el.getAttribute("data-id");
+      missionsDepliees[mId] = !missionsDepliees[mId];
+      renderMissions();
+    }
+    else if(action==="basculer-vue-benevoles"){
+      benevolesVue = benevolesVue === "tableau" ? "cartes" : "tableau";
+      renderBenevoles();
+    }
+    else if(action==="trier-benevoles"){
+      benevolesTri = el.getAttribute("data-tri");
+      renderBenevoles();
+    }
+    else if(action==="toggle-ligne-benevole"){
+      var bId = el.getAttribute("data-id");
+      benevolesDepliees[bId] = !benevolesDepliees[bId];
+      renderBenevoles();
+    }
+    else if(action==="imprimer-selection-benevoles"){
+      imprimerSelectionBenevoles();
+    }
+    else if(action==="imprimer-selection-missions"){
+      imprimerSelectionMissions();
+    }
+    else if(action==="imprimer-selection-heures"){
+      imprimerSelectionHeures();
+    }
+    else if(action==="imprimer-selection-historique"){
+      imprimerSelectionHistorique();
+    }
+    else if(action==="vider-selection-benevoles"){
+      benevolesSelection = {};
+      renderBenevoles();
+    }
+    else if(action==="vider-selection-missions"){
+      missionsSelection = {};
+      renderMissions();
+    }
+    else if(action==="vider-selection-heures"){
+      heuresSelection = {};
+      renderHeures();
+    }
+    else if(action==="vider-selection-historique"){
+      historiqueSelection = {};
+      renderHistorique();
+    }
+  });
+
+  // Recherche générale dans le tableau "Heures données", dans le module
+  // Bénévoles, dans l'Historique et dans la vue tableau des Missions :
+  // filtre en direct sans perdre le focus ni la position du curseur dans
+  // le champ.
+  document.addEventListener("input", function(e){
+    if(e.target.id === "heures-recherche"){
+      heuresRecherche = e.target.value;
+      var pos = e.target.selectionStart;
+      renderHeures();
+      var champ = document.getElementById("heures-recherche");
+      if(champ){ champ.focus(); champ.setSelectionRange(pos,pos); }
+    }
+    else if(e.target.id === "benevoles-recherche"){
+      benevolesRecherche = e.target.value;
+      var pos2 = e.target.selectionStart;
+      renderBenevoles();
+      var champ2 = document.getElementById("benevoles-recherche");
+      if(champ2){ champ2.focus(); champ2.setSelectionRange(pos2,pos2); }
+    }
+    else if(e.target.id === "historique-recherche"){
+      historiqueRecherche = e.target.value;
+      var pos3 = e.target.selectionStart;
+      renderHistorique();
+      var champ3 = document.getElementById("historique-recherche");
+      if(champ3){ champ3.focus(); champ3.setSelectionRange(pos3,pos3); }
+    }
+    else if(e.target.id === "missions-recherche"){
+      missionsRecherche = e.target.value;
+      var pos4 = e.target.selectionStart;
+      renderMissions();
+      var champ4 = document.getElementById("missions-recherche");
+      if(champ4){ champ4.focus(); champ4.setSelectionRange(pos4,pos4); }
+    }
+  });
+
+  // Listes déroulantes "Filtrer par pôle" (Bénévoles, Missions et Heures
+  // données), basées sur la liste des pôles de Paramètres.
+  document.addEventListener("change", function(e){
+    if(e.target.id === "benevoles-filtre-pole"){
+      benevolesFiltrePole = e.target.value;
+      renderBenevoles();
+    }
+    else if(e.target.id === "missions-filtre-pole"){
+      missionsFiltrePole = e.target.value;
+      renderMissions();
+    }
+    else if(e.target.id === "heures-filtre-pole"){
+      heuresFiltrePole = e.target.value;
+      renderHeures();
+    }
+  });
+
+  // Cases à cocher pour l'impression de la sélection (Bénévoles / Missions),
+  // y compris la case "tout cocher" en en-tête de colonne, qui n'agit que
+  // sur les lignes actuellement affichées (recherche/filtre en cours).
+  document.addEventListener("change", function(e){
+    if(e.target.matches('[data-action="toggle-select-benevole"]')){
+      benevolesSelection[e.target.getAttribute("data-id")] = e.target.checked;
+      renderBenevoles();
+    }
+    else if(e.target.matches('[data-action="toggle-select-all-benevoles"]')){
+      var checkedB = e.target.checked;
+      document.querySelectorAll('#panel-benevoles [data-action="toggle-select-benevole"]').forEach(function(cb){
+        benevolesSelection[cb.getAttribute("data-id")] = checkedB;
       });
-      var text = lines.join("\n");
-      try{
-        navigator.clipboard.writeText(text).then(function(){
-          el.textContent = "Copié ✓";
-          setTimeout(function(){ el.textContent = "Copier le récapitulatif"; }, 1800);
-        });
-      }catch(err){}
+      renderBenevoles();
+    }
+    else if(e.target.matches('[data-action="toggle-select-mission"]')){
+      missionsSelection[e.target.getAttribute("data-id")] = e.target.checked;
+      renderMissions();
+    }
+    else if(e.target.matches('[data-action="toggle-select-all-missions"]')){
+      var checkedM = e.target.checked;
+      document.querySelectorAll('#panel-missions [data-action="toggle-select-mission"]').forEach(function(cb){
+        missionsSelection[cb.getAttribute("data-id")] = checkedM;
+      });
+      renderMissions();
+    }
+    else if(e.target.matches('[data-action="toggle-select-heure"]')){
+      heuresSelection[e.target.getAttribute("data-id")] = e.target.checked;
+      renderHeures();
+    }
+    else if(e.target.matches('[data-action="toggle-select-all-heures"]')){
+      var checkedHe = e.target.checked;
+      document.querySelectorAll('#panel-heures [data-action="toggle-select-heure"]').forEach(function(cb){
+        heuresSelection[cb.getAttribute("data-id")] = checkedHe;
+      });
+      renderHeures();
+    }
+    else if(e.target.matches('[data-action="toggle-select-historique"]')){
+      historiqueSelection[e.target.getAttribute("data-id")] = e.target.checked;
+      renderHistorique();
+    }
+    else if(e.target.matches('[data-action="toggle-select-all-historique"]')){
+      var checkedHi = e.target.checked;
+      document.querySelectorAll('#panel-historique [data-action="toggle-select-historique"]').forEach(function(cb){
+        historiqueSelection[cb.getAttribute("data-id")] = checkedHi;
+      });
+      renderHistorique();
     }
   });
 
@@ -979,11 +1849,59 @@
     if(e.target.id === "form-identite"){
       e.preventDefault();
       var fi = e.target;
-      if(fi.benevoleId.value){
-        moiBenevoleId = fi.benevoleId.value;
+      var pSaisi = fi.prenom.value.trim().toLowerCase();
+      var nSaisi = fi.nom.value.trim().toLowerCase();
+      var eSaisi = fi.email.value.trim().toLowerCase();
+      // Prénom + nom + email doivent correspondre exactement à une fiche
+      // bénévole déjà validée et active : ça remplace l'ancienne liste
+      // déroulante ouverte, qui permettait de s'inscrire sous le nom de
+      // n'importe qui. L'email n'étant plus affiché nulle part publiquement,
+      // seul le bénévole concerné (ou quelqu'un à qui il l'a donné) le connaît.
+      var correspond = state.benevoles.find(function(b){
+        return b.actif
+          && (b.prenom||"").trim().toLowerCase() === pSaisi
+          && (b.nom||"").trim().toLowerCase() === nSaisi
+          && (b.email||"").trim().toLowerCase() === eSaisi;
+      });
+      if(correspond){
+        moiBenevoleId = correspond.id;
         sauvegarderMoiBenevoleId(moiBenevoleId);
+        identiteError = "";
+        renderMissions();
+      } else {
+        identiteError = "Aucune fiche bénévole ne correspond à ces informations. Vérifiez l'orthographe et l'email utilisé lors de la candidature.";
         renderMissions();
       }
+      return;
+    }
+    if(e.target.id === "form-candidature"){
+      e.preventDefault();
+      var fc = e.target;
+      var polesC = Array.prototype.slice.call(fc.querySelectorAll('input[name="pole"]:checked')).map(function(i){ return i.value; });
+      var candPrenom = fc.prenom.value.trim();
+      var candNom = fc.nom.value.trim();
+      addDoc(collection(db,"candidatures"), {
+        prenom: candPrenom, nom: candNom, poles: polesC, dateEnvoi: serverTimestamp()
+      }).then(function(){
+        candidatureFormOpen = false; candidatureError = ""; candidatureEnvoyee = true;
+        renderMissions();
+        // Ouvre le client mail du visiteur pour prévenir l'association, si une
+        // adresse a été configurée dans Paramètres (lien mailto : aucune
+        // infrastructure d'envoi d'email nécessaire). Pas d'email/téléphone
+        // du candidat dans ce message : il n'est pas demandé dans le
+        // formulaire (déjà connu via le dossier d'adhésion).
+        if(state.emailCandidature){
+          var sujet = "Nouvelle candidature bénévole — " + candPrenom + " " + candNom;
+          var corps = "Nouvelle candidature reçue sur le site des bénévoles :\n\n"
+            + "Prénom : " + candPrenom + "\nNom : " + candNom
+            + "\nPôles souhaités : " + (polesC.join(", ") || "aucun")
+            + "\n\nÀ valider dans l'onglet Candidatures du site (ses coordonnées vous seront demandées à la validation).";
+          window.location.href = "mailto:" + encodeURIComponent(state.emailCandidature) + "?subject=" + encodeURIComponent(sujet) + "&body=" + encodeURIComponent(corps);
+        }
+      }).catch(function(err){
+        candidatureError = "Erreur, réessayez.";
+        renderMissions();
+      });
       return;
     }
     if(e.target.id === "form-benevole"){
@@ -991,14 +1909,20 @@
       var f = e.target;
       var emailId = f.email.value.trim().toLowerCase();
       var poles = Array.prototype.slice.call(f.querySelectorAll('input[name="pole"]:checked')).map(function(i){ return i.value; });
+      var benPrenom = f.prenom.value.trim();
+      var benNom = f.nom.value.trim();
       setDoc(doc(db,"benevoles", emailId), {
-        prenom: f.prenom.value.trim(),
-        nom: f.nom.value.trim(),
+        prenom: benPrenom,
+        nom: benNom,
         email: f.email.value.trim(),
         tel: f.tel.value.trim(),
         poles: poles,
-        actif: true
-      }).then(function(){ benevoleFormOpen = false; benevoleError=""; renderBenevoles(); }).catch(function(err){
+        actif: true,
+        dateCreation: serverTimestamp()
+      }).then(function(){
+        benevoleFormOpen = false; benevoleError=""; renderBenevoles();
+        logHistorique("creation_benevole", benPrenom + " " + benNom);
+      }).catch(function(err){
         benevoleError = (err && err.code === "permission-denied")
           ? "Cette adresse email est déjà enregistrée."
           : "Erreur, réessayez.";
@@ -1031,14 +1955,35 @@
       var nomPole = fp.nom.value.trim();
       if(!nomPole) return;
       var nouvelleListePoles = state.poles.concat([nomPole]).filter(function(v,i,arr){ return arr.indexOf(v) === i; });
-      setDoc(doc(db,"parametres","poles"), {liste: nouvelleListePoles}).then(function(){
+      setDoc(doc(db,"parametres","poles"), {liste: nouvelleListePoles}, {merge:true}).then(function(){
         fp.reset();
+      }).catch(reportError);
+    }
+    if(e.target.id === "form-email-candidature"){
+      e.preventDefault();
+      var fec = e.target;
+      var emailC = fec.emailCandidature.value.trim();
+      setDoc(doc(db,"parametres","poles"), {emailCandidature: emailC}, {merge:true}).then(function(){
+        logHistorique("modification_email_candidature", emailC);
       }).catch(reportError);
     }
   });
 
   function importerDonnees(data){
     var promesses = [];
+    var nbPolesAjoutes = 0;
+    // Restaure les pôles du fichier exporté : ajoutés à la liste actuelle
+    // sans rien retirer (même logique que pour bénévoles/missions/inscriptions
+    // ci-dessous — un import ne supprime jamais ce qui existe déjà en ligne).
+    if(Array.isArray(data.poles) && data.poles.length){
+      var polesFusionnes = state.poles.concat(data.poles).filter(function(p, i, arr){
+        return p && arr.indexOf(p) === i;
+      });
+      nbPolesAjoutes = polesFusionnes.length - state.poles.length;
+      if(nbPolesAjoutes > 0){
+        promesses.push(setDoc(doc(db,"parametres","poles"), {liste: polesFusionnes}, {merge:true}));
+      }
+    }
     (data.benevoles||[]).forEach(function(b){
       if(!b || !b.id) return;
       var copie = Object.assign({}, b);
@@ -1058,7 +2003,8 @@
       promesses.push(setDoc(doc(db,"affectations", a.id), copie));
     });
     Promise.all(promesses).then(function(){
-      importStatus = "Import terminé : " + (data.benevoles||[]).length + " bénévole(s), " + (data.missions||[]).length + " mission(s), " + (data.affectations||[]).length + " inscription(s) traité(s).";
+      importStatus = "Import terminé : " + (data.benevoles||[]).length + " bénévole(s), " + (data.missions||[]).length + " mission(s), " + (data.affectations||[]).length + " inscription(s)"
+        + (nbPolesAjoutes > 0 ? ", " + nbPolesAjoutes + " pôle(s) ajouté(s)" : "") + " traité(s).";
       importError = false;
       logHistorique("import_donnees", importStatus);
       renderDonnees();
@@ -1086,13 +2032,19 @@
       state.historique = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
       renderAll();
     }, function(){ /* accès révoqué : silencieux */ });
+    unsubCandidatures = onSnapshot(collection(db,"candidatures"), function(snap){
+      state.candidatures = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderAll();
+    }, function(){ /* accès révoqué : silencieux */ });
   }
 
   function detachRoleCollections(){
     if(unsubGestionnaires){ unsubGestionnaires(); unsubGestionnaires = null; }
     if(unsubHistorique){ unsubHistorique(); unsubHistorique = null; }
+    if(unsubCandidatures){ unsubCandidatures(); unsubCandidatures = null; }
     state.gestionnaires = [];
     state.historique = [];
+    state.candidatures = [];
   }
 
   // ---------- Firebase wiring ----------
@@ -1162,6 +2114,7 @@
 
     unsubParametres = onSnapshot(doc(db,"parametres","poles"), function(snap){
       state.poles = (snap.exists() && Array.isArray(snap.data().liste) && snap.data().liste.length) ? snap.data().liste : POLES.slice();
+      state.emailCandidature = (snap.exists() && snap.data().emailCandidature) ? snap.data().emailCandidature : "";
       renderAll();
     }, function(){ /* pas encore de liste personnalisée : on garde les valeurs par défaut */ });
   }
