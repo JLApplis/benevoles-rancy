@@ -148,6 +148,14 @@
   #impression thead th{background:#f4f2ee;color:var(--ink-faint);text-transform:uppercase;font-size:.7rem;letter-spacing:.03em;text-align:left;padding:8px 10px;border-bottom:2px solid #ddd;}
   #impression tbody td{padding:9px 10px;border-bottom:1px solid #eee;text-align:left;}
   #impression .impression-pied{display:flex;justify-content:space-between;align-items:flex-end;margin-top:32px;padding-top:12px;border-top:1px solid #ddd;font-size:.8rem;color:var(--ink-soft);}
+  /* Impression de l'historique par bénévole (imprimerHistoriqueBenevoles) :
+     un bloc par bénévole, bien séparé du suivant par un trait et un espace,
+     et qui évite de couper une fiche en deux entre deux pages. */
+  #impression .impression-bloc-benevole{margin-top:26px;padding-top:16px;border-top:2px solid #ddd;page-break-inside:avoid;}
+  #impression .impression-bloc-benevole:first-of-type{margin-top:0;padding-top:0;border-top:none;}
+  #impression .impression-bloc-benevole h3{margin:0 0 4px;font-size:1rem;color:var(--ink);}
+  #impression .impression-resume{font-size:.85rem;color:var(--ink-soft);margin-bottom:8px;}
+  #impression .impression-vide{color:var(--ink-faint);text-align:center;font-style:italic;}
   @media print{
     body *{visibility:hidden;}
     #impression,#impression *{visibility:visible;}
@@ -157,6 +165,15 @@
   .tag{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:var(--accent-soft-ink);border-radius:999px;padding:4px 10px;font-size:.76rem;font-weight:600;}
   .tag .dot{width:7px;height:7px;border-radius:50%;flex:none;}
   .card-footrow{display:flex;justify-content:space-between;align-items:center;margin-top:auto;font-size:.82rem;color:var(--ink-soft);}
+
+  .benevole-missions{border-top:1px solid var(--line);margin-top:10px;padding-top:8px;}
+  .benevole-missions-titre{font-weight:600;font-size:.82rem;margin-bottom:2px;}
+  .benevole-missions-resume{font-size:.78rem;color:var(--ink-soft);margin-bottom:6px;}
+  .benevole-missions-liste{margin:0;padding-left:18px;font-size:.84rem;color:var(--ink-soft);max-height:150px;overflow-y:auto;}
+  .benevole-missions-liste li{margin-bottom:2px;}
+  .statut-realisee{color:var(--success-soft-ink);font-weight:600;}
+  .statut-avenir{color:var(--accent-soft-ink);font-weight:600;}
+  .statut-nonrealisee{color:var(--danger);font-weight:600;}
 
   .mission-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
   .mission-title{font-family:"Fraunces",serif;font-size:1.1rem;font-weight:600;}
@@ -375,6 +392,18 @@
     return state.missions.find(function(m){ return m.id === id; });
   }
 
+  // Numéro de référence d'une mission (M1, M2…), attribué une fois pour
+  // toutes à la création (voir prochainNumeroMission / completerNumerosMissions
+  // plus bas) et affiché partout où le titre de la mission apparaît, pour
+  // pouvoir s'y référer facilement même quand plusieurs missions ont lieu le
+  // même jour. Une mission qui n'aurait pas encore de numéro (juste après le
+  // déploiement de cette fonctionnalité, avant qu'un gestionnaire se
+  // connecte) affiche simplement son titre seul.
+  function libelleMission(m){
+    if(!m) return "";
+    return (m.numero ? ("M"+m.numero+" — ") : "") + (m.titre || "");
+  }
+
   function initiales(b){
     return ((b.prenom[0]||"") + (b.nom[0]||"")).toUpperCase();
   }
@@ -411,6 +440,32 @@
       }
     });
     return map;
+  }
+
+  // Historique complet des inscriptions d'un bénévole — pas seulement les
+  // missions réalisées : aussi celles à venir, et surtout celles où il/elle
+  // était inscrit·e à une mission déjà passée sans que ce soit jamais marqué
+  // "réalisé". C'est ce dernier cas qui permet de juger la fiabilité d'un
+  // bénévole (inscriptions sans suite). Le plus récent en premier. Utilisée
+  // à la fois pour l'affichage à l'écran (benevoleCardHtml) et pour
+  // l'impression (imprimerHistoriqueBenevoles).
+  var LIBELLE_STATUT_INSCRIPTION = {realisee:"Réalisée", avenir:"À venir", nonrealisee:"Non réalisée"};
+  var CLASSE_STATUT_INSCRIPTION = {realisee:"statut-realisee", avenir:"statut-avenir", nonrealisee:"statut-nonrealisee"};
+  function inscriptionsDe(benevoleId){
+    var aujourdhuiIso = new Date().toISOString().slice(0,10);
+    return state.affectations
+      .filter(function(a){ return a.benevoleId === benevoleId; })
+      .map(function(a){
+        var m = missionById(a.missionId);
+        if(!m) return null;
+        var statut;
+        if(a.statut === "realise") statut = "realisee";
+        else if(m.date && m.date >= aujourdhuiIso) statut = "avenir";
+        else statut = "nonrealisee";
+        return {mission: m, statut: statut};
+      })
+      .filter(function(x){ return !!x; })
+      .sort(function(x1, x2){ return (x2.mission.date||"").localeCompare(x1.mission.date||""); });
   }
 
   function logHistorique(action, cible){
@@ -502,6 +557,26 @@
     if(role !== "public"){
       actions += '<button class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'" title="Supprimer">✕</button>';
     }
+
+    var inscriptions = inscriptionsDe(b.id);
+
+    var nbRealisees = inscriptions.filter(function(x){ return x.statut === "realisee"; }).length;
+    var nbAvenir = inscriptions.filter(function(x){ return x.statut === "avenir"; }).length;
+    var nbNonRealisees = inscriptions.filter(function(x){ return x.statut === "nonrealisee"; }).length;
+
+    var missionsRealiseesHtml = inscriptions.length
+      ? '<div class="benevole-missions"><div class="benevole-missions-titre">Historique des inscriptions ('+inscriptions.length+')</div>'
+        + '<div class="benevole-missions-resume">'+nbRealisees+' réalisée(s) · '+nbAvenir+' à venir · '
+          + '<span class="'+(nbNonRealisees>0?"statut-nonrealisee":"")+'">'+nbNonRealisees+' non réalisée(s)</span></div>'
+        + '<ul class="benevole-missions-liste">'
+        + inscriptions.map(function(x){
+            var detail = x.statut === "realisee" ? (" · "+dureeHeures(x.mission)+" h") : "";
+            return '<li>'+fmtDateCourt(x.mission.date)+' — '+escapeHtml(libelleMission(x.mission))
+              + ' <span class="'+CLASSE_STATUT_INSCRIPTION[x.statut]+'">('+LIBELLE_STATUT_INSCRIPTION[x.statut]+detail+')</span></li>';
+          }).join("")
+        + '</ul></div>'
+      : '';
+
     return '<div class="card">'
       + '<div><div class="benevole-name">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
       + '<div class="benevole-contact">'+escapeHtml(b.email)+'<br>'+escapeHtml(b.tel)+'</div></div>'
@@ -509,6 +584,7 @@
       + '<div class="card-footrow"><span><strong>'+h+' h</strong> données au total</span>'
       + (actions ? '<span style="display:flex;gap:6px;">'+actions+'</span>' : '')
       + '</div>'
+      + missionsRealiseesHtml
       + (b.dateCreation ? '<div class="benevole-contact">Fiche créée le '+fmtDateTime(b.dateCreation)+'</div>' : '')
       + (b.actif ? '' : '<div class="benevole-contact" style="color:var(--danger)">Inactif</div>')
       + '</div>';
@@ -638,6 +714,7 @@
     var selectionActiveB = benevolesVue === "tableau" && nbSelectionnesB > 0;
     var imprimerBtnB = role !== "public"
       ? '<button class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-selection-benevoles"'+(selectionActiveB?"":" disabled")+'>Imprimer la sélection ('+nbSelectionnesB+')</button>'
+        + '<button class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-historique-benevoles"'+(selectionActiveB?"":" disabled")+'>Imprimer l\'historique ('+nbSelectionnesB+')</button>'
         + '<button class="btn btn-badge badge-vider btn-sm" data-action="vider-selection-benevoles"'+(selectionActiveB?"":" disabled")+'>Vider la sélection</button>'
       : '';
 
@@ -761,7 +838,7 @@
     }
 
     return '<div class="card">'
-      + '<div class="mission-head"><div><div class="mission-title">'+escapeHtml(m.titre)+'</div>'
+      + '<div class="mission-head"><div><div class="mission-title">'+escapeHtml(libelleMission(m))+'</div>'
       + '<div class="mission-when">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+' · '+escapeHtml(m.lieu)+'</div></div>'
       + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>'
       + '<div class="tags">'+poleTag(m.pole)
@@ -846,7 +923,7 @@
           + '<div class="mission-date-detail">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</div>'
           + (m.creeLe ? '<div class="mission-creele">Mission créée le '+fmtDateTime(m.creeLe)+'</div>' : '')
           + '</td>'
-          + '<td>'+escapeHtml(m.titre)+'</td>'
+          + '<td>'+escapeHtml(libelleMission(m))+'</td>'
           + '<td>'+poleTag(m.pole)+'</td>'
           + '<td>'+escapeHtml(m.lieu)+'</td>'
           + '<td><span class="'+badgeCls+'">'+badgeTxt+'</span></td>'
@@ -1391,13 +1468,47 @@
     window.print();
   }
 
+  // Impression de l'historique complet des inscriptions (réalisées / à
+  // venir / non réalisées) des bénévoles sélectionnés — volontairement
+  // séparée du bouton "Imprimer la sélection" (qui reste le tableau simple
+  // Nom/Prénom/Pôles/Heures) : chaque bénévole a ici son propre bloc, bien
+  // délimité des autres, avec le détail mission par mission.
+  function imprimerHistoriqueBenevoles(){
+    var liste = state.benevoles.filter(function(b){ return benevolesSelection[b.id]; });
+    var blocs = liste.map(function(b){
+      var inscriptions = inscriptionsDe(b.id);
+      var nbRealisees = inscriptions.filter(function(x){ return x.statut === "realisee"; }).length;
+      var nbAvenir = inscriptions.filter(function(x){ return x.statut === "avenir"; }).length;
+      var nbNonRealisees = inscriptions.filter(function(x){ return x.statut === "nonrealisee"; }).length;
+      var lignes = inscriptions.length
+        ? inscriptions.map(function(x){
+            var detail = x.statut === "realisee" ? (" · "+dureeHeures(x.mission)+" h") : "";
+            return '<tr><td>'+fmtDateCourt(x.mission.date)+'</td><td>'+escapeHtml(libelleMission(x.mission))+'</td>'
+              + '<td class="'+CLASSE_STATUT_INSCRIPTION[x.statut]+'">'+LIBELLE_STATUT_INSCRIPTION[x.statut]+detail+'</td></tr>';
+          }).join("")
+        : '<tr><td colspan="3" class="impression-vide">Aucune inscription</td></tr>';
+      return '<div class="impression-bloc-benevole">'
+        + '<h3>'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</h3>'
+        + '<div class="impression-resume">'+nbRealisees+' réalisée(s) · '+nbAvenir+' à venir · '+nbNonRealisees+' non réalisée(s)</div>'
+        + '<table><thead><tr><th>Date</th><th>Mission</th><th>Statut</th></tr></thead>'
+        + '<tbody>'+lignes+'</tbody></table>'
+        + '</div>';
+    }).join("");
+    document.getElementById("impression").innerHTML =
+      impressionEnteteHtml()
+      + '<h2>Historique complet des inscriptions ('+liste.length+' bénévole'+(liste.length>1?"s":"")+')</h2>'
+      + blocs
+      + impressionPiedHtml("Historique des bénévoles");
+    window.print();
+  }
+
   function imprimerSelectionMissions(){
     var liste = state.missions.filter(function(m){ return missionsSelection[m.id]; });
     var lignes = liste.map(function(m){
       var restantes = placesRestantes(m);
       var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
       var nbInscrits = inscritsDe(m.id).length;
-      return '<tr><td>'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</td><td>'+escapeHtml(m.titre)+'</td>'
+      return '<tr><td>'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</td><td>'+escapeHtml(libelleMission(m))+'</td>'
         + '<td>'+escapeHtml(m.pole||"")+'</td><td>'+escapeHtml(m.lieu)+'</td>'
         + '<td>'+badgeTxt+'</td><td>'+nbInscrits+'</td></tr>';
     }).join("");
@@ -1536,7 +1647,7 @@
         addDoc(collection(db,"affectations"), {missionId:missionIdMoi, benevoleId:moiBenevoleId, statut:"inscrit"}).then(function(){
           logHistoriquePublic(
             "inscription_publique",
-            missionPourLog ? missionPourLog.titre : missionIdMoi,
+            missionPourLog ? libelleMission(missionPourLog) : missionIdMoi,
             moiPourLog ? (moiPourLog.prenom+" "+moiPourLog.nom) : ""
           );
         }).catch(reportError);
@@ -1551,16 +1662,16 @@
       var aff = state.affectations.find(function(x){ return x.id === el.getAttribute("data-id"); });
       var mm = aff ? missionById(aff.missionId) : null;
       var bb = aff ? benevoleById(aff.benevoleId) : null;
-      if(!confirm("Retirer l'inscription de " + (bb?(bb.prenom+" "+bb.nom):"ce bénévole") + (mm?(" à la mission « "+mm.titre+" »"):"") + " ?")) return;
+      if(!confirm("Retirer l'inscription de " + (bb?(bb.prenom+" "+bb.nom):"ce bénévole") + (mm?(" à la mission « "+libelleMission(mm)+" »"):"") + " ?")) return;
       deleteDoc(doc(db,"affectations", el.getAttribute("data-id"))).then(function(){
-        logHistorique("suppression_inscription", (bb?bb.prenom+" "+bb.nom:"") + (mm?" — "+mm.titre:""));
+        logHistorique("suppression_inscription", (bb?bb.prenom+" "+bb.nom:"") + (mm?" — "+libelleMission(mm):""));
       }).catch(reportError);
     }
     else if(action==="delete-mission"){
       var mDel = missionById(el.getAttribute("data-id"));
-      if(!confirm("Supprimer définitivement la mission « " + (mDel?mDel.titre:"") + " » ? Cette action est irréversible.")) return;
+      if(!confirm("Supprimer définitivement la mission « " + (mDel?libelleMission(mDel):"") + " » ? Cette action est irréversible.")) return;
       deleteDoc(doc(db,"missions", el.getAttribute("data-id"))).then(function(){
-        logHistorique("suppression_mission", mDel ? mDel.titre : "");
+        logHistorique("suppression_mission", mDel ? libelleMission(mDel) : "");
       }).catch(reportError);
     }
     else if(action==="export-json"){
@@ -1642,6 +1753,9 @@
     }
     else if(action==="imprimer-selection-benevoles"){
       imprimerSelectionBenevoles();
+    }
+    else if(action==="imprimer-historique-benevoles"){
+      imprimerHistoriqueBenevoles();
     }
     else if(action==="imprimer-selection-missions"){
       imprimerSelectionMissions();
@@ -1780,7 +1894,7 @@
       var bb = aff ? benevoleById(aff.benevoleId) : null;
       var checked = e.target.checked;
       updateDoc(doc(db,"affectations",id), {statut: checked ? "realise" : "inscrit"}).then(function(){
-        logHistorique(checked ? "validation" : "annulation_validation", (bb?bb.prenom+" "+bb.nom:"") + (mm?" — "+mm.titre:""));
+        logHistorique(checked ? "validation" : "annulation_validation", (bb?bb.prenom+" "+bb.nom:"") + (mm?" — "+libelleMission(mm):""));
       }).catch(reportError);
     }
     if(e.target.id === "import-file-input"){
@@ -1933,8 +2047,10 @@
       e.preventDefault();
       var f2 = e.target;
       var titre = f2.titre.value.trim();
+      var numeroMission = prochainNumeroMission();
       addDoc(collection(db,"missions"), {
         titre: titre,
+        numero: numeroMission,
         pole: f2.pole.value,
         date: f2.date.value,
         lieu: f2.lieu.value.trim(),
@@ -1945,7 +2061,7 @@
         creePar: moiNom,
         creeLe: serverTimestamp()
       }).then(function(){
-        logHistorique("creation_mission", titre);
+        logHistorique("creation_mission", "M"+numeroMission+" — "+titre);
         missionFormOpen = false; renderMissions();
       }).catch(reportError);
     }
@@ -2067,6 +2183,7 @@
           role = snap.data().role === "directeur" ? "directeur" : "gestionnaire";
           moiNom = snap.data().nom || "";
           attachRoleCollections();
+          completerNumerosMissions();
         } else {
           role = "public"; moiNom = "";
           detachRoleCollections();
@@ -2084,6 +2201,44 @@
 
   function sortBenevoles(){ state.benevoles.sort(function(a,b){ return (a.nom||"").localeCompare(b.nom||"") || (a.prenom||"").localeCompare(b.prenom||""); }); }
   function sortMissions(){ state.missions.sort(function(a,b){ return (a.date||"").localeCompare(b.date||"") || (a.debut||"").localeCompare(b.debut||""); }); }
+
+  function maxNumeroMission(){
+    var max = 0;
+    state.missions.forEach(function(m){ if(m.numero && m.numero > max) max = m.numero; });
+    return max;
+  }
+  function prochainNumeroMission(){
+    return maxNumeroMission() + 1;
+  }
+
+  // Rattrapage : les missions créées avant l'ajout de cette numérotation n'ont
+  // pas de champ "numero". On leur en attribue un une seule fois, à la suite
+  // du plus grand numéro déjà utilisé, dans l'ordre de création (date de
+  // création si connue, sinon date de la mission) pour rester cohérent avec
+  // les missions déjà numérotées. Seuls gestionnaire/directeur ont le droit
+  // d'écrire dans Firestore (voir les règles de sécurité) : un visiteur
+  // public ne déclenche jamais ce rattrapage. Le verrou "numerotationEnCours"
+  // évite de relancer l'opération en boucle tant que les écritures en cours
+  // n'ont pas abouti (l'écriture elle-même déclenchera un nouvel appel via
+  // onSnapshot, qui ne trouvera alors plus rien à numéroter).
+  var numerotationEnCours = false;
+  function completerNumerosMissions(){
+    if(role === "public" || numerotationEnCours) return;
+    var sansNumero = state.missions.filter(function(m){ return !m.numero; });
+    if(!sansNumero.length) return;
+    numerotationEnCours = true;
+    var base = maxNumeroMission();
+    sansNumero.sort(function(m1, m2){
+      var t1 = m1.creeLe && m1.creeLe.toMillis ? m1.creeLe.toMillis() : 0;
+      var t2 = m2.creeLe && m2.creeLe.toMillis ? m2.creeLe.toMillis() : 0;
+      if(t1 && t2) return t1 - t2;
+      return (m1.date||"").localeCompare(m2.date||"") || (m1.debut||"").localeCompare(m2.debut||"");
+    });
+    var ecritures = sansNumero.map(function(m, idx){
+      return updateDoc(doc(db,"missions", m.id), { numero: base + idx + 1 }).catch(function(){});
+    });
+    Promise.all(ecritures).then(function(){ numerotationEnCours = false; });
+  }
 
   var publicCollectionsAttached = false;
   var unsubBenevoles = null, unsubMissions = null, unsubAffectations = null, unsubParametres = null;
@@ -2104,6 +2259,7 @@
     unsubMissions = onSnapshot(collection(db,"missions"), function(snap){
       state.missions = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
       sortMissions();
+      completerNumerosMissions();
       renderAll();
     }, reportError);
 
