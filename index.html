@@ -417,6 +417,8 @@
   var authReady = false;
   var importStatus = "";
   var importError = false;
+  var reinitialisationStatus = "";
+  var reinitialisationError = false;
 
   // role: "public" | "gestionnaire" | "directeur"
   var role = "public";
@@ -442,6 +444,10 @@
   // ci-dessous — un simple bandeau au départ, le formulaire à 3 champs ne
   // s'affiche qu'au clic sur "Je m'identifie".
   var identiteFormOpen = false;
+
+  // Fenêtre "Mon historique" (demande de Jluc) : accessible une fois
+  // identifié, en lecture seule — voir monHistoriqueModaleHtml().
+  var monHistoriqueOpen = false;
 
   var unsubMoi = null;
   var unsubGestionnaires = null;
@@ -509,6 +515,19 @@
 
   function placesRestantes(mission){
     return mission.placesTotal - inscritsDe(mission.id).length;
+  }
+
+  // Une mission est "passée" dès que son heure de fin est dépassée (demande
+  // de Jluc, page de garde publique) : comparaison sur la date + l'heure de
+  // fin exactes, pas seulement sur le jour — contrairement à
+  // verifierMissionsAPasser() plus bas, qui ne bascule le statut en "À
+  // vérifier" qu'au jour près et laisse la mission du jour même "En cours"
+  // jusqu'au soir. N'affecte que l'affichage, jamais les données enregistrées.
+  function missionEstPassee(mission){
+    if(!mission || !mission.date || !mission.fin) return false;
+    var finMs = new Date(mission.date + "T" + mission.fin + ":00").getTime();
+    if(isNaN(finMs)) return false;
+    return finMs < Date.now();
   }
 
   // Pastille "places" partagée par la fiche mission et le tableau : montre
@@ -744,6 +763,17 @@
     var totalHeures = Object.keys(heuresMap).reduce(function(s,k){ return s + heuresMap[k]; }, 0);
     var aVerifier = state.missions.filter(function(m){ return statutMission(m) === "À vérifier"; }).length;
 
+    // Page de garde publique uniquement : une mission dont l'heure de fin
+    // est dépassée n'est plus proposée (demande de Jluc, voir aussi
+    // missionsAffichees dans renderMissions()) — ces deux compteurs restent
+    // donc cohérents avec la liste affichée juste en dessous, sur la même
+    // page de garde. Gestionnaire/Directeur gardent aVenir/places tels
+    // quels (calculés plus haut), sans ce filtre : voir toutes les missions
+    // incomplètes, même passées, les aide à repérer celles jamais closes.
+    var missionsNonPasseesPublic = state.missions.filter(function(m){ return !missionEstPassee(m); });
+    var aVenirPublic = missionsNonPasseesPublic.filter(function(m){ return placesRestantes(m) > 0; }).length;
+    var placesPublic = missionsNonPasseesPublic.reduce(function(s,m){ return s + Math.max(0, placesRestantes(m)); }, 0);
+
     // Chaque tuile, pour Gestionnaire/Directeur, ouvre le tableau qu'elle
     // annonce (onglet + filtre/tri déjà en place), comme pour les actions
     // dans PICS. Sans intérêt pour le public : son onglet Bénévoles ne lui
@@ -758,8 +788,8 @@
     // Directeur gardent les 4 tuiles, inchangées.
     var tuiles = role === "public"
       ? [
-          stat(aVenir, "Missions proposées incomplètes", false, "incomplet"),
-          stat(places, "Places disponibles", false, "places")
+          stat(aVenirPublic, "Missions proposées incomplètes", false, "incomplet"),
+          stat(placesPublic, "Places disponibles", false, "places")
         ]
       : [
           stat(actifs, "Bénévoles actifs", false, "actifs"),
@@ -819,10 +849,14 @@
 
   // Historique des inscriptions d'un bénévole (liste + badge "Voir la
   // mission" pour ouvrir la modale mission par-dessus) — fonction partagée
-  // entre la vue "cartes" (benevoleCardHtml) et la modale fiche bénévole
-  // (benevoleModaleHtml), comme missionInscritsSectionHtml() pour les
-  // missions.
-  function benevoleHistoriqueSectionHtml(b){
+  // entre la vue "cartes" (benevoleCardHtml), la modale fiche bénévole
+  // (benevoleModaleHtml) et la fenêtre "Mon historique" côté public
+  // (monHistoriqueModaleHtml), comme missionInscritsSectionHtml() pour les
+  // missions. sansLienMission (demande de Jluc) : masque le badge "Voir la
+  // mission", qui ouvrirait sinon la modale d'édition de mission — réservée
+  // aux Gestionnaires/Directeur, elle n'a rien à faire devant un visiteur
+  // public identifié.
+  function benevoleHistoriqueSectionHtml(b, sansLienMission){
     var inscriptions = inscriptionsDe(b.id);
     if(!inscriptions.length) return "";
 
@@ -838,7 +872,7 @@
           var detail = x.statut === "realisee" ? (" · "+dureeHeures(x.mission)+" h") : "";
           return '<li><span>'+fmtDateCourt(x.mission.date)+' — '+escapeHtml(libelleMission(x.mission))
             + ' <span class="'+CLASSE_STATUT_INSCRIPTION[x.statut]+'">('+LIBELLE_STATUT_INSCRIPTION[x.statut]+detail+')</span></span>'
-            + ' <button type="button" class="badge-voir-mission" data-action="edit-mission" data-id="'+x.mission.id+'" title="Voir / modifier cette mission">Voir la mission ↗</button></li>';
+            + (sansLienMission ? '' : ' <button type="button" class="badge-voir-mission" data-action="edit-mission" data-id="'+x.mission.id+'" title="Voir / modifier cette mission">Voir la mission ↗</button>')+'</li>';
         }).join("")
       + '</ul></div>';
   }
@@ -1197,10 +1231,15 @@
     // afficher une mission complète à quelqu'un qui ne peut pas s'y inscrire),
     // PLUS les missions où le visiteur identifié est déjà inscrit — même
     // complètes — pour qu'il retrouve toujours ses propres missions.
-    // Gestionnaires et Directeur voient tout, pour pouvoir suivre et gérer
-    // les missions déjà complètes (retirer quelqu'un, marquer les heures faites…).
+    // Sauf si l'heure de fin est dépassée (demande de Jluc) : une mission
+    // passée n'est plus proposée sur la page de garde, même si le visiteur
+    // y était inscrit — elle disparaît systématiquement dès que finie.
+    // Gestionnaires et Directeur voient tout, y compris les missions
+    // passées et déjà complètes, pour pouvoir suivre et gérer (retirer
+    // quelqu'un, marquer les heures faites…).
     var missionsAffichees = role === "public"
       ? state.missions.filter(function(m){
+          if(missionEstPassee(m)) return false;
           if(placesRestantes(m) > 0) return true;
           return moiBenevoleId && inscritsDe(m.id).some(function(a){ return a.benevoleId === moiBenevoleId; });
         })
@@ -1371,7 +1410,8 @@
       var moiIdentite = moiBenevoleId ? benevoleById(moiBenevoleId) : null;
       if(moiIdentite){
         identiteHtml = '<div class="card" style="margin-bottom:14px;"><div>Vous êtes identifié(e) comme <strong>'+escapeHtml(moiIdentite.prenom)+' '+escapeHtml(moiIdentite.nom)+'</strong>. '
-          + '<button class="link-btn" data-action="changer-identite">Ce n\'est pas vous ?</button></div></div>';
+          + '<button class="link-btn" data-action="changer-identite">Ce n\'est pas vous ?</button>'
+          + ' <button class="link-btn" data-action="open-mon-historique">Voir mon historique</button></div></div>';
       } else if(identiteFormOpen){
         // Avant : une liste déroulante de tous les bénévoles actifs — donc
         // n'importe qui pouvait s'inscrire sous le nom de n'importe qui.
@@ -1586,6 +1626,42 @@
       + formHtml + '</div></div>';
   }
 
+  // Fenêtre "Mon historique" (demande de Jluc) : version publique, en
+  // lecture seule, de benevoleModaleHtml() ci-dessus — même présentation
+  // (bandeau Actif/Inactif + heures données, puis l'historique des
+  // inscriptions), mais aucun champ modifiable, aucun bouton de suppression,
+  // et pas de lien vers la modale d'édition de mission (voir
+  // benevoleHistoriqueSectionHtml). Le bouton "Imprimer" réutilise
+  // imprimerFicheBenevole(), déjà utilisée côté Gestionnaire — même mise en
+  // page, elle s'adapte déjà à l'absence de connexion (voir
+  // impressionPiedHtml).
+  function monHistoriqueModaleHtml(){
+    var b = moiBenevoleId ? benevoleById(moiBenevoleId) : null;
+    if(!b) return "";
+    var heuresMap = heuresParBenevole();
+    var h = Math.round((heuresMap[b.id]||0)*10)/10;
+
+    var enteteHtml = '<div class="mission-head" style="margin-bottom:10px;">'
+      + '<div class="tags">'+(b.actif
+          ? '<span class="tag" style="background:var(--success-soft);color:var(--success-soft-ink);">Actif</span>'
+          : '<span class="tag" style="background:var(--danger-soft);color:var(--danger-soft-ink);">Inactif</span>')+'</div>'
+      + '<span class="places-badge">'+h+' h données au total</span></div>';
+
+    var contenuHtml = '<form class="form">'
+      + enteteHtml
+      + '<div class="modal-section-inscrits"><div class="modal-section-titre">🗓️ HISTORIQUE DES INSCRIPTIONS</div>'
+      + (benevoleHistoriqueSectionHtml(b, true) || '<div class="benevole-contact">Aucune inscription pour l\'instant.</div>')
+      + '</div>'
+      + '<div class="form-actions"><button type="button" class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-mon-historique">🖨️ Imprimer mon historique</button>'
+      + '<button type="button" class="btn btn-ghost" data-action="cancel-mon-historique">Fermer</button></div>'
+      + '</form>';
+
+    return '<div class="modal-backdrop" data-action="close-modal-mon-historique">'
+      + '<div class="modal-box"><div class="modal-box-head"><h3>Mon historique — '+escapeHtml(b.prenom+' '+b.nom)+'</h3>'
+      + '<button type="button" class="modal-close" data-action="cancel-mon-historique" aria-label="Fermer">✕</button></div>'
+      + contenuHtml + '</div></div>';
+  }
+
   function renderModal(){
     var racine = document.getElementById("modal-root");
     if(!racine) return;
@@ -1595,6 +1671,7 @@
     // l'historique d'un bénévole sans perdre sa fiche en arrière-plan.
     if(benevoleModaleOpen) html += benevoleModaleHtml();
     if(missionFormOpen) html += missionFormModalHtml();
+    if(monHistoriqueOpen) html += monHistoriqueModaleHtml();
     racine.innerHTML = html;
   }
 
@@ -1624,7 +1701,8 @@
     reactivation_gestionnaire: "Gestionnaire réactivé",
     modification_email_candidature: "Email de candidature modifié",
     import_donnees: "Données importées",
-    inscription_publique: "Inscription publique à une mission"
+    inscription_publique: "Inscription publique à une mission",
+    reinitialisation_application: "Application réinitialisée"
   };
 
   // Libellé du rôle affiché dans la colonne "Par" de l'historique. Ajouté
@@ -1790,6 +1868,19 @@
       + '<div><input type="file" id="import-file-input" accept="application/json" hidden>'
       + '<button class="btn" data-action="import-json">Importer des données (JSON)</button></div>'
       + (importStatus ? '<div class="'+(importError?"msg-error":"msg-ok")+'" style="margin-top:6px;">'+escapeHtml(importStatus)+'</div>' : '')
+      + '</div>'
+      // Réservé au Directeur comme le reste de cet onglet (voir
+      // updateTabsVisibility). Ne touche jamais aux comptes Gestionnaire/
+      // Directeur ni aux pôles/statuts : même exception que pour l'import
+      // ci-dessus, ce sont de vrais comptes de connexion / de la
+      // configuration, pas des données à réinitialiser (demande de Jluc).
+      + '<div class="card" style="max-width:520px;margin-top:14px;">'
+      + '<div class="benevole-name">Réinitialiser l\'application</div>'
+      + '<div class="benevole-contact">Supprime définitivement tous les bénévoles, missions, inscriptions et candidatures — par exemple pour repartir d\'une base vide après une démonstration. '
+      + 'L\'historique des actions est aussi vidé si les règles de sécurité Firestore l\'autorisent (sur certaines bases, il est protégé contre la suppression pour rester un journal fiable — le message après réinitialisation précise ce qui a effectivement été fait). '
+      + 'Les comptes Gestionnaire/Directeur et la configuration (pôles, statuts) sont conservés. Pensez à exporter une copie avant (bouton ci-dessus) si vous voulez pouvoir revenir en arrière.</div>'
+      + '<div><button type="button" class="btn-danger-ghost" data-action="reinitialiser-application">Réinitialiser l\'application</button></div>'
+      + (reinitialisationStatus ? '<div class="'+(reinitialisationError?"msg-error":"msg-ok")+'" style="margin-top:6px;">'+escapeHtml(reinitialisationStatus)+'</div>' : '')
       + '</div>';
   }
 
@@ -2228,7 +2319,9 @@
       moiBenevoleId = null;
       sauvegarderMoiBenevoleId(null);
       identiteFormOpen = false;
+      monHistoriqueOpen = false;
       renderMissions();
+      renderModal();
     }
     else if(action==="open-identite"){
       identiteFormOpen = true;
@@ -2238,6 +2331,20 @@
       identiteFormOpen = false;
       identiteError = "";
       renderMissions();
+    }
+    else if(action==="open-mon-historique"){
+      monHistoriqueOpen = true;
+      renderModal();
+    }
+    else if(action==="cancel-mon-historique"){
+      monHistoriqueOpen = false;
+      renderModal();
+    }
+    else if(action==="close-modal-mon-historique"){
+      if(e.target === el){ monHistoriqueOpen = false; renderModal(); }
+    }
+    else if(action==="imprimer-mon-historique"){
+      if(moiBenevoleId) imprimerFicheBenevole(moiBenevoleId);
     }
     else if(action==="retirer"){
       var aff = state.affectations.find(function(x){ return x.id === el.getAttribute("data-id"); });
@@ -2303,6 +2410,9 @@
     else if(action==="import-json"){
       var fileInput = document.getElementById("import-file-input");
       if(fileInput) fileInput.click();
+    }
+    else if(action==="reinitialiser-application"){
+      reinitialiserApplication();
     }
     else if(action==="trier-historique"){
       historiqueTri = el.getAttribute("data-tri");
@@ -2782,6 +2892,99 @@
     }).catch(function(err){
       importStatus = "Erreur pendant l'import : " + (err && err.message ? err.message : err);
       importError = true;
+      renderDonnees();
+    });
+  }
+
+  // Réinitialisation complète (demande de Jluc) : supprime les données d'une
+  // exploitation réelle (bénévoles, missions, inscriptions, candidatures)
+  // pour repartir d'une base vide — typiquement après une démonstration
+  // faite avec le jeu de données fictif. Ne touche JAMAIS aux comptes
+  // Gestionnaire/Directeur (de vrais accès de connexion, voir
+  // importerDonnees ci-dessus) ni à la configuration (pôles, statuts).
+  // Confirmation par saisie d'un mot exact plutôt qu'un simple confirm() :
+  // vu l'ampleur (tout est supprimé d'un coup, contrairement à "Supprimer
+  // la mission"/"Supprimer la fiche" qui ne touchent qu'un seul
+  // enregistrement), une case à cliquer trop vite ne suffit pas comme
+  // protection.
+  //
+  // L'historique est traité À PART, en "best effort" (essai indépendant,
+  // erreur par élément ignorée) : sur la base réelle de Jluc, les règles de
+  // sécurité Firestore refusent la suppression des entrées d'historique
+  // (erreur "Missing or insufficient permissions" observée le 19/09/2026),
+  // très probablement volontaire pour garder un journal d'actions
+  // infalsifiable — aucun autre bouton de l'appli ne supprime de
+  // l'historique. Le regrouper avec bénévoles/missions/affectations/
+  // candidatures dans un seul Promise.all faisait échouer TOUTE la
+  // réinitialisation (y compris la partie qui, elle, fonctionne) dès que
+  // Firestore refusait ne serait-ce qu'une seule des suppressions
+  // d'historique. Désormais, un refus sur l'historique n'empêche plus le
+  // reste d'aboutir, et le message final dit précisément ce qui a été fait.
+  function reinitialiserApplication(){
+    var saisie = prompt(
+      "Ceci va supprimer DÉFINITIVEMENT tous les bénévoles, missions, inscriptions "
+      + "et candidatures. Les comptes Gestionnaire/Directeur et la configuration "
+      + "(pôles, statuts) sont conservés. L'historique des actions sera aussi vidé "
+      + "si les règles de sécurité Firestore l'autorisent (sinon il reste tel quel).\n\n"
+      + "Pensez à exporter une copie avant si vous voulez pouvoir revenir en arrière "
+      + "(bouton \"Exporter horodaté\" ci-dessus).\n\n"
+      + "Pour confirmer, tapez SUPPRIMER (en majuscules) :"
+    );
+    if(saisie === null) return; // Annuler : on ne montre même pas de message, pas une vraie tentative.
+    if(saisie.trim() !== "SUPPRIMER"){
+      reinitialisationStatus = "Réinitialisation annulée : le texte tapé ne correspondait pas à « SUPPRIMER ».";
+      reinitialisationError = true;
+      renderDonnees();
+      return;
+    }
+
+    var nb = {
+      benevoles: state.benevoles.length,
+      missions: state.missions.length,
+      affectations: state.affectations.length,
+      candidatures: state.candidatures.length,
+      historique: state.historique.length
+    };
+    var suppressionsPrincipales = [];
+    state.benevoles.forEach(function(b){ suppressionsPrincipales.push(deleteDoc(doc(db,"benevoles", b.id))); });
+    state.missions.forEach(function(m){ suppressionsPrincipales.push(deleteDoc(doc(db,"missions", m.id))); });
+    state.affectations.forEach(function(a){ suppressionsPrincipales.push(deleteDoc(doc(db,"affectations", a.id))); });
+    state.candidatures.forEach(function(c){ suppressionsPrincipales.push(deleteDoc(doc(db,"candidatures", c.id))); });
+
+    // Historique : chaque suppression individuelle ignore sa propre erreur
+    // (.catch renvoyant false) au lieu de faire échouer tout le reste.
+    var nbHistoriqueSupprime = 0;
+    var suppressionsHistorique = state.historique.map(function(h){
+      return deleteDoc(doc(db,"historique", h.id))
+        .then(function(){ nbHistoriqueSupprime++; return true; })
+        .catch(function(){ return false; });
+    });
+
+    Promise.all(suppressionsPrincipales).then(function(){
+      return Promise.all(suppressionsHistorique);
+    }).then(function(){
+      reinitialisationStatus = "Application réinitialisée : " + nb.benevoles + " bénévole(s), " + nb.missions + " mission(s), "
+        + nb.affectations + " inscription(s) et " + nb.candidatures + " candidature(s) supprimées.";
+      if(nb.historique === 0){
+        reinitialisationStatus += " Aucune entrée d'historique à supprimer.";
+      } else if(nbHistoriqueSupprime === nb.historique){
+        reinitialisationStatus += " " + nbHistoriqueSupprime + " entrée(s) d'historique supprimée(s).";
+      } else if(nbHistoriqueSupprime === 0){
+        reinitialisationStatus += " L'historique des actions (" + nb.historique + " entrée(s)) n'a PAS pu être supprimé : "
+          + "les règles de sécurité Firestore ne l'autorisent pas (probablement volontaire, pour garder un journal fiable).";
+      } else {
+        reinitialisationStatus += " " + nbHistoriqueSupprime + " sur " + nb.historique + " entrée(s) d'historique supprimée(s), le reste refusé par les règles de sécurité.";
+      }
+      reinitialisationError = false;
+      // Journalisée après coup (création, jamais bloquée par les mêmes
+      // règles que la suppression) : garde une trace de quand et par qui la
+      // réinitialisation a été faite, même si l'historique n'a pas pu être
+      // vidé lui-même.
+      logHistorique("reinitialisation_application", reinitialisationStatus);
+      renderDonnees();
+    }).catch(function(err){
+      reinitialisationStatus = "Erreur pendant la réinitialisation : " + (err && err.message ? err.message : err) + " (une partie a peut-être déjà été supprimée).";
+      reinitialisationError = true;
       renderDonnees();
     });
   }
