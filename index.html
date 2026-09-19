@@ -43,10 +43,15 @@
   :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important;}}
 
-  .shell{max-width:920px;margin:0 auto;padding:0 16px 72px;}
+  /* Largeur élargie de 920px à 1280px (demande de Jluc, le 920px coupait
+     les colonnes des tableaux, ex. "Places"). C'est un max-width, pas une
+     largeur fixe : sur un écran plus étroit que 1280px (mobile compris),
+     le contenu reste toujours à 100% de l'écran (moins le padding) comme
+     avant — rien ne change sur portable. */
+  .shell{max-width:1280px;margin:0 auto;padding:0 16px 72px;}
 
   .hero-wrap{background:var(--accent-deep);color:#fff;}
-  .hero-inner{max-width:920px;margin:0 auto;padding:22px 16px 26px;}
+  .hero-inner{max-width:1280px;margin:0 auto;padding:22px 16px 26px;}
   .eyebrow{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.75);font-weight:700;}
   .title{font-size:clamp(1.5rem,3.4vw,2rem);margin-top:6px;color:#fff;}
   .subtitle{color:rgba(255,255,255,.82);max-width:60ch;margin-top:8px;font-size:.92rem;}
@@ -69,6 +74,11 @@
 
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:20px;}
   .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);border-left:4px solid var(--accent);}
+  .stat-clic{cursor:pointer;}
+  .stat-clic:hover,.stat-clic:focus-visible{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);outline:none;}
+  .stat-alerte{border-left-color:var(--warm);}
+  .stat-alerte .stat-value{color:var(--warm);}
+  .mission-a-pointer{background:var(--warm-soft);color:var(--warm-soft-ink);border:1px solid var(--warm);border-radius:8px;padding:6px 10px;font-size:.85rem;font-weight:600;margin:8px 0;}
   .stat-value{font-family:"Fraunces",serif;font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);}
   .stat-label{color:var(--ink-soft);font-size:.82rem;margin-top:2px;}
 
@@ -114,6 +124,32 @@
   .form-actions{display:flex;gap:10px;margin-top:6px;align-items:center;flex-wrap:wrap;}
   .form-hint{color:var(--ink-faint);font-size:.8rem;}
 
+  /* Modale (ex. formulaire "Créer/Modifier une mission") : par-dessus le
+     reste de l'écran, pour ne pas perdre sa place dans le tableau en
+     modifiant une ligne (demande de Jluc). */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(44,44,42,.55);display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow-y:auto;z-index:100;}
+  /* Modale de gestion de mission : bandeau de titre coloré, plein bord, à
+     la manière des modales de gestion de PICS (demande de Jluc) — plus
+     agréable qu'un simple titre noir sur fond blanc. */
+  .modal-box{background:var(--surface);border-radius:var(--radius);box-shadow:0 16px 48px rgba(0,0,0,.28);max-width:760px;width:100%;margin:auto;overflow:hidden;}
+  .modal-box .form{margin:20px 24px 24px;}
+  .modal-box-head{display:flex;justify-content:space-between;align-items:center;background:var(--accent-deep);color:#fff;padding:16px 24px;}
+  .modal-box-head h3{margin:0;font-family:"Fraunces",Georgia,serif;font-size:1.3rem;}
+  .modal-close{background:rgba(255,255,255,.16);border:none;font-size:1.05rem;line-height:1;color:#fff;cursor:pointer;padding:7px 11px;border-radius:999px;}
+  .modal-close:hover{background:rgba(255,255,255,.32);color:#fff;}
+  /* Champs "colorés" : label en couleur + bordure/fond assortis, pour
+     repérer d'un coup d'œil le pôle, le statut... (même esprit que les
+     fiches colorées de PICS). --fc / --fc-soft sont fixés en style inline
+     par missionChampHtml/missionSelectChampHtml selon le champ. */
+  .field.champ-colore label{color:var(--fc);font-weight:700;}
+  .field.champ-colore input,.field.champ-colore select,.field.champ-colore textarea{border:2px solid var(--fc);background:var(--fc-soft);}
+  .field.champ-colore input:focus,.field.champ-colore select:focus,.field.champ-colore textarea:focus{outline:2px solid var(--fc);outline-offset:1px;}
+  /* Section "Inscrits" en bas de la modale : même codes visuels que les
+     rubriques "Réunion liée / NC liée / Document lié" de PICS (icône +
+     titre en majuscules coloré, séparé par un filet). */
+  .modal-section-inscrits{border-top:1px solid var(--line);margin-top:16px;padding-top:14px;}
+  .modal-section-titre{font-size:.78rem;font-weight:700;letter-spacing:.03em;color:var(--accent-deep);text-transform:uppercase;margin-bottom:8px;}
+
   .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:10px;}
 
@@ -135,31 +171,54 @@
   /* Impression des lignes sélectionnées (Bénévoles / Missions) : le
      contenu de #impression est construit en JS juste avant window.print(),
      et n'est affiché que sur papier (voir @media print ci-dessous). Mise en
-     page calquée sur celle de PICS (entête, trait bleu, tableau, signature
-     horodatée en pied de page). */
+     page inspirée de PICS : entête avec pictogramme + nom d'appli, trait
+     coloré épais, titre de section coloré, tableau resserré, signature
+     horodatée en pied de page. Le tout pensé concis : pas de ligne ou de
+     tableau vide, une seule couleur d'accent reprise partout. */
   #impression{display:none;}
   #impression .impression-entete{display:flex;justify-content:space-between;align-items:flex-start;}
-  #impression .impression-titre-app{font-family:"Fraunces",serif;font-weight:700;font-size:1.4rem;color:var(--accent-deep);}
-  #impression .impression-soustitre{color:var(--ink-soft);font-size:.85rem;margin-top:2px;}
-  #impression .impression-date{font-size:.95rem;color:var(--ink);white-space:nowrap;}
-  #impression .impression-trait{height:3px;background:var(--accent);margin:10px 0 20px;border:none;}
-  #impression h2{margin:0 0 14px;font-size:1.05rem;color:var(--ink);}
-  #impression table{width:100%;border-collapse:collapse;font-size:.85rem;}
-  #impression thead th{background:#f4f2ee;color:var(--ink-faint);text-transform:uppercase;font-size:.7rem;letter-spacing:.03em;text-align:left;padding:8px 10px;border-bottom:2px solid #ddd;}
-  #impression tbody td{padding:9px 10px;border-bottom:1px solid #eee;text-align:left;}
-  #impression .impression-pied{display:flex;justify-content:space-between;align-items:flex-end;margin-top:32px;padding-top:12px;border-top:1px solid #ddd;font-size:.8rem;color:var(--ink-soft);}
+  #impression .impression-titre-app{font-family:"Fraunces",serif;font-weight:700;font-size:1.5rem;color:var(--accent-deep);}
+  /* font-family:initial pour que le pictogramme reste en emoji couleur —
+     sans ça, il hérite de la police serif du titre, qui n'a pas de glyphe
+     couleur pour les emojis et l'affiche en contour noir et blanc. */
+  #impression .impression-titre-app .impression-logo{margin-right:6px;font-family:initial;}
+  #impression .impression-soustitre{color:var(--ink-soft);font-size:.82rem;margin-top:2px;}
+  #impression .impression-date{font-size:.9rem;color:var(--ink-soft);white-space:nowrap;}
+  #impression .impression-trait{height:3px;background:var(--accent-deep);margin:10px 0 18px;border:none;}
+  #impression h2{margin:0 0 12px;font-size:1.25rem;font-weight:700;color:var(--accent-deep);}
+  #impression table{width:100%;border-collapse:collapse;font-size:.83rem;}
+  #impression thead th{background:#f4f2ee;color:var(--ink-faint);text-transform:uppercase;font-size:.68rem;letter-spacing:.03em;text-align:left;padding:7px 10px;border-bottom:2px solid #ddd;}
+  #impression tbody td{padding:7px 10px;border-bottom:1px solid #eee;text-align:left;}
+  #impression tbody td.impression-col-principale{font-weight:700;color:var(--ink);}
+  #impression .impression-alerte{color:var(--danger);font-weight:700;white-space:nowrap;}
+  #impression .impression-pied{display:flex;justify-content:space-between;align-items:flex-end;margin-top:24px;padding-top:10px;border-top:1px solid #ddd;font-size:.78rem;color:var(--ink-soft);}
   /* Impression de l'historique par bénévole (imprimerHistoriqueBenevoles) :
      un bloc par bénévole, bien séparé du suivant par un trait et un espace,
-     et qui évite de couper une fiche en deux entre deux pages. */
-  #impression .impression-bloc-benevole{margin-top:26px;padding-top:16px;border-top:2px solid #ddd;page-break-inside:avoid;}
+     et qui évite de couper une fiche en deux entre deux pages. Concision :
+     un bénévole sans aucune inscription tient sur une ligne de texte, pas
+     un tableau vide (voir imprimerHistoriqueBenevoles). */
+  #impression .impression-bloc-benevole{margin-top:18px;padding-top:14px;border-top:1px solid #ddd;page-break-inside:avoid;}
   #impression .impression-bloc-benevole:first-of-type{margin-top:0;padding-top:0;border-top:none;}
-  #impression .impression-bloc-benevole h3{margin:0 0 4px;font-size:1rem;color:var(--ink);}
-  #impression .impression-resume{font-size:.85rem;color:var(--ink-soft);margin-bottom:8px;}
-  #impression .impression-vide{color:var(--ink-faint);text-align:center;font-style:italic;}
+  #impression .impression-bloc-benevole h3{margin:0 0 3px;font-size:.95rem;color:var(--ink);}
+  #impression .impression-resume{font-size:.82rem;color:var(--ink-soft);margin-bottom:6px;}
+  #impression .impression-vide{color:var(--ink-faint);font-style:italic;font-size:.85rem;}
+  /* Historique des actions, présenté façon "PICS" en journal chronologique
+     (bandeau coloré à gauche) plutôt qu'en tableau — plus lisible qu'une
+     grille de colonnes pour une suite d'évènements. */
+  #impression .impression-evenement{border-left:3px solid var(--accent); padding:2px 0 10px 12px; margin-bottom:10px; page-break-inside:avoid;}
+  #impression .impression-evenement:last-child{margin-bottom:0;}
+  #impression .impression-evenement-date{font-size:.75rem;color:var(--ink-faint);}
+  #impression .impression-evenement-action{font-weight:700;color:var(--ink);font-size:.92rem;margin:1px 0;}
+  #impression .impression-evenement-detail{font-size:.85rem;color:var(--ink-soft);}
+  /* Sous-titre de section dans une fiche imprimée (ex. "Historique des
+     réalisations" sur la fiche bénévole) — même traitement que le titre
+     "Historique des échanges" de PICS : gras, coloré, souligné. */
+  #impression h3.impression-sous-titre{margin:22px 0 10px;font-size:1.05rem;font-weight:700;color:var(--accent-deep);padding-bottom:6px;border-bottom:2px solid var(--accent-deep);}
   @media print{
+    body{background:#fff;}
     body *{visibility:hidden;}
     #impression,#impression *{visibility:visible;}
-    #impression{display:block;position:absolute;top:0;left:0;width:100%;padding:20px 24px;}
+    #impression{display:block;position:absolute;top:0;left:0;width:100%;padding:20px 24px;background:#fff;}
   }
   .tags{display:flex;flex-wrap:wrap;gap:6px;}
   .tag{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:var(--accent-soft-ink);border-radius:999px;padding:4px 10px;font-size:.76rem;font-weight:600;}
@@ -169,8 +228,12 @@
   .benevole-missions{border-top:1px solid var(--line);margin-top:10px;padding-top:8px;}
   .benevole-missions-titre{font-weight:600;font-size:.82rem;margin-bottom:2px;}
   .benevole-missions-resume{font-size:.78rem;color:var(--ink-soft);margin-bottom:6px;}
-  .benevole-missions-liste{margin:0;padding-left:18px;font-size:.84rem;color:var(--ink-soft);max-height:150px;overflow-y:auto;}
-  .benevole-missions-liste li{margin-bottom:2px;}
+  .benevole-missions-liste{margin:0;padding-left:0;list-style:none;font-size:.84rem;color:var(--ink-soft);max-height:170px;overflow-y:auto;}
+  .benevole-missions-liste li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+  /* Badge bleu bien visible (demande de Jluc) : un vrai bouton, pas juste
+     un lien discret, pour que ce soit évident qu'on peut cliquer dessus. */
+  .badge-voir-mission{display:inline-flex;align-items:center;gap:4px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;padding:3px 11px;font-size:.74rem;font-weight:700;white-space:nowrap;cursor:pointer;flex-shrink:0;}
+  .badge-voir-mission:hover,.badge-voir-mission:focus-visible{background:var(--accent-deep);outline:none;}
   .statut-realisee{color:var(--success-soft-ink);font-weight:600;}
   .statut-avenir{color:var(--accent-soft-ink);font-weight:600;}
   .statut-nonrealisee{color:var(--danger);font-weight:600;}
@@ -180,8 +243,18 @@
   .mission-when{color:var(--ink-soft);font-size:.85rem;margin-top:2px;}
   .mission-meta{color:var(--ink-faint);font-size:.78rem;}
   .places-badge{font-variant-numeric:tabular-nums;font-size:.78rem;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent-soft-ink);white-space:nowrap;}
+  .mission-id-badge{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent-soft-ink);vertical-align:middle;margin-left:4px;}
   .places-badge.low{background:var(--danger-soft);color:var(--danger);}
+  .statut-tag{display:inline-flex;align-items:center;border-radius:999px;padding:4px 10px;font-size:.76rem;font-weight:600;white-space:nowrap;}
+  .statut-tag.statut-accent{background:var(--accent-soft);color:var(--accent-soft-ink);}
+  .statut-tag.statut-warm{background:var(--warm-soft);color:var(--warm-soft-ink);}
+  .statut-tag.statut-success{background:var(--success-soft);color:var(--success-soft-ink);}
+  .statut-tag.statut-danger{background:var(--danger-soft);color:var(--danger);}
   .mission-desc{color:var(--ink-soft);font-size:.88rem;}
+  /* Note interne (gestionnaires/Directeur uniquement, jamais visible du
+     public) — fond distinct de la description pour bien la repérer. */
+  .mission-commentaires{background:var(--surface-2);border-radius:8px;padding:8px 10px;font-size:.85rem;color:var(--ink-soft);margin-top:8px;white-space:pre-wrap;}
+  .mission-commentaires strong{color:var(--ink);}
 
   .inscrits-list{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px;}
   .inscrit-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.86rem;}
@@ -206,6 +279,13 @@
   .bar-fill{height:100%;background:var(--accent);}
   .table-scroll{overflow-x:auto;}
   .mission-row{cursor:pointer;}
+  /* Couleur pastel de la ligne selon le statut de la mission, même palette
+     que les badges de statut (statutTag) : accent=bleu, warm=orange,
+     success=vert, danger=rouge. */
+  .mission-row.statut-accent td{background:var(--accent-soft);}
+  .mission-row.statut-warm td{background:var(--warm-soft);}
+  .mission-row.statut-success td{background:var(--success-soft);}
+  .mission-row.statut-danger td{background:var(--danger-soft);}
   .mission-row:hover td{background:var(--surface-2);}
   .mission-row.active td{background:var(--accent-soft);}
   .mission-row .tri-arrow{color:var(--ink-soft);display:inline-block;width:.9em;}
@@ -224,6 +304,27 @@
   .footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:.8rem;}
 
   [hidden]{display:none !important;}
+
+  /* Cartes plus compactes sur téléphone (demande de Jluc) : marges,
+     espacements et tailles de police resserrés pour voir plus de missions
+     à l'écran sans faire défiler, sans retirer aucune information — rien
+     ne change au-delà de 640px de large (tablette/ordinateur inchangés). */
+  @media (max-width: 640px){
+    .card-grid{gap:10px;}
+    .card{padding:12px;gap:6px;}
+    .mission-head{gap:8px;}
+    .mission-title{font-size:1rem;}
+    .mission-when{font-size:.8rem;margin-top:0;}
+    .mission-desc{font-size:.84rem;}
+    .tags{gap:4px;}
+    .tag,.places-badge{padding:3px 8px;font-size:.72rem;}
+    .mission-commentaires{padding:6px 8px;margin-top:4px;}
+    .inscrits-list{gap:4px;padding-top:8px;}
+    .inscrit-row{font-size:.82rem;}
+    .avatar{width:22px;height:22px;font-size:.65rem;}
+    .inscrire-row{margin-top:0;}
+    .card-footrow{font-size:.8rem;}
+  }
 </style>
 </head>
 <body>
@@ -246,7 +347,6 @@
   <div class="tabs" role="tablist" aria-label="Sections">
     <button class="tab" role="tab" data-tab="benevoles" aria-selected="false">Bénévoles</button>
     <button class="tab" role="tab" data-tab="missions" aria-selected="true">Missions</button>
-    <button class="tab" role="tab" data-tab="heures" aria-selected="false">Heures données</button>
     <button class="tab" role="tab" data-tab="historique" aria-selected="false" hidden>Historique</button>
     <button class="tab" role="tab" data-tab="equipe" aria-selected="false" hidden>Équipe</button>
     <button class="tab" role="tab" data-tab="candidatures" aria-selected="false" hidden>Candidatures</button>
@@ -256,7 +356,6 @@
 
   <section class="panel" id="panel-benevoles" role="tabpanel" hidden></section>
   <section class="panel" id="panel-missions" role="tabpanel"></section>
-  <section class="panel" id="panel-heures" role="tabpanel" hidden></section>
   <section class="panel" id="panel-historique" role="tabpanel" hidden></section>
   <section class="panel" id="panel-equipe" role="tabpanel" hidden></section>
   <section class="panel" id="panel-candidatures" role="tabpanel" hidden></section>
@@ -267,6 +366,13 @@
 </div>
 
 <div id="impression"></div>
+
+<!-- Racine des modales "mission" (voir / modifier), en dehors des onglets
+     (panel-*) : elles doivent pouvoir s'afficher par-dessus n'importe quel
+     onglet (ex. depuis la fiche d'un bénévole, sans quitter l'onglet
+     Bénévoles), donc pas question de les mettre dans un panel qui peut
+     être "hidden". Voir renderModal(). -->
+<div id="modal-root"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
@@ -298,8 +404,15 @@
 
   var POLES = ["Accueil","Ateliers","Numérique (EPN)","Événements","Communication","Logistique"];
   var POLE_HUES = {"Accueil":150,"Ateliers":28,"Numérique (EPN)":205,"Événements":340,"Communication":260,"Logistique":45};
+  // Cycle de vie d'une mission, décidé par Jluc : le premier statut de la
+  // liste est celui donné par défaut à toute nouvelle mission. Modifiable
+  // dans Paramètres, comme les pôles. "Non effectuée" est mis à la main par
+  // le/la gestionnaire (jamais automatiquement) une fois qu'il/elle a
+  // vérifié qu'une mission "À vérifier" n'a en fait pas eu lieu.
+  var STATUTS_MISSIONS = ["En cours","À vérifier","Terminée","Non effectuée"];
+  var STATUT_COULEUR = {"En cours":"accent","À vérifier":"warm","Terminée":"success","Non effectuée":"danger"};
 
-  var state = { benevoles: [], missions: [], affectations: [], gestionnaires: [], historique: [], candidatures: [], poles: POLES.slice(), emailCandidature: "" };
+  var state = { benevoles: [], missions: [], affectations: [], gestionnaires: [], historique: [], candidatures: [], poles: POLES.slice(), statutsMissions: STATUTS_MISSIONS.slice() };
   var currentTab = "missions";
   var authReady = false;
   var importStatus = "";
@@ -324,6 +437,11 @@
   }
   var moiBenevoleId = chargerMoiBenevoleId();
   var identiteError = "";
+  // Formulaire d'identification replié par défaut (demande de Jluc, pour
+  // gagner de la place sur téléphone) : même principe que candidatureFormOpen
+  // ci-dessous — un simple bandeau au départ, le formulaire à 3 champs ne
+  // s'affiche qu'au clic sur "Je m'identifie".
+  var identiteFormOpen = false;
 
   var unsubMoi = null;
   var unsubGestionnaires = null;
@@ -376,6 +494,15 @@
     return Math.round(d*10)/10;
   }
 
+  // Même calcul que dureeHeures, mais à partir de deux chaînes "HH:MM"
+  // brutes (utilisé dans la modale mission pour l'affichage en direct,
+  // avant même que la mission soit enregistrée) — renvoie "–" tant que les
+  // deux heures ne sont pas encore renseignées.
+  function calculDureeAffichage(debut, fin){
+    if(!debut || !fin) return "–";
+    return dureeHeures({debut:debut, fin:fin}) + " h";
+  }
+
   function inscritsDe(missionId){
     return state.affectations.filter(function(a){ return a.missionId === missionId; });
   }
@@ -383,6 +510,39 @@
   function placesRestantes(mission){
     return mission.placesTotal - inscritsDe(mission.id).length;
   }
+
+  // Pastille "places" partagée par la fiche mission et le tableau : montre
+  // toujours le nombre d'inscrits ET le nombre de places prévues au
+  // départ (ex. "1 / 2 places"), pas seulement ce qu'il reste — c'est ce
+  // qui manquait dans le tableau (demande de Jluc).
+  function placesBadgeHtml(mission){
+    var nbInscrits = inscritsDe(mission.id).length;
+    var restantes = placesRestantes(mission);
+    var cls = "places-badge" + (restantes <= 0 ? " low" : "");
+    return '<span class="'+cls+'">'+nbInscrits+' / '+mission.placesTotal+' places</span>';
+  }
+
+  // Statut d'une mission ("En cours" / "À vérifier" / "Terminée" /
+  // "Non effectuée" par défaut, personnalisable dans Paramètres) : modifié
+  // à la main par le/la gestionnaire, SAUF le passage automatique
+  // "En cours" → "À vérifier" une fois la date dépassée (voir
+  // verifierMissionsAPasser plus bas) — "Non effectuée" reste, lui,
+  // toujours un choix manuel après vérification. Une mission créée avant
+  // l'ajout de cette fonctionnalité n'a pas encore de champ "statut" en
+  // base : on lui affiche alors le premier statut de la liste, sans jamais
+  // réécrire la mission elle-même (aucune migration silencieuse en base).
+  function statutMission(m){
+    var s = (m && m.statut) || state.statutsMissions[0] || "En cours";
+    // "Terminées" (ancien libellé, au pluriel) est réaffiché "Terminée" : les
+    // missions déjà enregistrées en base avec l'ancien texte ne sont jamais
+    // réécrites (aucune migration silencieuse), seul l'affichage est corrigé.
+    return s === "Terminées" ? "Terminée" : s;
+  }
+  function statutTag(statut){
+    var couleur = STATUT_COULEUR[statut] || "accent";
+    return '<span class="statut-tag statut-'+couleur+'">'+escapeHtml(statut)+'</span>';
+  }
+  function aujourdhuiIso(){ return new Date().toISOString().slice(0,10); }
 
   function benevoleById(id){
     return state.benevoles.find(function(b){ return b.id === id; });
@@ -430,6 +590,45 @@
       + '</select></div>';
   }
 
+  // Même principe pour le statut des missions (voir statutsMissions dans
+  // Paramètres) — utilisé uniquement dans l'onglet Missions (le statut n'a
+  // pas de sens pour les bénévoles ou les heures données).
+  function selectFiltreStatutHtml(id, valeurActuelle){
+    return '<div class="field" style="max-width:220px;margin-bottom:14px;"><label for="'+id+'">Filtrer par statut</label>'
+      + '<select id="'+id+'"><option value="">Tous les statuts</option>'
+      + state.statutsMissions.map(function(s){ return '<option value="'+escapeHtml(s)+'"'+(s===valeurActuelle?' selected':'')+'>'+escapeHtml(s)+'</option>'; }).join("")
+      + '</select></div>';
+  }
+
+  // Filtre "État" des bénévoles (Actifs / Inactifs) — utilisé dans l'onglet
+  // Bénévoles, et par la tuile "Bénévoles actifs" du tableau de bord.
+  function selectFiltreEtatBenevoleHtml(id, valeurActuelle){
+    return '<div class="field" style="max-width:190px;margin-bottom:14px;"><label for="'+id+'">Filtrer par état</label>'
+      + '<select id="'+id+'"><option value="">Tous</option>'
+      + '<option value="actif"'+(valeurActuelle==="actif"?' selected':'')+'>Actifs seulement</option>'
+      + '<option value="inactif"'+(valeurActuelle==="inactif"?' selected':'')+'>Inactifs seulement</option>'
+      + '</select></div>';
+  }
+
+  // Filtre "Disponibilité" des missions (places restantes ou non) — utilisé
+  // dans l'onglet Missions, et par les tuiles "Missions proposées
+  // incomplètes" et "Places disponibles" du tableau de bord.
+  function selectFiltreDispoMissionHtml(id, valeurActuelle){
+    return '<div class="field" style="max-width:210px;margin-bottom:14px;"><label for="'+id+'">Filtrer par disponibilité</label>'
+      + '<select id="'+id+'"><option value="">Toutes</option>'
+      + '<option value="incomplete"'+(valeurActuelle==="incomplete"?' selected':'')+'>Incomplètes (places libres)</option>'
+      + '<option value="complete"'+(valeurActuelle==="complete"?' selected':'')+'>Complètes</option>'
+      + '</select></div>';
+  }
+
+  // Bouton "Supprimer tous les filtres", identique dans les onglets qui
+  // ont de la recherche/des filtres (Bénévoles, Missions). Grisé quand rien
+  // n'est filtré, pour ne pas laisser croire qu'il y a quelque chose à
+  // réinitialiser.
+  function btnSupprimerFiltres(action, actif){
+    return '<button type="button" class="btn btn-ghost btn-sm" data-action="'+action+'" style="align-self:flex-end;margin-bottom:14px;" '+(actif?'':'disabled')+'>Supprimer tous les filtres</button>';
+  }
+
   function heuresParBenevole(){
     var map = {};
     state.benevoles.forEach(function(b){ map[b.id] = 0; });
@@ -466,6 +665,31 @@
       })
       .filter(function(x){ return !!x; })
       .sort(function(x1, x2){ return (x2.mission.date||"").localeCompare(x1.mission.date||""); });
+  }
+
+  // Même principe qu'inscriptionsDe(), mais côté mission : pour une mission
+  // donnée, la liste de ses bénévoles inscrits avec leur statut (réalisée /
+  // à venir / non réalisée), triée par Nom — utilisée pour la fiche mission
+  // imprimable (voir imprimerFicheMission).
+  function inscritsAvecStatutDe(missionId){
+    var m = missionById(missionId);
+    var aujourdhuiIso = new Date().toISOString().slice(0,10);
+    return state.affectations
+      .filter(function(a){ return a.missionId === missionId; })
+      .map(function(a){
+        var b = benevoleById(a.benevoleId);
+        if(!b) return null;
+        var statut;
+        if(a.statut === "realise") statut = "realisee";
+        else if(m && m.date && m.date >= aujourdhuiIso) statut = "avenir";
+        else statut = "nonrealisee";
+        return {benevole: b, statut: statut};
+      })
+      .filter(function(x){ return !!x; })
+      .sort(function(x1, x2){
+        return (x1.benevole.nom||"").localeCompare(x2.benevole.nom||"", "fr", {sensitivity:"base"})
+          || (x1.benevole.prenom||"").localeCompare(x2.benevole.prenom||"", "fr", {sensitivity:"base"});
+      });
   }
 
   function logHistorique(action, cible){
@@ -518,16 +742,47 @@
     var places = state.missions.reduce(function(s,m){ return s + Math.max(0, placesRestantes(m)); }, 0);
     var heuresMap = heuresParBenevole();
     var totalHeures = Object.keys(heuresMap).reduce(function(s,k){ return s + heuresMap[k]; }, 0);
+    var aVerifier = state.missions.filter(function(m){ return statutMission(m) === "À vérifier"; }).length;
 
-    document.getElementById("stats").innerHTML = [
-      stat(actifs, "Bénévoles actifs"),
-      stat(aVenir, "Missions proposées incomplètes"),
-      stat(places, "Places disponibles"),
-      stat((Math.round(totalHeures*10)/10) + " h", "Heures données")
-    ].join("");
+    // Chaque tuile, pour Gestionnaire/Directeur, ouvre le tableau qu'elle
+    // annonce (onglet + filtre/tri déjà en place), comme pour les actions
+    // dans PICS. Sans intérêt pour le public : son onglet Bénévoles ne lui
+    // est de toute façon pas accessible (voir updateTabsVisibility). La
+    // tuile "Heures données" ouvre l'onglet Bénévoles trié par heures.
+    //
+    // Page de garde (visiteur public, demande de Jluc) : "Bénévoles actifs"
+    // et "Heures données" sont retirées, ce sont des chiffres internes sans
+    // repère pour quelqu'un qui découvre l'appli. Ne restent que "Missions
+    // proposées incomplètes" et "Places disponibles", qui donnent tout de
+    // suite l'envie de descendre voir la liste des missions. Gestionnaire et
+    // Directeur gardent les 4 tuiles, inchangées.
+    var tuiles = role === "public"
+      ? [
+          stat(aVenir, "Missions proposées incomplètes", false, "incomplet"),
+          stat(places, "Places disponibles", false, "places")
+        ]
+      : [
+          stat(actifs, "Bénévoles actifs", false, "actifs"),
+          stat(aVenir, "Missions proposées incomplètes", false, "incomplet"),
+          stat(places, "Places disponibles", false, "places"),
+          stat((Math.round(totalHeures*10)/10) + " h", "Heures données", false, "heures")
+        ];
+    // Tuile "Missions à vérifier" : réservé à Gestionnaire/Directeur (c'est
+    // une tâche à faire de leur côté, sans intérêt pour le public), et
+    // affichée seulement s'il y en a au moins une. Basée sur le statut
+    // choisi à la main (onglet Missions / Paramètres) — si le statut
+    // "À vérifier" est renommé ou supprimé dans Paramètres, cette tuile ne
+    // comptera plus rien : elle est volontairement liée à ce libellé précis.
+    if(role !== "public" && aVerifier > 0){
+      tuiles.push(stat(aVerifier, "Mission" + (aVerifier>1?"s":"") + " à vérifier", true, "averifier"));
+    }
+    document.getElementById("stats").innerHTML = tuiles.join("");
 
-    function stat(v,l){
-      return '<div class="stat"><div class="stat-value">'+v+'</div><div class="stat-label">'+l+'</div></div>';
+    function stat(v,l,alerte,statKey){
+      var cliquable = role !== "public" && statKey;
+      return '<div class="stat'+(alerte?" stat-alerte":"")+(cliquable?" stat-clic":"")+'"'
+        + (cliquable ? ' data-action="ouvrir-stat" data-stat="'+statKey+'" tabindex="0" role="button"' : '')
+        + '><div class="stat-value">'+v+'</div><div class="stat-label">'+l+'</div></div>';
     }
   }
 
@@ -536,46 +791,72 @@
   var benevoleError = "";
   var benevolesRecherche = "";
   var benevolesFiltrePole = "";
+  var benevolesFiltreEtat = ""; // "" | "actif" | "inactif"
   // Même fonctionnement que l'onglet Missions : bascule Vue cartes / Vue
   // tableau (ouverture par défaut sur le tableau), tri par colonne, ligne
   // dépliable pour voir la fiche complète.
   var benevolesVue = "tableau"; // "cartes" | "tableau"
   var benevolesTri = "nom";
-  var benevolesDepliees = {};
   var benevolesSelection = {}; // { [benevoleId]: true } — cases cochées pour l'impression
 
-  // Contenu détaillé d'une fiche bénévole (carte), utilisé à la fois dans
-  // la vue "cartes" et dans la ligne dépliée de la vue "tableau" — comme
-  // missionCardHtml() pour les missions.
-  function benevoleCardHtml(b, heuresMap){
-    var tags = (b.poles||[]).map(poleTag).join("");
-    var h = Math.round((heuresMap[b.id]||0)*10)/10;
-    var actions = "";
-    if(role !== "public"){
-      actions += '<button class="btn btn-ghost btn-sm" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>';
-    }
-    if(role !== "public"){
-      actions += '<button class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'" title="Supprimer">✕</button>';
-    }
+  // Remet à zéro recherche, filtres et sélection de l'onglet Bénévoles (mais
+  // pas le tri) — utilisée par le bouton "Supprimer tous les filtres" ET par
+  // les tuiles du tableau de bord (voir "ouvrir-stat") : sans ça, un filtre
+  // ou une case cochée laissés par une visite précédente de l'onglet se
+  // combinaient avec celui de la tuile cliquée, et la tuile suivante ne
+  // montrait plus les bonnes lignes (signalé par Jluc).
+  function resetFiltresBenevoles(){
+    benevolesRecherche = ""; benevolesFiltrePole = ""; benevolesFiltreEtat = "";
+    benevolesSelection = {};
+  }
 
+  // Modale de fiche bénévole (voir/modifier), même principe que la modale
+  // mission : ouverture directe au clic sur la ligne, champs modifiables
+  // (sauf email, qui est l'identifiant Firestore de la fiche).
+  var benevoleModaleOpen = false;
+  var benevoleModaleId = null;
+  var benevoleModaleError = "";
+
+  // Historique des inscriptions d'un bénévole (liste + badge "Voir la
+  // mission" pour ouvrir la modale mission par-dessus) — fonction partagée
+  // entre la vue "cartes" (benevoleCardHtml) et la modale fiche bénévole
+  // (benevoleModaleHtml), comme missionInscritsSectionHtml() pour les
+  // missions.
+  function benevoleHistoriqueSectionHtml(b){
     var inscriptions = inscriptionsDe(b.id);
+    if(!inscriptions.length) return "";
 
     var nbRealisees = inscriptions.filter(function(x){ return x.statut === "realisee"; }).length;
     var nbAvenir = inscriptions.filter(function(x){ return x.statut === "avenir"; }).length;
     var nbNonRealisees = inscriptions.filter(function(x){ return x.statut === "nonrealisee"; }).length;
 
-    var missionsRealiseesHtml = inscriptions.length
-      ? '<div class="benevole-missions"><div class="benevole-missions-titre">Historique des inscriptions ('+inscriptions.length+')</div>'
-        + '<div class="benevole-missions-resume">'+nbRealisees+' réalisée(s) · '+nbAvenir+' à venir · '
-          + '<span class="'+(nbNonRealisees>0?"statut-nonrealisee":"")+'">'+nbNonRealisees+' non réalisée(s)</span></div>'
-        + '<ul class="benevole-missions-liste">'
-        + inscriptions.map(function(x){
-            var detail = x.statut === "realisee" ? (" · "+dureeHeures(x.mission)+" h") : "";
-            return '<li>'+fmtDateCourt(x.mission.date)+' — '+escapeHtml(libelleMission(x.mission))
-              + ' <span class="'+CLASSE_STATUT_INSCRIPTION[x.statut]+'">('+LIBELLE_STATUT_INSCRIPTION[x.statut]+detail+')</span></li>';
-          }).join("")
-        + '</ul></div>'
-      : '';
+    return '<div class="benevole-missions"><div class="benevole-missions-titre">Historique des inscriptions ('+inscriptions.length+')</div>'
+      + '<div class="benevole-missions-resume">'+nbRealisees+' réalisée(s) · '+nbAvenir+' à venir · '
+        + '<span class="'+(nbNonRealisees>0?"statut-nonrealisee":"")+'">'+nbNonRealisees+' non réalisée(s)</span></div>'
+      + '<ul class="benevole-missions-liste">'
+      + inscriptions.map(function(x){
+          var detail = x.statut === "realisee" ? (" · "+dureeHeures(x.mission)+" h") : "";
+          return '<li><span>'+fmtDateCourt(x.mission.date)+' — '+escapeHtml(libelleMission(x.mission))
+            + ' <span class="'+CLASSE_STATUT_INSCRIPTION[x.statut]+'">('+LIBELLE_STATUT_INSCRIPTION[x.statut]+detail+')</span></span>'
+            + ' <button type="button" class="badge-voir-mission" data-action="edit-mission" data-id="'+x.mission.id+'" title="Voir / modifier cette mission">Voir la mission ↗</button></li>';
+        }).join("")
+      + '</ul></div>';
+  }
+
+  // Contenu détaillé d'une fiche bénévole (carte), utilisé dans la vue
+  // "cartes" — comme missionCardHtml() pour les missions. Le bouton
+  // "Modifier" ouvre la modale (voir benevoleModaleHtml).
+  function benevoleCardHtml(b, heuresMap){
+    var tags = (b.poles||[]).map(poleTag).join("");
+    var h = Math.round((heuresMap[b.id]||0)*10)/10;
+    var actions = "";
+    if(role !== "public"){
+      actions += '<button class="btn btn-ghost btn-sm" data-action="open-benevole-modale" data-id="'+b.id+'">Modifier</button>';
+      actions += '<button class="btn btn-ghost btn-sm" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>';
+    }
+    if(role !== "public"){
+      actions += '<button class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'" title="Supprimer">✕</button>';
+    }
 
     return '<div class="card">'
       + '<div><div class="benevole-name">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
@@ -584,7 +865,7 @@
       + '<div class="card-footrow"><span><strong>'+h+' h</strong> données au total</span>'
       + (actions ? '<span style="display:flex;gap:6px;">'+actions+'</span>' : '')
       + '</div>'
-      + missionsRealiseesHtml
+      + benevoleHistoriqueSectionHtml(b)
       + (b.dateCreation ? '<div class="benevole-contact">Fiche créée le '+fmtDateTime(b.dateCreation)+'</div>' : '')
       + (b.actif ? '' : '<div class="benevole-contact" style="color:var(--danger)">Inactif</div>')
       + '</div>';
@@ -598,6 +879,14 @@
 
   function renderBenevoles(){
     var heuresMap = heuresParBenevole();
+    // Nombre de missions réalisées (affectations marquées "réalisé") par
+    // bénévole — même calcul que l'ancien onglet "Heures données", repris
+    // ici pour la colonne "Missions réalisées" du tableau (demande de Jluc,
+    // qui a supprimé cet onglet devenu redondant avec Bénévoles).
+    var missionsMap = {};
+    state.affectations.forEach(function(a){
+      if(a.statut === "realise") missionsMap[a.benevoleId] = (missionsMap[a.benevoleId]||0) + 1;
+    });
     var recherche = benevolesRecherche.trim().toLowerCase();
 
     // Recherche générale : nom, prénom, email, téléphone ou pôle. Filtre en
@@ -605,6 +894,8 @@
     // pôles définis dans Paramètres).
     var listeFiltree = state.benevoles.filter(function(b){
       if(benevolesFiltrePole && (b.poles||[]).indexOf(benevolesFiltrePole) === -1) return false;
+      if(benevolesFiltreEtat === "actif" && !b.actif) return false;
+      if(benevolesFiltreEtat === "inactif" && b.actif) return false;
       if(!recherche) return true;
       var poles = (b.poles||[]).join(" ").toLowerCase();
       return (b.nom||"").toLowerCase().indexOf(recherche) >= 0
@@ -625,6 +916,9 @@
         var pa = (a.poles||[]).join(", "), pb = (b.poles||[]).join(", ");
         var cmpPo = pa.localeCompare(pb, "fr", {sensitivity:"base"});
         if(cmpPo !== 0) return cmpPo;
+      } else if(benevolesTri === "missions"){
+        var cmpM = (missionsMap[b.id]||0) - (missionsMap[a.id]||0);
+        if(cmpM !== 0) return cmpM;
       } else if(benevolesTri === "heures"){
         var cmpH = (heuresMap[b.id]||0) - (heuresMap[a.id]||0);
         if(cmpH !== 0) return cmpH;
@@ -636,27 +930,25 @@
     var cards = listeFiltree.map(function(b){ return benevoleCardHtml(b, heuresMap); }).join("");
 
     // Vue tableau : même principe que la vue tableau de Missions — 1 ligne
-    // par bénévole, colonnes triables, ligne dépliable sur place pour
-    // retrouver la fiche complète (email, téléphone, actions).
+    // par bénévole, colonnes triables, clic sur la ligne = ouverture directe
+    // de la modale fiche bénévole (voir/modifier), comme pour les missions.
     var tableauHtml = "";
     if(role !== "public" && benevolesVue === "tableau"){
       var lignesHtml = listeFiltree.map(function(b){
         var h = Math.round((heuresMap[b.id]||0)*10)/10;
+        var missionsRealisees = missionsMap[b.id]||0;
         var tags = (b.poles||[]).map(poleTag).join("");
-        var ouverte = !!benevolesDepliees[b.id];
         var coche = !!benevolesSelection[b.id];
-        var ligne = '<tr class="mission-row'+(ouverte?" active":"")+'" data-action="toggle-ligne-benevole" data-id="'+b.id+'">'
+        return '<tr class="mission-row" data-action="open-benevole-modale" data-id="'+b.id+'">'
           + '<td class="col-select"><input type="checkbox" data-action="toggle-select-benevole" data-id="'+b.id+'" '+(coche?"checked":"")+'></td>'
-          + '<td><span class="tri-arrow">'+(ouverte?"▾":"▸")+'</span> '+escapeHtml(b.nom)
+          + '<td>'+escapeHtml(b.nom)
           + (b.actif ? '' : ' <span class="badge-inactif">Inactif</span>') + '</td>'
           + '<td>'+escapeHtml(b.prenom)+'</td>'
+          + '<td>'+escapeHtml(b.email||"—")+'</td>'
           + '<td>'+(tags || '—')+'</td>'
+          + '<td class="num">'+missionsRealisees+'</td>'
           + '<td class="num">'+h+' h</td>'
           + '</tr>';
-        if(ouverte){
-          ligne += '<tr class="mission-row-detail"><td colspan="5">'+benevoleCardHtml(b, heuresMap)+'</td></tr>';
-        }
-        return ligne;
       }).join("");
 
       function thTriBenevole(label, triKey, alignRight){
@@ -670,8 +962,8 @@
 
       tableauHtml = listeFiltree.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr>'
           + '<th class="col-select"><input type="checkbox" data-action="toggle-select-all-benevoles" '+(touTochesB?"checked":"")+'></th>'
-          + thTriBenevole("Nom","nom") + thTriBenevole("Prénom","prenom") + thTriBenevole("Pôles","poles")
-          + thTriBenevole("Heures données","heures",true)
+          + thTriBenevole("Nom","nom") + thTriBenevole("Prénom","prenom") + '<th>Email</th>' + thTriBenevole("Pôles","poles")
+          + thTriBenevole("Missions réalisées","missions",true) + thTriBenevole("Heures données","heures",true)
           + '</tr></thead><tbody>'+lignesHtml+'</tbody></table></div>'
         : '<div class="empty-state">'+(state.benevoles.length ? 'Aucune fiche ne correspond.' : 'Aucun bénévole enregistré pour l\'instant.')+'</div>';
     }
@@ -718,10 +1010,16 @@
         + '<button class="btn btn-badge badge-vider btn-sm" data-action="vider-selection-benevoles"'+(selectionActiveB?"":" disabled")+'>Vider la sélection</button>'
       : '';
 
+    // "Actif" (donc cliquable) dès qu'il y a un filtre à retirer OU des
+    // cases cochées à vider : le bouton "Supprimer tous les filtres" fait
+    // maintenant aussi office de "Vider la sélection" (demande de Jluc).
+    var benevolesFiltreActif = !!(benevolesRecherche.trim() || benevolesFiltrePole || benevolesFiltreEtat || nbSelectionnesB > 0);
     var rechercheHtml = '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
       + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="benevoles-recherche">Recherche</label>'
       + '<input type="search" id="benevoles-recherche" placeholder="Nom, prénom, email, téléphone ou pôle…" value="'+escapeHtml(benevolesRecherche)+'"></div>'
       + selectFiltrePoleHtml("benevoles-filtre-pole", benevolesFiltrePole)
+      + selectFiltreEtatBenevoleHtml("benevoles-filtre-etat", benevolesFiltreEtat)
+      + btnSupprimerFiltres("reset-filtres-benevoles", benevolesFiltreActif)
       + '</div>';
 
     var listeBenevolesHtml = listeFiltree.length ? '<div class="card-grid">'+cards+'</div>'
@@ -752,8 +1050,12 @@
 
     var cards = liste.map(function(c){
       var tags = (c.poles||[]).map(poleTag).join("");
+      // c.email est absent uniquement pour une candidature envoyée avant
+      // l'ajout de ce champ au formulaire (voir action "valider-candidature").
       return '<div class="card">'
         + '<div><div class="benevole-name">'+escapeHtml(c.prenom)+' '+escapeHtml(c.nom)+'</div>'
+        + '<div class="benevole-contact">'+(c.email ? escapeHtml(c.email) : '<em>Email non renseigné (ancienne candidature)</em>')
+          + (c.tel ? '<br>'+escapeHtml(c.tel) : '')+'</div>'
         + (c.dateEnvoi ? '<div class="benevole-contact">Reçue le '+fmtDateTime(c.dateEnvoi)+'</div>' : '')
         + '</div>'
         + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun pôle renseigné</span>')+'</div>'
@@ -766,31 +1068,42 @@
 
     document.getElementById("panel-candidatures").innerHTML =
       '<div class="toolbar"><div><h2>Candidatures</h2><div class="toolbar-meta">'+liste.length+' candidature(s) en attente de validation</div></div></div>'
-      + '<div class="form-hint" style="margin-bottom:14px;">Email et téléphone ne sont pas demandés ici : retrouvez-les dans le dossier d\'adhésion, "Valider" vous les demandera.</div>'
       + (liste.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune candidature en attente.</div>');
   }
 
   // ---------- render: missions ----------
   var missionFormOpen = false;
+  // Id de la mission en cours de modification (formulaire pré-rempli avec
+  // ses valeurs actuelles), ou null quand le formulaire sert à créer une
+  // mission. Même formulaire, même bouton "+ Créer une mission" / "Modifier",
+  // pour rester le plus simple possible.
+  var missionEnEdition = null;
+  var missionFormError = "";
   // Vue tableau (gestionnaires/Directeur uniquement) : utile dès que la
   // liste de missions grandit, pour trier/rechercher au lieu de faire
   // défiler des dizaines de cartes. Le public garde uniquement les cartes.
   var missionsVue = "tableau"; // "cartes" | "tableau" — ouverture par défaut sur le tableau pour les Gestionnaires/Directeur (le public voit toujours les cartes)
   var missionsRecherche = "";
-  var missionsTri = "date"; // "date"(plus proche d'abord) | "titre" | "pole" | "lieu" | "places" | "inscrits"
-  var missionsDepliees = {}; // { [missionId]: true } — lignes du tableau ouvertes
+  var missionsTri = "date"; // "date"(plus proche d'abord) | "titre" | "pole" | "statut" | "lieu" | "places" | "inscrits"
   var missionsFiltrePole = "";
+  var missionsFiltreStatut = "";
+  var missionsFiltreDispo = ""; // "" | "incomplete" | "complete"
   var missionsSelection = {}; // { [missionId]: true } — cases cochées pour l'impression
 
-  // Construit la carte détaillée d'une mission (titre, inscrits, actions).
-  // Réutilisée telle quelle dans la vue cartes ET repliée dans une ligne du
-  // tableau récapitulatif (vue tableau), pour ne pas dupliquer la logique.
-  function missionCardHtml(m){
+  // Même principe que resetFiltresBenevoles() : remet à zéro recherche,
+  // filtres et sélection de l'onglet Missions (mais pas le tri).
+  function resetFiltresMissions(){
+    missionsRecherche = ""; missionsFiltrePole = ""; missionsFiltreStatut = ""; missionsFiltreDispo = "";
+    missionsSelection = {};
+  }
+
+  // Bloc "qui est inscrit + inscrire quelqu'un", commun à la carte de
+  // mission en lecture (missionCardHtml) ET à la modale de création/
+  // modification (missionFormModalHtml), pour ne jamais avoir deux fois la
+  // même logique à maintenir.
+  function missionInscritsSectionHtml(m){
     var restantes = placesRestantes(m);
-    var badgeCls = "places-badge" + (restantes <= 0 ? " low" : "");
-    var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
     var inscrits = inscritsDe(m.id);
-    var moiEstInscrit = role === "public" && moiBenevoleId && inscrits.some(function(a){ return a.benevoleId === moiBenevoleId; });
 
     var inscritsHtml = inscrits.map(function(a){
       var b = benevoleById(a.benevoleId);
@@ -811,6 +1124,9 @@
 
     var disponibles = state.benevoles.filter(function(b){
       return b.actif && !inscrits.some(function(a){ return a.benevoleId === b.id; });
+    }).sort(function(a,b){
+      return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
+        || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
     });
 
     var selectHtml;
@@ -837,18 +1153,42 @@
       }
     }
 
+    return '<div class="inscrits-list">'+(inscritsHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>'
+      + selectHtml;
+  }
+
+  // Construit la carte détaillée d'une mission (titre, inscrits, actions).
+  // Réutilisée telle quelle dans la vue cartes ET repliée dans une ligne du
+  // tableau récapitulatif (vue tableau), pour ne pas dupliquer la logique.
+  function missionCardHtml(m){
+    var restantes = placesRestantes(m);
+    var badgeCls = "places-badge" + (restantes <= 0 ? " low" : "");
+    var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
+    var inscrits = inscritsDe(m.id);
+    var moiEstInscrit = role === "public" && moiBenevoleId && inscrits.some(function(a){ return a.benevoleId === moiBenevoleId; });
+
     return '<div class="card">'
       + '<div class="mission-head"><div><div class="mission-title">'+escapeHtml(libelleMission(m))+'</div>'
       + '<div class="mission-when">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+' · '+escapeHtml(m.lieu)+'</div></div>'
       + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>'
+      + (role !== "public" && statutMission(m) === "À vérifier"
+          ? '<div class="mission-a-pointer">⚠ Statut « À vérifier » : pensez à cocher qui est venu ci-dessous.</div>'
+          : '')
       + '<div class="tags">'+poleTag(m.pole)
+      + (role !== "public" ? statutTag(statutMission(m)) : '')
       + (moiEstInscrit ? '<span class="tag" style="background:var(--success-soft);color:var(--success-soft-ink);">✓ Vous êtes inscrit·e</span>' : '')
       + '</div>'
       + '<div class="mission-desc">'+escapeHtml(m.description)+'</div>'
+      // Commentaires : note interne pour les gestionnaires/Directeur (suivi,
+      // consignes, points de vigilance...), jamais montrée au public — à la
+      // différence de la description, qui est publique.
+      + (role !== "public" && m.commentaires ? '<div class="mission-commentaires"><strong>Commentaires : </strong>'+escapeHtml(m.commentaires)+'</div>' : '')
       + (m.creePar ? '<div class="mission-meta">Proposée par '+escapeHtml(m.creePar)+'</div>' : '')
-      + '<div class="inscrits-list">'+(inscritsHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>'
-      + selectHtml
-      + (role === "directeur" ? '<div><button class="btn-danger-ghost" data-action="delete-mission" data-id="'+m.id+'">Supprimer la mission</button></div>' : '')
+      + missionInscritsSectionHtml(m)
+      + (role !== "public" ? '<div style="display:flex;gap:6px;">'
+          + '<button class="btn btn-ghost btn-sm" data-action="edit-mission" data-id="'+m.id+'">Modifier</button>'
+          + (role === "directeur" ? '<button class="btn-danger-ghost" data-action="delete-mission" data-id="'+m.id+'">Supprimer la mission</button>' : '')
+          + '</div>' : '')
       + '</div>';
   }
 
@@ -875,11 +1215,16 @@
       var rechercheM = missionsRecherche.trim().toLowerCase();
       var lignes = missionsAffichees.filter(function(m){
         if(missionsFiltrePole && m.pole !== missionsFiltrePole) return false;
+        if(missionsFiltreStatut && statutMission(m) !== missionsFiltreStatut) return false;
+        if(missionsFiltreDispo === "incomplete" && placesRestantes(m) <= 0) return false;
+        if(missionsFiltreDispo === "complete" && placesRestantes(m) > 0) return false;
         if(!rechercheM) return true;
         return (m.titre||"").toLowerCase().indexOf(rechercheM) >= 0
           || (m.pole||"").toLowerCase().indexOf(rechercheM) >= 0
+          || statutMission(m).toLowerCase().indexOf(rechercheM) >= 0
           || (m.lieu||"").toLowerCase().indexOf(rechercheM) >= 0
           || (m.description||"").toLowerCase().indexOf(rechercheM) >= 0
+          || (m.commentaires||"").toLowerCase().indexOf(rechercheM) >= 0
           || (m.creePar||"").toLowerCase().indexOf(rechercheM) >= 0;
       });
 
@@ -890,6 +1235,9 @@
         } else if(missionsTri === "pole"){
           var cmpP = (a.pole||"").localeCompare(b.pole||"", "fr", {sensitivity:"base"});
           if(cmpP !== 0) return cmpP;
+        } else if(missionsTri === "statut"){
+          var cmpS = statutMission(a).localeCompare(statutMission(b), "fr", {sensitivity:"base"});
+          if(cmpS !== 0) return cmpS;
         } else if(missionsTri === "lieu"){
           var cmpL = (a.lieu||"").localeCompare(b.lieu||"", "fr", {sensitivity:"base"});
           if(cmpL !== 0) return cmpL;
@@ -911,28 +1259,32 @@
       });
 
       var lignesHtml = lignes.map(function(m){
-        var restantes = placesRestantes(m);
-        var badgeCls = "places-badge" + (restantes <= 0 ? " low" : "");
-        var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
-        var nbInscrits = inscritsDe(m.id).length;
-        var ouverte = !!missionsDepliees[m.id];
+        var inscritsLigne = inscritsDe(m.id);
+        var nomsInscrits = inscritsLigne.map(function(a){
+          var b = benevoleById(a.benevoleId);
+          return b ? escapeHtml(b.prenom)+' '+escapeHtml(b.nom) : "";
+        }).filter(Boolean).join(", ");
         var coche = !!missionsSelection[m.id];
-        var ligne = '<tr class="mission-row'+(ouverte?" active":"")+'" data-action="toggle-ligne-mission" data-id="'+m.id+'">'
+        // Clic sur la ligne = ouvre directement la modale de gestion de la
+        // mission (demande de Jluc) : plus de dépliage sur place, tout se
+        // passe dans la même modale que celle ouverte depuis une fiche
+        // bénévole (voir missionFormModalHtml). Seule la case à cocher a
+        // sa propre action et n'ouvre pas la modale (elle est retrouvée en
+        // priorité par la délégation de clic, voir data-action plus haut).
+        var coloreStatut = STATUT_COULEUR[statutMission(m)] || "accent";
+        return '<tr class="mission-row statut-'+coloreStatut+'" data-action="edit-mission" data-id="'+m.id+'">'
           + '<td class="col-select"><input type="checkbox" data-action="toggle-select-mission" data-id="'+m.id+'" '+(coche?"checked":"")+'></td>'
-          + '<td><span class="tri-arrow">'+(ouverte?"▾":"▸")+'</span> <strong>'+fmtDateCourt(m.date)+'</strong>'
+          + '<td><strong>'+fmtDateCourt(m.date)+'</strong>'
           + '<div class="mission-date-detail">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</div>'
           + (m.creeLe ? '<div class="mission-creele">Mission créée le '+fmtDateTime(m.creeLe)+'</div>' : '')
           + '</td>'
-          + '<td>'+escapeHtml(libelleMission(m))+'</td>'
+          + '<td>'+escapeHtml(libelleMission(m))
+          + '<div class="mission-date-detail">'+escapeHtml(m.lieu)+'</div></td>'
+          + '<td>'+placesBadgeHtml(m)+'</td>'
+          + '<td>'+(nomsInscrits || '<span class="benevole-contact">Personne d\'inscrit</span>')+'</td>'
           + '<td>'+poleTag(m.pole)+'</td>'
-          + '<td>'+escapeHtml(m.lieu)+'</td>'
-          + '<td><span class="'+badgeCls+'">'+badgeTxt+'</span></td>'
-          + '<td class="num">'+nbInscrits+'</td>'
+          + '<td>'+statutTag(statutMission(m))+'</td>'
           + '</tr>';
-        if(ouverte){
-          ligne += '<tr class="mission-row-detail"><td colspan="7">'+missionCardHtml(m)+'</td></tr>';
-        }
-        return ligne;
       }).join("");
 
       function thTriMission(label, triKey, alignRight){
@@ -944,38 +1296,32 @@
 
       var touTochesM = lignes.length > 0 && lignes.every(function(m){ return missionsSelection[m.id]; });
 
+      // "Actif" (donc cliquable) dès qu'il y a un filtre à retirer OU des
+      // cases cochées à vider : le bouton "Supprimer tous les filtres" fait
+      // maintenant aussi office de "Vider la sélection" (demande de Jluc).
+      var nbSelectionnesMissionsFiltre = state.missions.filter(function(m){ return missionsSelection[m.id]; }).length;
+      var missionsFiltreActif = !!(missionsRecherche.trim() || missionsFiltrePole || missionsFiltreStatut || missionsFiltreDispo || nbSelectionnesMissionsFiltre > 0);
       tableauHtml = '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
         + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="missions-recherche">Recherche</label>'
         + '<input type="search" id="missions-recherche" placeholder="Titre, pôle, lieu, description…" value="'+escapeHtml(missionsRecherche)+'"></div>'
         + selectFiltrePoleHtml("missions-filtre-pole", missionsFiltrePole)
+        + selectFiltreStatutHtml("missions-filtre-statut", missionsFiltreStatut)
+        + selectFiltreDispoMissionHtml("missions-filtre-dispo", missionsFiltreDispo)
+        + btnSupprimerFiltres("reset-filtres-missions", missionsFiltreActif)
         + '</div>'
         + (lignes.length ? '<div class="table-scroll"><table class="heures-table missions-table"><thead><tr>'
             + '<th class="col-select"><input type="checkbox" data-action="toggle-select-all-missions" '+(touTochesM?"checked":"")+'></th>'
-            + thTriMission("Date","date") + thTriMission("Titre","titre") + thTriMission("Pôle","pole")
-            + thTriMission("Lieu","lieu") + thTriMission("Places","places") + thTriMission("Inscrits","inscrits",true)
+            + thTriMission("Date","date") + thTriMission("Titre","titre")
+            + thTriMission("Places","places") + thTriMission("Inscrits","inscrits")
+            + thTriMission("Pôle","pole") + thTriMission("Statut","statut")
             + '</tr></thead><tbody>'+lignesHtml+'</tbody></table></div>'
           : '<div class="empty-state">'+(missionsAffichees.length ? 'Aucune mission ne correspond.' : 'Aucune mission proposée pour l\'instant.')+'</div>');
     }
 
-    var formHtml = "";
-    if(missionFormOpen){
-      formHtml = '<form class="form" id="form-mission">'
-        + '<div class="field-row">'
-        + field("Titre de la mission","titre",true)
-        + selectField("Pôle","pole",state.poles)
-        + field("Date","date",true,"date")
-        + field("Lieu","lieu",true)
-        + field("Heure de début","debut",true,"time")
-        + field("Heure de fin","fin",true,"time")
-        + field("Places proposées","placesTotal",true,"number")
-        + '</div>'
-        + '<div class="field"><label for="f-description">Description</label><textarea id="f-description" name="description" rows="2"></textarea></div>'
-        + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>Créer la mission</button>'
-        + '<button type="button" class="btn btn-ghost" data-action="cancel-mission">Annuler</button>'
-        + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
-        + '</div>'
-        + '</form>';
-    }
+    // La modale de création/modification de mission (formHtml) n'est plus
+    // construite ici : elle est commune à tout le site (accessible aussi
+    // depuis une fiche bénévole) et vit désormais dans renderModal(), tout
+    // en bas de ce fichier, avec la modale "voir la mission".
 
     // La candidature ("Envoyer ma candidature") est affichée ici, en tête de
     // l'onglet Missions, plutôt que dans un onglet Bénévoles à part : le
@@ -989,18 +1335,19 @@
     if(role === "public" && !moiBenevoleId){
       if(candidatureEnvoyee){
         candidatureHtml = '<div class="card" style="max-width:560px;margin-bottom:14px;">'
-          + '<div class="msg-ok">Candidature envoyée. '
-          + (state.emailCandidature ? "Un message vient de s'ouvrir dans votre messagerie : pensez à cliquer sur Envoyer pour qu'elle soit transmise. " : "")
-          + 'Elle sera examinée par le Directeur ou un·e gestionnaire avant de devenir une fiche bénévole.</div></div>';
+          + '<div class="msg-ok">Candidature envoyée, en attente de validation par la Direction sous 48 h maximum.</div></div>';
       } else if(candidatureFormOpen){
-        // Pas d'email/téléphone demandés ici : ce sont des coordonnées déjà
-        // connues de l'association via le dossier d'adhésion (le bénévole
-        // doit être inscrit à l'association). Le/la gestionnaire les
-        // complètera à la validation — voir action "valider-candidature".
+        // Le candidat donne lui-même son email et son téléphone : le/la
+        // gestionnaire n'a ainsi rien à ressaisir à la validation (voir
+        // action "valider-candidature") — auparavant ces coordonnées
+        // n'étaient demandées qu'au gestionnaire, via deux pop-up, au moment
+        // de valider.
         candidatureHtml = '<form class="form" id="form-candidature" style="margin-bottom:14px;">'
           + '<div class="field-row">'
-          + field("Prénom","prenom",true)
-          + field("Nom","nom",true)
+          + missionChampHtml("Prénom","prenom",true)
+          + missionChampHtml("Nom","nom",true)
+          + missionChampHtml("Email","email",true,"email")
+          + missionChampHtml("Téléphone","tel",false,"tel")
           + '</div>'
           + '<div class="field"><label>Pôles / domaines</label><div class="checkbox-group">'
           + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'"> '+escapeHtml(p)+'</label>'; }).join("")
@@ -1025,7 +1372,7 @@
       if(moiIdentite){
         identiteHtml = '<div class="card" style="margin-bottom:14px;"><div>Vous êtes identifié(e) comme <strong>'+escapeHtml(moiIdentite.prenom)+' '+escapeHtml(moiIdentite.nom)+'</strong>. '
           + '<button class="link-btn" data-action="changer-identite">Ce n\'est pas vous ?</button></div></div>';
-      } else {
+      } else if(identiteFormOpen){
         // Avant : une liste déroulante de tous les bénévoles actifs — donc
         // n'importe qui pouvait s'inscrire sous le nom de n'importe qui.
         // Désormais il faut saisir prénom + nom + email correspondant
@@ -1033,14 +1380,23 @@
         // affiché nulle part publiquement (voir onglet Bénévoles), ce n'est
         // plus une information à la portée de n'importe quel visiteur.
         identiteHtml = '<div class="card" style="margin-bottom:14px;">'
-          + '<div style="margin-bottom:8px;">Avant de vous inscrire à une mission, identifiez-vous (les informations doivent correspondre à votre fiche bénévole validée) :</div>'
+          + '<div style="margin-bottom:8px;">Identifiez-vous (les informations doivent correspondre à votre fiche bénévole validée) :</div>'
           + '<form class="form" id="form-identite"><div class="field-row">'
-          + field("Prénom","prenom",true)
-          + field("Nom","nom",true)
-          + field("Email","email",true,"email")
-          + '</div><div class="form-actions"><button type="submit" class="btn btn-sm btn-primary">C\'est moi</button>'
+          + missionChampHtml("Prénom","prenom",true)
+          + missionChampHtml("Nom","nom",true)
+          + missionChampHtml("Email","email",true,"email")
+          + '</div><div class="form-actions"><button type="submit" class="btn btn-sm btn-primary">Valider</button>'
+          + '<button type="button" class="btn btn-ghost btn-sm" data-action="cancel-identite">Annuler</button>'
           + (identiteError ? '<span class="error-text">'+escapeHtml(identiteError)+'</span>' : '')
           + '</div></form>';
+      } else {
+        // Replié par défaut : juste un bandeau, pour ne pas imposer le
+        // formulaire à quelqu'un qui n'est encore qu'en train de regarder
+        // les missions proposées (gain de place, surtout sur téléphone).
+        identiteHtml = '<div class="card" style="margin-bottom:14px;">'
+          + '<div style="margin-bottom:8px;">Identifiez-vous pour pouvoir vous inscrire à une mission.</div>'
+          + '<button class="btn btn-sm" data-action="open-identite">Je m\'identifie</button>'
+          + '</div>';
       }
     }
 
@@ -1067,122 +1423,199 @@
       + '</div></div>'
       + candidatureHtml
       + identiteHtml
-      + formHtml
       + (role !== "public" && missionsVue === "tableau"
           ? tableauHtml
           : (missionsAffichees.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant.</div>'));
-
-    function field(label, name, required, type){
-      return '<div class="field"><label for="f-'+name+'">'+label+'</label>'
-        + '<input id="f-'+name+'" name="'+name+'" type="'+(type||"text")+'" '+(type==="number"?'min="1"':'')+' '+(required ? "required" : "")+'></div>';
-    }
-    function selectField(label,name,options){
-      return '<div class="field"><label for="f-'+name+'">'+label+'</label><select id="f-'+name+'" name="'+name+'">'
-        + options.map(function(o){ return '<option value="'+escapeHtml(o)+'">'+escapeHtml(o)+'</option>'; }).join("")
-        + '</select></div>';
-    }
   }
 
-  // ---------- render: heures ----------
-  var heuresRecherche = "";
-  var heuresFiltrePole = "";
-  var heuresTri = "nom"; // "nom" | "poles" | "missions" | "heures" — tri secondaire toujours par Nom
-  var heuresSelection = {}; // { [benevoleId]: true } — cases cochées pour l'impression, propre à cet onglet
+  // Champs de formulaire réutilisés par la modale de création/modification
+  // de mission (missionFormModalHtml, voir plus bas, section modales).
+  // `couleur`, optionnel, est un objet {fc, fcSoft} (voir couleurNommee /
+  // couleurPole ci-dessous) qui colore le libellé et le cadre du champ —
+  // inspiré des fiches colorées de PICS.
+  function missionChampHtml(label, name, required, type, value, couleur){
+    var classeCol = couleur ? ' champ-colore' : '';
+    var styleCol = couleur ? ' style="--fc:'+couleur.fc+';--fc-soft:'+couleur.fcSoft+';"' : '';
+    return '<div class="field'+classeCol+'"'+styleCol+'><label for="f-'+name+'">'+label+'</label>'
+      + '<input id="f-'+name+'" name="'+name+'" type="'+(type||"text")+'" '+(type==="number"?'min="1"':'')+' '+(required ? "required" : "")
+      + (value!=null && value!=="" ? ' value="'+escapeHtml(String(value))+'"' : '') + '></div>';
+  }
+  function missionSelectChampHtml(label,name,options,selected,couleur){
+    var classeCol = couleur ? ' champ-colore' : '';
+    var styleCol = couleur ? ' style="--fc:'+couleur.fc+';--fc-soft:'+couleur.fcSoft+';"' : '';
+    return '<div class="field'+classeCol+'"'+styleCol+'><label for="f-'+name+'">'+label+'</label><select id="f-'+name+'" name="'+name+'">'
+      + options.map(function(o){ return '<option value="'+escapeHtml(o)+'"'+(selected===o?' selected':'')+'>'+escapeHtml(o)+'</option>'; }).join("")
+      + '</select></div>';
+  }
+  // Couleur fixe (accent/warm/success/danger, mêmes teintes que le reste du
+  // site) ou couleur dynamique liée au pôle (même teinte que son badge,
+  // voir poleTag/hueForPole) — deux petites usines à {fc, fcSoft}.
+  function couleurNommee(nom){
+    return { fc: 'var(--'+nom+')', fcSoft: 'var(--'+nom+'-soft)' };
+  }
+  function couleurPole(pole){
+    var h = hueForPole(pole || "");
+    return { fc: 'hsl('+h+',45%,32%)', fcSoft: 'hsl('+h+',60%,94%)' };
+  }
 
-  function renderHeures(){
-    var heuresMap = heuresParBenevole();
-    var missionsMap = {};
-    state.affectations.forEach(function(a){
-      if(a.statut === "realise") missionsMap[a.benevoleId] = (missionsMap[a.benevoleId]||0) + 1;
-    });
-    var recherche = heuresRecherche.trim().toLowerCase();
+  // ---------- modale "mission" (créer / voir / modifier) ----------
+  // Une seule et même modale, commune à tout le site : accessible aussi
+  // bien depuis l'onglet Missions (clic sur une ligne du tableau, ou
+  // "+ Créer une mission") que depuis le badge "Voir la mission" d'une
+  // fiche bénévole — dans tous les cas elle s'ouvre directement modifiable,
+  // sans détour par une modale "juste voir" (demande de Jluc). Elle
+  // s'affiche par-dessus l'écran actuel sans jamais changer d'onglet ; la
+  // fermer (✕, Annuler, clic sur le fond ou Échap) fait réapparaître
+  // l'onglet en dessous (Bénévoles, Missions, peu importe : on n'a jamais
+  // bougé). Présentation inspirée des modales de gestion de PICS (demande
+  // de Jluc) : bandeau de titre coloré, et champs identifiants (Titre,
+  // Pôle, Statut, Commentaires) mis en couleur pour se repérer d'un coup
+  // d'œil — le Pôle et le Statut reprennent exactement la même teinte que
+  // leurs badges habituels (hueForPole / STATUT_COULEUR), pour rester
+  // cohérent avec le reste du site plutôt que d'inventer une palette à
+  // part. Quand on crée une mission (missionEnEdition vide), il n'y a bien
+  // sûr encore ni badges ni inscrits à afficher.
+  function missionFormModalHtml(){
+    var missionEdit = missionEnEdition ? missionById(missionEnEdition) : null;
 
-    // Recherche générale : nom, prénom ou pôle. Filtre en plus, si choisi,
-    // par un pôle précis (même liste déroulante que Bénévoles et Missions).
-    var rows = state.benevoles.filter(function(b){
-      if(heuresFiltrePole && (b.poles||[]).indexOf(heuresFiltrePole) === -1) return false;
-      if(!recherche) return true;
-      var poles = (b.poles||[]).join(" ").toLowerCase();
-      return (b.nom||"").toLowerCase().indexOf(recherche) >= 0
-        || (b.prenom||"").toLowerCase().indexOf(recherche) >= 0
-        || poles.indexOf(recherche) >= 0;
-    });
-
-    // Tri par Nom (par défaut, alphabétique), par Pôles, par Missions
-    // réalisées ou par Total d'heures (ces deux derniers du plus grand au
-    // plus petit) ; à égalité, on retombe sur l'ordre alphabétique du Nom.
-    rows.sort(function(a,b){
-      if(heuresTri === "poles"){
-        var pa = (a.poles && a.poles[0]) || "";
-        var pb = (b.poles && b.poles[0]) || "";
-        var cmpPoles = pa.localeCompare(pb, "fr", {sensitivity:"base"});
-        if(cmpPoles !== 0) return cmpPoles;
-      } else if(heuresTri === "missions"){
-        var cmpMissions = (missionsMap[b.id]||0) - (missionsMap[a.id]||0);
-        if(cmpMissions !== 0) return cmpMissions;
-      } else if(heuresTri === "heures"){
-        var cmpHeures = (heuresMap[b.id]||0) - (heuresMap[a.id]||0);
-        if(cmpHeures !== 0) return cmpHeures;
-      }
-      return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
-        || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
-    });
-
-    var max = Math.max.apply(null, [1].concat(rows.map(function(b){ return heuresMap[b.id]||0; })));
-
-    var trs = rows.map(function(b){
-      var h = Math.round((heuresMap[b.id]||0)*10)/10;
-      var missionsRealisees = missionsMap[b.id]||0;
-      var pct = Math.round(((heuresMap[b.id]||0)/max)*100);
-      var coche = !!heuresSelection[b.id];
-      return '<tr><td class="col-select"><input type="checkbox" data-action="toggle-select-heure" data-id="'+b.id+'" '+(coche?"checked":"")+'></td>'
-        + '<td>'+escapeHtml(b.nom)+'</td><td>'+escapeHtml(b.prenom)+'</td>'
-        + '<td>'+((b.poles||[]).map(poleTag).join(" ") || '—')+'</td>'
-        + '<td class="num">'+missionsRealisees+'</td>'
-        + '<td class="num"><span class="bar-wrap"><span class="bar-fill" style="width:'+pct+'%"></span></span><strong>'+h+' h</strong></td></tr>';
-    }).join("");
-
-    var total = Math.round(rows.reduce(function(s,b){ return s + (heuresMap[b.id]||0); },0)*10)/10;
-
-    // En-têtes cliquables : le tri se déclenche directement au-dessus de la
-    // colonne concernée, pas besoin d'une rangée de boutons séparée.
-    function thTri(label, triKey, alignRight){
-      var active = heuresTri === triKey;
-      return '<th'+(alignRight?' class="num"':'')+'><button type="button" class="th-tri'+(active?" active":"")+'" data-action="trier-heures" data-tri="'+triKey+'">'
-        + label + (active ? ' <span class="tri-arrow">▼</span>' : '')
-        + '</button></th>';
+    var enteteHtml = "";
+    if(missionEdit){
+      var restantes = placesRestantes(missionEdit);
+      var badgeCls = "places-badge" + (restantes <= 0 ? " low" : "");
+      var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
+      enteteHtml = '<div class="mission-head" style="margin-bottom:10px;">'
+        + '<div class="tags">'+poleTag(missionEdit.pole)+statutTag(statutMission(missionEdit))+'</div>'
+        + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>';
     }
 
-    var touTochesH = rows.length > 0 && rows.every(function(b){ return heuresSelection[b.id]; });
-    var nbSelectionnesH = state.benevoles.filter(function(b){ return heuresSelection[b.id]; }).length;
-    // Toujours affichés, juste désactivés si rien n'est coché.
-    var imprimerBtnH = '<button class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-selection-heures"'+(nbSelectionnesH>0?"":" disabled")+'>Imprimer la sélection ('+nbSelectionnesH+')</button>'
-      + '<button class="btn btn-badge badge-vider btn-sm" data-action="vider-selection-heures"'+(nbSelectionnesH>0?"":" disabled")+'>Vider la sélection</button>';
+    var poleActuel = missionEdit ? missionEdit.pole : (state.poles[0]||"");
+    var statutActuel = missionEdit ? statutMission(missionEdit) : state.statutsMissions[0];
+    var couleurStatut = couleurNommee(STATUT_COULEUR[statutActuel] || "accent");
 
-    document.getElementById("panel-heures").innerHTML =
-      '<div class="toolbar"><h2>Heures données</h2>'
-      + '<div style="display:flex;gap:8px;">'+imprimerBtnH+'</div></div>'
-      + '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
-      + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="heures-recherche">Recherche</label>'
-      + '<input type="search" id="heures-recherche" placeholder="Nom, prénom ou pôle…" value="'+escapeHtml(heuresRecherche)+'"></div>'
-      + selectFiltrePoleHtml("heures-filtre-pole", heuresFiltrePole)
+    var labelTitre = "Titre de la mission" + (missionEdit && missionEdit.numero ? ' <span class="mission-id-badge">M'+missionEdit.numero+'</span>' : '');
+
+    var formMissionHtml = '<form class="form" id="form-mission">'
+      + enteteHtml
+      + missionChampHtml(labelTitre,"titre",true,"text",missionEdit?missionEdit.titre:"",couleurNommee("accent"))
+      + '<div class="field-row">'
+      + missionSelectChampHtml("Pôle","pole",state.poles,missionEdit?missionEdit.pole:"",couleurPole(poleActuel))
+      + missionSelectChampHtml("Statut","statut",state.statutsMissions,statutActuel,couleurStatut)
       + '</div>'
-      + (rows.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr>'
-          + '<th class="col-select"><input type="checkbox" data-action="toggle-select-all-heures" '+(touTochesH?"checked":"")+'></th>'
-          + thTri("Nom","nom") + '<th>Prénom</th>' + thTri("Pôles","poles")
-          + thTri("Missions réalisées","missions",true) + thTri("Total d\'heures","heures",true)
-          + '</tr></thead><tbody>'+trs+'</tbody></table></div>'
-        : '<div class="empty-state">Aucun·e bénévole ne correspond.</div>');
+      + '<div class="field-row">'
+      + missionChampHtml("Date","date",true,"date",missionEdit?missionEdit.date:"")
+      + missionChampHtml("Lieu","lieu",true,"text",missionEdit?missionEdit.lieu:"")
+      + '</div>'
+      + '<div class="field-row" style="grid-template-columns:repeat(4,1fr);">'
+      + missionChampHtml("Heure de début","debut",true,"time",missionEdit?missionEdit.debut:"")
+      + missionChampHtml("Heure de fin","fin",true,"time",missionEdit?missionEdit.fin:"")
+      + '<div class="field"><label for="f-duree-affichage">Durée</label><input id="f-duree-affichage" type="text" readonly value="'+calculDureeAffichage(missionEdit?missionEdit.debut:"", missionEdit?missionEdit.fin:"")+'"></div>'
+      + missionChampHtml("Places proposées","placesTotal",true,"number",missionEdit?missionEdit.placesTotal:"")
+      + '</div>'
+      + '<div class="field"><label for="f-description">Description</label><textarea id="f-description" name="description" rows="2">'+escapeHtml(missionEdit?missionEdit.description:"")+'</textarea></div>'
+      // Commentaires : champ demandé par Jluc pour le suivi interne (jamais
+      // montré au public, voir missionCardHtml) — distinct de la
+      // Description, qui elle est publique.
+      + '<div class="field champ-colore" style="--fc:var(--warm);--fc-soft:var(--warm-soft);">'
+        + '<label for="f-commentaires">Commentaires <span class="form-hint">(usage interne, jamais visible du public)</span></label>'
+        + '<textarea id="f-commentaires" name="commentaires" rows="2">'+escapeHtml(missionEdit?missionEdit.commentaires:"")+'</textarea></div>'
+      + (missionFormError ? '<div class="error-text" style="margin-bottom:8px;">'+escapeHtml(missionFormError)+'</div>' : '')
+      + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>💾 '+(missionEdit?"Enregistrer les modifications":"Créer la mission")+'</button>'
+      + '<button type="button" class="btn btn-ghost" data-action="cancel-mission">Annuler</button>'
+      + (missionEdit && role === "directeur" ? '<button type="button" class="btn-danger-ghost" data-action="delete-mission" data-id="'+missionEdit.id+'">Supprimer la mission</button>' : '')
+      + (missionEdit ? '<button type="button" class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-fiche-mission" data-id="'+missionEdit.id+'">Imprimer la fiche</button>' : '')
+      + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
+      + '</div>'
+      // Qui est déjà inscrit, et inscrire quelqu'un d'autre : seulement pour
+      // une mission qui existe déjà (pas de sens à la création).
+      + (missionEdit ? '<div class="modal-section-inscrits"><div class="modal-section-titre">👥 INSCRITS</div>'+missionInscritsSectionHtml(missionEdit)+'</div>' : '')
+      + '</form>';
+    return '<div class="modal-backdrop" data-action="close-modal-mission">'
+      + '<div class="modal-box"><div class="modal-box-head"><h3>'+(missionEdit?"Modifier la mission":"Créer une mission")+'</h3>'
+      + '<button type="button" class="modal-close" data-action="cancel-mission" aria-label="Fermer">✕</button></div>'
+      + formMissionHtml + '</div></div>';
   }
+
+  // Fiche bénévole en modale (voir/modifier) — même principe que
+  // missionFormModalHtml() : bandeau coloré, champs modifiables, actions,
+  // puis l'historique des inscriptions. Le badge "Voir la mission" à
+  // l'intérieur ouvre la modale mission PAR-DESSUS celle-ci (renderModal
+  // affiche les deux, la mission en dernier donc au-dessus) ; la fermer
+  // revient simplement à la fiche bénévole, toujours ouverte en dessous.
+  function benevoleModaleHtml(){
+    var b = benevoleModaleId ? benevoleById(benevoleModaleId) : null;
+    if(!b) return "";
+    var heuresMap = heuresParBenevole();
+    var h = Math.round((heuresMap[b.id]||0)*10)/10;
+
+    var enteteHtml = '<div class="mission-head" style="margin-bottom:10px;">'
+      + '<div class="tags">'+(b.actif
+          ? '<span class="tag" style="background:var(--success-soft);color:var(--success-soft-ink);">Actif</span>'
+          : '<span class="tag" style="background:var(--danger-soft);color:var(--danger-soft-ink);">Inactif</span>')+'</div>'
+      + '<span class="places-badge">'+h+' h données au total</span></div>';
+
+    var formHtml = '<form class="form" id="form-benevole-modale">'
+      + enteteHtml
+      + '<div class="field-row">'
+      + missionChampHtml("Prénom","prenom",true,"text",b.prenom,couleurNommee("accent"))
+      + missionChampHtml("Nom","nom",true,"text",b.nom,couleurNommee("accent"))
+      + '</div>'
+      + '<div class="field-row">'
+      + '<div class="field"><label>Email</label><input type="email" value="'+escapeHtml(b.email||"")+'" readonly></div>'
+      + missionChampHtml("Téléphone","tel",false,"tel",b.tel||"")
+      + '</div>'
+      + '<div class="field"><label>Pôles / domaines</label><div class="checkbox-group">'
+      + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'" '+((b.poles||[]).indexOf(p)>=0?"checked":"")+'> '+escapeHtml(p)+'</label>'; }).join("")
+      + '</div></div>'
+      + (benevoleModaleError ? '<div class="error-text" style="margin-bottom:8px;">'+escapeHtml(benevoleModaleError)+'</div>' : '')
+      + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>💾 Enregistrer les modifications</button>'
+      + '<button type="button" class="btn btn-ghost" data-action="cancel-benevole-modale">Annuler</button>'
+      + '<button type="button" class="btn btn-ghost" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>'
+      + '<button type="button" class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'">Supprimer la fiche</button>'
+      + '<button type="button" class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-fiche-benevole" data-id="'+b.id+'">Imprimer la fiche</button>'
+      + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
+      + '</div>'
+      + (b.dateCreation ? '<div class="benevole-contact">Fiche créée le '+fmtDateTime(b.dateCreation)+'</div>' : '')
+      + '<div class="modal-section-inscrits"><div class="modal-section-titre">🗓️ HISTORIQUE DES INSCRIPTIONS</div>'
+      + (benevoleHistoriqueSectionHtml(b) || '<div class="benevole-contact">Aucune inscription pour l\'instant.</div>')
+      + '</div>'
+      + '</form>';
+
+    return '<div class="modal-backdrop" data-action="close-modal-benevole">'
+      + '<div class="modal-box"><div class="modal-box-head"><h3>'+escapeHtml(b.prenom+' '+b.nom)+'</h3>'
+      + '<button type="button" class="modal-close" data-action="cancel-benevole-modale" aria-label="Fermer">✕</button></div>'
+      + formHtml + '</div></div>';
+  }
+
+  function renderModal(){
+    var racine = document.getElementById("modal-root");
+    if(!racine) return;
+    var html = "";
+    // Ordre important : la fiche bénévole d'abord (en dessous), la mission
+    // ensuite (par-dessus) — pour pouvoir ouvrir "Voir la mission" depuis
+    // l'historique d'un bénévole sans perdre sa fiche en arrière-plan.
+    if(benevoleModaleOpen) html += benevoleModaleHtml();
+    if(missionFormOpen) html += missionFormModalHtml();
+    racine.innerHTML = html;
+  }
+
+  // L'onglet "Heures données" (qui vivait ici) faisait doublon avec le
+  // tableau de l'onglet Bénévoles (Nom/Prénom/Pôles/Heures) : supprimé à la
+  // demande de Jluc. Ses deux informations propres (Missions réalisées, tri
+  // par nombre de missions) ont été reprises dans le tableau Bénévoles (voir
+  // renderBenevoles et imprimerSelectionBenevoles). La tuile "Heures
+  // données" du tableau de bord ouvre maintenant l'onglet Bénévoles trié par
+  // heures (voir l'action "ouvrir-stat").
 
   // ---------- render: historique ----------
   var ACTION_LABELS = {
     creation_mission: "Mission créée",
+    modification_mission: "Mission modifiée",
     suppression_mission: "Mission supprimée",
     validation: "Mission marquée réalisée",
     annulation_validation: "Validation annulée",
     suppression_inscription: "Inscription supprimée",
     creation_benevole: "Bénévole ajouté",
+    modification_benevole: "Fiche bénévole modifiée",
     suppression_benevole: "Bénévole supprimé",
     validation_candidature: "Candidature validée",
     refus_candidature: "Candidature refusée",
@@ -1250,7 +1683,7 @@
         + '<td>'+escapeHtml(h.cible||"")+'</td><td>'+escapeHtml(h.parNom||"")+' ('+libelleRoleHistorique(h.parRole)+')</td></tr>';
     }).join("");
 
-    // En-têtes cliquables, même principe que pour "Heures données".
+    // En-têtes cliquables, même principe que pour Bénévoles ou Missions.
     function thTri(label, triKey){
       var active = historiqueTri === triKey;
       return '<th><button type="button" class="th-tri'+(active?" active":"")+'" data-action="trier-historique" data-tri="'+triKey+'">'
@@ -1285,7 +1718,7 @@
         actionsHtml = '<button class="btn btn-ghost btn-sm" data-action="toggle-gestionnaire" data-id="'+g.id+'">'+(g.actif ? "Désactiver" : "Réactiver")+'</button>';
       }
       return '<div class="list-row"><div class="list-row-main"><span class="list-row-title">'+escapeHtml(g.nom)+'</span>'
-        + '<span class="list-row-meta">'+(g.actif ? "Actif" : "Inactif")+'</span></div>'
+        + '<span class="list-row-meta">'+escapeHtml(g.email||"—")+' · '+(g.actif ? "Actif" : "Inactif")+'</span></div>'
         + '<div style="display:flex;align-items:center;gap:10px;"><span class="'+pillCls+'">'+(g.role==="directeur"?"Directeur":"Gestionnaire")+'</span>'+actionsHtml+'</div></div>';
     }).join("");
 
@@ -1311,25 +1744,33 @@
       + (rows || '<div class="empty-state">Aucun gestionnaire pour l\'instant.</div>');
   }
 
-  // ---------- render: paramètres (pôles) ----------
+  // ---------- render: paramètres (pôles, statuts des missions) ----------
   function renderParametres(){
     var lignesPoles = state.poles.map(function(p){
       return '<div class="list-row"><div class="list-row-main"><span class="list-row-title">'+escapeHtml(p)+'</span></div>'
         + '<button class="btn-danger-ghost" data-action="delete-pole" data-pole="'+escapeHtml(p)+'" title="Retirer">✕</button></div>';
     }).join("");
 
+    var lignesStatuts = state.statutsMissions.map(function(s){
+      return '<div class="list-row"><div class="list-row-main"><span class="list-row-title">'+escapeHtml(s)+'</span></div>'
+        + '<button class="btn-danger-ghost" data-action="delete-statut" data-statut="'+escapeHtml(s)+'" title="Retirer">✕</button></div>';
+    }).join("");
+
     document.getElementById("panel-parametres").innerHTML =
-      '<div class="toolbar"><div><h2>Paramètres</h2><div class="toolbar-meta">Email de réception des candidatures, et pôles / domaines proposés dans les formulaires</div></div></div>'
-      + '<form class="form" id="form-email-candidature"><div class="field-row">'
-      + '<div class="field"><label for="p-email-candidature">Email de réception des candidatures</label>'
-      + '<input id="p-email-candidature" name="emailCandidature" type="email" placeholder="ex : accueil@monassociation.fr" value="'+escapeHtml(state.emailCandidature)+'"></div>'
-      + '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer cette adresse</button></div></form>'
-      + '<div class="form-hint" style="margin-bottom:18px;">Quand un visiteur envoie une candidature, son client mail lui propose d\'envoyer un message à cette adresse. Elle doit aussi être validée ici (onglet Candidatures) pour devenir une fiche bénévole.</div>'
+      '<div class="toolbar"><div><h2>Paramètres</h2><div class="toolbar-meta">Pôles / domaines et statuts proposés dans les formulaires</div></div></div>'
+      + '<div class="form-hint" style="margin-bottom:18px;">Les nouvelles candidatures apparaissent dans l\'onglet Candidatures : pensez à le consulter régulièrement pour les valider.</div>'
+      + '<h3 style="margin:0 0 8px;">Pôles / domaines</h3>'
       + '<form class="form" id="form-pole"><div class="field-row">'
       + '<div class="field"><label for="p-nom">Nouveau pôle</label><input id="p-nom" name="nom" required placeholder="Ex : Jardinage"></div>'
       + '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter ce pôle</button></div></form>'
       + (lignesPoles || '<div class="empty-state">Aucun pôle défini.</div>')
-      + '<div class="form-hint" style="margin-top:10px;">Retirer un pôle ne modifie pas les bénévoles ou missions qui l\'utilisent déjà — seuls les nouveaux formulaires ne le proposeront plus.</div>';
+      + '<div class="form-hint" style="margin:10px 0 26px;">Retirer un pôle ne modifie pas les bénévoles ou missions qui l\'utilisent déjà — seuls les nouveaux formulaires ne le proposeront plus.</div>'
+      + '<h3 style="margin:0 0 8px;">Statuts des missions</h3>'
+      + '<form class="form" id="form-statut"><div class="field-row">'
+      + '<div class="field"><label for="p-statut-nom">Nouveau statut</label><input id="p-statut-nom" name="nom" required placeholder="Ex : Annulée"></div>'
+      + '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter ce statut</button></div></form>'
+      + (lignesStatuts || '<div class="empty-state">Aucun statut défini.</div>')
+      + '<div class="form-hint" style="margin-top:10px;">Chaque mission a un statut (visible et modifiable par les gestionnaires/Directeur, pas par le public), utile pour suivre où elle en est et faire un retour aux responsables de pôle. Retirer un statut ne modifie pas les missions qui l\'utilisent déjà.</div>';
   }
 
   // ---------- render: données (export / import) ----------
@@ -1358,17 +1799,19 @@
     renderStats();
     if(currentTab==="benevoles") renderBenevoles();
     if(currentTab==="missions") renderMissions();
-    if(currentTab==="heures") renderHeures();
     if(currentTab==="historique") renderHistorique();
     if(currentTab==="equipe") renderEquipe();
     if(currentTab==="candidatures") renderCandidatures();
     if(currentTab==="parametres") renderParametres();
     if(currentTab==="donnees") renderDonnees();
+    // Toujours rendu, quel que soit l'onglet actif : les modales "mission"
+    // (voir / créer / modifier) doivent pouvoir rester ouvertes par-dessus
+    // n'importe quel onglet, notamment Bénévoles (voir renderModal()).
+    renderModal();
   }
 
   function updateTabsVisibility(){
     var benevolesTab = document.querySelector('[data-tab="benevoles"]');
-    var heuresTab = document.querySelector('[data-tab="heures"]');
     var histTab = document.querySelector('[data-tab="historique"]');
     var equipeTab = document.querySelector('[data-tab="equipe"]');
     var candidaturesTab = document.querySelector('[data-tab="candidatures"]');
@@ -1378,16 +1821,14 @@
     var directeurSeul = role === "directeur";
     // Le public n'a plus d'usage de l'onglet Bénévoles : les autres fiches
     // ne lui sont pas montrées et l'envoi de candidature se fait depuis
-    // l'onglet Missions (voir renderMissions()). "Heures données" ne
-    // concerne que le suivi interne, réservé aux gestionnaires/Directeur.
+    // l'onglet Missions (voir renderMissions()).
     benevolesTab.hidden = !visible;
-    heuresTab.hidden = !visible;
     histTab.hidden = !visible;
     equipeTab.hidden = !visible;
     candidaturesTab.hidden = !visible;
     paramTab.hidden = !directeurSeul;
     donneesTab.hidden = !directeurSeul;
-    if(!visible && (currentTab === "benevoles" || currentTab === "heures" || currentTab === "historique" || currentTab === "equipe" || currentTab === "candidatures")){
+    if(!visible && (currentTab === "benevoles" || currentTab === "historique" || currentTab === "equipe" || currentTab === "candidatures")){
       switchTab("missions");
     }
     if(!directeurSeul && (currentTab === "parametres" || currentTab === "donnees")){
@@ -1400,7 +1841,7 @@
     document.querySelectorAll(".tab").forEach(function(b){
       b.setAttribute("aria-selected", b.getAttribute("data-tab")===name ? "true" : "false");
     });
-    ["benevoles","missions","heures","historique","equipe","candidatures","parametres","donnees"].forEach(function(t){
+    ["benevoles","missions","historique","equipe","candidatures","parametres","donnees"].forEach(function(t){
       document.getElementById("panel-"+t).hidden = (t !== name);
     });
   }
@@ -1433,7 +1874,7 @@
 
   function impressionEnteteHtml(){
     return '<div class="impression-entete">'
-      + '<div><div class="impression-titre-app">Maison Pour Tous des Rancy</div>'
+      + '<div><div class="impression-titre-app"><span class="impression-logo">🌿</span>Maison Pour Tous des Rancy</div>'
       + '<div class="impression-soustitre">Gestion des bénévoles</div></div>'
       + '<div class="impression-date">'+fmtAujourdhui()+'</div>'
       + '</div>'
@@ -1451,21 +1892,60 @@
       + '</div>';
   }
 
+  // Même signal qu'à l'écran (voir missionCardHtml) : une mission "À
+  // vérifier" attend une action du gestionnaire, on la met en évidence à
+  // l'impression comme PICS le fait pour une échéance qui réclame
+  // attention. Utilisé par imprimerSelectionMissions et imprimerFicheMission.
+  function impressionStatutMissionHtml(m){
+    return statutMission(m) === "À vérifier"
+      ? '<span class="impression-alerte">⚠ À vérifier</span>'
+      : escapeHtml(statutMission(m));
+  }
+
   function imprimerSelectionBenevoles(){
     var heuresMap = heuresParBenevole();
+    var missionsMap = {};
+    state.affectations.forEach(function(a){
+      if(a.statut === "realise") missionsMap[a.benevoleId] = (missionsMap[a.benevoleId]||0) + 1;
+    });
     var liste = state.benevoles.filter(function(b){ return benevolesSelection[b.id]; });
     var lignes = liste.map(function(b){
       var h = Math.round((heuresMap[b.id]||0)*10)/10;
-      return '<tr><td>'+escapeHtml(b.nom)+'</td><td>'+escapeHtml(b.prenom)+'</td>'
-        + '<td>'+escapeHtml((b.poles||[]).join(", "))+'</td><td>'+h+' h</td></tr>';
+      var missionsRealisees = missionsMap[b.id]||0;
+      return '<tr><td class="impression-col-principale">'+escapeHtml(b.nom)+'</td><td>'+escapeHtml(b.prenom)+'</td>'
+        + '<td>'+escapeHtml((b.poles||[]).join(", "))+'</td><td>'+missionsRealisees+'</td><td>'+h+' h</td></tr>';
     }).join("");
     document.getElementById("impression").innerHTML =
       impressionEnteteHtml()
       + '<h2>Bénévoles ('+liste.length+')</h2>'
-      + '<table><thead><tr><th>Nom</th><th>Prénom</th><th>Pôles</th><th>Heures données</th></tr></thead>'
+      + '<table><thead><tr><th>Nom</th><th>Prénom</th><th>Pôles</th><th>Missions réalisées</th><th>Heures données</th></tr></thead>'
       + '<tbody>'+lignes+'</tbody></table>'
       + impressionPiedHtml("Bénévoles");
     window.print();
+  }
+
+  // Résumé + tableau (ou ligne "Aucune inscription") de l'historique des
+  // réalisations d'un bénévole, pour l'impression — utilisé à la fois pour
+  // le bloc par bénévole d'imprimerHistoriqueBenevoles (plusieurs bénévoles
+  // à la suite) et pour la fiche imprimable d'un seul bénévole
+  // (imprimerFicheBenevole, depuis la modale). Toujours le détail complet
+  // (réalisées, à venir, non réalisées), rien de résumé ou de tronqué.
+  function impressionHistoriqueRealisationsHtml(b){
+    var inscriptions = inscriptionsDe(b.id);
+    if(!inscriptions.length){
+      return '<div class="impression-vide">Aucune inscription enregistrée.</div>';
+    }
+    var nbRealisees = inscriptions.filter(function(x){ return x.statut === "realisee"; }).length;
+    var nbAvenir = inscriptions.filter(function(x){ return x.statut === "avenir"; }).length;
+    var nbNonRealisees = inscriptions.filter(function(x){ return x.statut === "nonrealisee"; }).length;
+    var lignes = inscriptions.map(function(x){
+      var detail = x.statut === "realisee" ? (" · "+dureeHeures(x.mission)+" h") : "";
+      return '<tr><td>'+fmtDateCourt(x.mission.date)+'</td><td class="impression-col-principale">'+escapeHtml(libelleMission(x.mission))+'</td>'
+        + '<td class="'+CLASSE_STATUT_INSCRIPTION[x.statut]+'">'+LIBELLE_STATUT_INSCRIPTION[x.statut]+detail+'</td></tr>';
+    }).join("");
+    return '<div class="impression-resume">'+nbRealisees+' réalisée(s) · '+nbAvenir+' à venir · '+nbNonRealisees+' non réalisée(s)</div>'
+      + '<table><thead><tr><th>Date</th><th>Mission</th><th>Statut</th></tr></thead>'
+      + '<tbody>'+lignes+'</tbody></table>';
   }
 
   // Impression de l'historique complet des inscriptions (réalisées / à
@@ -1476,22 +1956,9 @@
   function imprimerHistoriqueBenevoles(){
     var liste = state.benevoles.filter(function(b){ return benevolesSelection[b.id]; });
     var blocs = liste.map(function(b){
-      var inscriptions = inscriptionsDe(b.id);
-      var nbRealisees = inscriptions.filter(function(x){ return x.statut === "realisee"; }).length;
-      var nbAvenir = inscriptions.filter(function(x){ return x.statut === "avenir"; }).length;
-      var nbNonRealisees = inscriptions.filter(function(x){ return x.statut === "nonrealisee"; }).length;
-      var lignes = inscriptions.length
-        ? inscriptions.map(function(x){
-            var detail = x.statut === "realisee" ? (" · "+dureeHeures(x.mission)+" h") : "";
-            return '<tr><td>'+fmtDateCourt(x.mission.date)+'</td><td>'+escapeHtml(libelleMission(x.mission))+'</td>'
-              + '<td class="'+CLASSE_STATUT_INSCRIPTION[x.statut]+'">'+LIBELLE_STATUT_INSCRIPTION[x.statut]+detail+'</td></tr>';
-          }).join("")
-        : '<tr><td colspan="3" class="impression-vide">Aucune inscription</td></tr>';
       return '<div class="impression-bloc-benevole">'
         + '<h3>'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</h3>'
-        + '<div class="impression-resume">'+nbRealisees+' réalisée(s) · '+nbAvenir+' à venir · '+nbNonRealisees+' non réalisée(s)</div>'
-        + '<table><thead><tr><th>Date</th><th>Mission</th><th>Statut</th></tr></thead>'
-        + '<tbody>'+lignes+'</tbody></table>'
+        + impressionHistoriqueRealisationsHtml(b)
         + '</div>';
     }).join("");
     document.getElementById("impression").innerHTML =
@@ -1502,58 +1969,133 @@
     window.print();
   }
 
+  // Impression de la fiche d'UN SEUL bénévole (bouton "Imprimer la fiche"
+  // dans la modale) : ses informations, puis tout l'historique de ses
+  // réalisations en détail — sur le même principe qu'une fiche d'action
+  // PICS (informations de l'action, puis historique complet des échanges).
+  function imprimerFicheBenevole(id){
+    var b = benevoleById(id);
+    if(!b) return;
+    var heuresMap = heuresParBenevole();
+    var h = Math.round((heuresMap[b.id]||0)*10)/10;
+
+    var ficheHtml = '<table><thead><tr><th>Nom</th><th>Prénom</th><th>Email</th><th>Téléphone</th><th>Pôles</th><th>Statut</th><th>Heures données</th></tr></thead>'
+      + '<tbody><tr><td class="impression-col-principale">'+escapeHtml(b.nom)+'</td><td>'+escapeHtml(b.prenom)+'</td>'
+      + '<td>'+escapeHtml(b.email||"—")+'</td><td>'+escapeHtml(b.tel||"—")+'</td>'
+      + '<td>'+escapeHtml((b.poles||[]).join(", ")||"—")+'</td>'
+      + '<td>'+(b.actif ? "Actif" : '<span class="impression-alerte">Inactif</span>')+'</td>'
+      + '<td>'+h+' h</td></tr></tbody></table>';
+
+    document.getElementById("impression").innerHTML =
+      impressionEnteteHtml()
+      + '<h2>'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</h2>'
+      + ficheHtml
+      + '<h3 class="impression-sous-titre">Historique des réalisations</h3>'
+      + impressionHistoriqueRealisationsHtml(b)
+      + impressionPiedHtml("Fiche bénévole");
+    window.print();
+  }
+
   function imprimerSelectionMissions(){
     var liste = state.missions.filter(function(m){ return missionsSelection[m.id]; });
+    // Classées par Statut (demande de Jluc) : dans l'ordre du cycle de vie
+    // défini dans Paramètres (En cours, À vérifier, Terminée, Non
+    // effectuée…) plutôt que par ordre alphabétique, pour que la liste
+    // imprimée se lise comme un vrai suivi d'avancement. À statut égal, la
+    // mission la plus proche dans le temps d'abord.
+    liste = liste.slice().sort(function(a, b){
+      var ia = state.statutsMissions.indexOf(statutMission(a));
+      var ib = state.statutsMissions.indexOf(statutMission(b));
+      if(ia === -1) ia = state.statutsMissions.length;
+      if(ib === -1) ib = state.statutsMissions.length;
+      if(ia !== ib) return ia - ib;
+      var da = (a.date||"") + " " + (a.debut||"");
+      var db = (b.date||"") + " " + (b.debut||"");
+      return da < db ? -1 : (da > db ? 1 : 0);
+    });
     var lignes = liste.map(function(m){
       var restantes = placesRestantes(m);
       var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
       var nbInscrits = inscritsDe(m.id).length;
-      return '<tr><td>'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</td><td>'+escapeHtml(libelleMission(m))+'</td>'
+      return '<tr><td>'+impressionStatutMissionHtml(m)+'</td><td>'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</td><td class="impression-col-principale">'+escapeHtml(libelleMission(m))+'</td>'
         + '<td>'+escapeHtml(m.pole||"")+'</td><td>'+escapeHtml(m.lieu)+'</td>'
         + '<td>'+badgeTxt+'</td><td>'+nbInscrits+'</td></tr>';
     }).join("");
     document.getElementById("impression").innerHTML =
       impressionEnteteHtml()
       + '<h2>Missions ('+liste.length+')</h2>'
-      + '<table><thead><tr><th>Date</th><th>Titre</th><th>Pôle</th><th>Lieu</th><th>Places</th><th>Inscrits</th></tr></thead>'
+      + '<table><thead><tr><th>Statut</th><th>Date</th><th>Titre</th><th>Pôle</th><th>Lieu</th><th>Places</th><th>Inscrits</th></tr></thead>'
       + '<tbody>'+lignes+'</tbody></table>'
       + impressionPiedHtml("Missions");
     window.print();
   }
 
-  function imprimerSelectionHeures(){
-    var heuresMap = heuresParBenevole();
-    var missionsMap = {};
-    state.affectations.forEach(function(a){
-      if(a.statut === "realise") missionsMap[a.benevoleId] = (missionsMap[a.benevoleId]||0) + 1;
-    });
-    var liste = state.benevoles.filter(function(b){ return heuresSelection[b.id]; });
-    var lignes = liste.map(function(b){
-      var h = Math.round((heuresMap[b.id]||0)*10)/10;
-      return '<tr><td>'+escapeHtml(b.nom)+'</td><td>'+escapeHtml(b.prenom)+'</td>'
-        + '<td>'+escapeHtml((b.poles||[]).join(", "))+'</td>'
-        + '<td>'+(missionsMap[b.id]||0)+'</td><td>'+h+' h</td></tr>';
-    }).join("");
+  // Impression de la fiche d'UNE SEULE mission (bouton "Imprimer la fiche"
+  // dans la modale mission) : ses informations, puis tout l'historique des
+  // bénévoles qui s'y sont inscrits (réalisé / à venir / non réalisé) —
+  // même principe que la fiche bénévole (imprimerFicheBenevole) et qu'une
+  // fiche d'action PICS (infos de l'action, puis historique complet).
+  function imprimerFicheMission(id){
+    var m = missionById(id);
+    if(!m) return;
+    var inscrits = inscritsAvecStatutDe(id);
+
+    var ficheHtml = '<table><thead><tr><th>Statut</th><th>Date</th><th>Horaire</th><th>Durée</th><th>Pôle</th><th>Lieu</th><th>Places</th></tr></thead>'
+      + '<tbody><tr><td>'+impressionStatutMissionHtml(m)+'</td><td>'+fmtDate(m.date)+'</td>'
+      + '<td>'+m.debut+'–'+m.fin+'</td><td>'+dureeHeures(m)+' h</td>'
+      + '<td>'+escapeHtml(m.pole||"—")+'</td><td>'+escapeHtml(m.lieu||"—")+'</td>'
+      + '<td>'+inscrits.length+' / '+m.placesTotal+'</td></tr></tbody></table>';
+
+    var notesHtml = (m.description ? '<div class="impression-resume">'+escapeHtml(m.description)+'</div>' : '')
+      + (m.commentaires ? '<div class="impression-resume"><strong>Commentaires : </strong>'+escapeHtml(m.commentaires)+'</div>' : '');
+
+    var historiqueHtml;
+    if(!inscrits.length){
+      historiqueHtml = '<div class="impression-vide">Aucun bénévole inscrit.</div>';
+    } else {
+      var nbRealisees = inscrits.filter(function(x){ return x.statut === "realisee"; }).length;
+      var nbAvenir = inscrits.filter(function(x){ return x.statut === "avenir"; }).length;
+      var nbNonRealisees = inscrits.filter(function(x){ return x.statut === "nonrealisee"; }).length;
+      var lignes = inscrits.map(function(x){
+        var detail = x.statut === "realisee" ? (" · "+dureeHeures(m)+" h") : "";
+        return '<tr><td class="impression-col-principale">'+escapeHtml(x.benevole.prenom)+' '+escapeHtml(x.benevole.nom)+'</td>'
+          + '<td>'+escapeHtml(x.benevole.email||"—")+'</td>'
+          + '<td class="'+CLASSE_STATUT_INSCRIPTION[x.statut]+'">'+LIBELLE_STATUT_INSCRIPTION[x.statut]+detail+'</td></tr>';
+      }).join("");
+      historiqueHtml = '<div class="impression-resume">'+nbRealisees+' réalisée(s) · '+nbAvenir+' à venir · '+nbNonRealisees+' non réalisée(s)</div>'
+        + '<table><thead><tr><th>Bénévole</th><th>Email</th><th>Statut</th></tr></thead>'
+        + '<tbody>'+lignes+'</tbody></table>';
+    }
+
     document.getElementById("impression").innerHTML =
       impressionEnteteHtml()
-      + '<h2>Heures données ('+liste.length+')</h2>'
-      + '<table><thead><tr><th>Nom</th><th>Prénom</th><th>Pôles</th><th>Missions réalisées</th><th>Total d\'heures</th></tr></thead>'
-      + '<tbody>'+lignes+'</tbody></table>'
-      + impressionPiedHtml("Heures données");
+      + '<h2>'+escapeHtml(libelleMission(m))+'</h2>'
+      + ficheHtml
+      + notesHtml
+      + '<h3 class="impression-sous-titre">Historique des réalisations</h3>'
+      + historiqueHtml
+      + impressionPiedHtml("Fiche mission");
     window.print();
   }
 
+  // Historique des actions, imprimé façon journal chronologique (comme
+  // "Historique des échanges" dans PICS) plutôt qu'en tableau à colonnes :
+  // plus lisible pour une suite d'évènements datés, et plus concis quand
+  // "Concerne" ou l'auteur sont vides.
   function imprimerSelectionHistorique(){
     var liste = state.historique.filter(function(h){ return historiqueSelection[h.id]; });
-    var lignes = liste.map(function(h){
-      return '<tr><td>'+fmtDateTime(h.date)+'</td><td>'+escapeHtml(ACTION_LABELS[h.action]||h.action)+'</td>'
-        + '<td>'+escapeHtml(h.cible||"")+'</td><td>'+escapeHtml(h.parNom||"")+' ('+libelleRoleHistorique(h.parRole)+')</td></tr>';
+    var evenements = liste.map(function(h){
+      return '<div class="impression-evenement">'
+        + '<div class="impression-evenement-date">'+fmtDateTime(h.date)+'</div>'
+        + '<div class="impression-evenement-action">'+escapeHtml(ACTION_LABELS[h.action]||h.action)+'</div>'
+        + (h.cible ? '<div class="impression-evenement-detail">'+escapeHtml(h.cible)+'</div>' : '')
+        + '<div class="impression-evenement-detail">Par '+escapeHtml(h.parNom||"—")+' ('+libelleRoleHistorique(h.parRole)+')</div>'
+        + '</div>';
     }).join("");
     document.getElementById("impression").innerHTML =
       impressionEnteteHtml()
       + '<h2>Historique ('+liste.length+')</h2>'
-      + '<table><thead><tr><th>Date</th><th>Action</th><th>Concerne</th><th>Par</th></tr></thead>'
-      + '<tbody>'+lignes+'</tbody></table>'
+      + (evenements || '<div class="impression-vide">Aucun évènement sélectionné.</div>')
       + impressionPiedHtml("Historique");
     window.print();
   }
@@ -1568,8 +2110,28 @@
     else if(action==="cancel-benevole"){ benevoleFormOpen = false; renderBenevoles(); }
     else if(action==="open-candidature"){ candidatureFormOpen = true; candidatureError=""; candidatureEnvoyee=false; renderMissions(); }
     else if(action==="cancel-candidature"){ candidatureFormOpen = false; renderMissions(); }
-    else if(action==="open-mission"){ missionFormOpen = true; renderMissions(); }
-    else if(action==="cancel-mission"){ missionFormOpen = false; renderMissions(); }
+    else if(action==="open-mission"){ missionFormOpen = true; missionEnEdition = null; missionFormError = ""; renderModal(); }
+    else if(action==="edit-mission"){
+      var idAModifier = el.getAttribute("data-id");
+      if(!missionById(idAModifier)){ alert("Cette mission n'existe plus."); return; }
+      missionFormOpen = true; missionEnEdition = idAModifier; missionFormError = ""; renderModal();
+    }
+    else if(action==="cancel-mission"){ missionFormOpen = false; missionEnEdition = null; missionFormError = ""; renderModal(); }
+    else if(action==="close-modal-mission"){
+      // Ne ferme que si le clic est bien sur le fond gris lui-même, pas sur
+      // un élément à l'intérieur de la boîte (le fond englobe toute la
+      // boîte, donc closest() le retrouverait aussi pour un clic dedans).
+      if(e.target === el){ missionFormOpen = false; missionEnEdition = null; missionFormError = ""; renderModal(); }
+    }
+    else if(action==="open-benevole-modale"){
+      var idBenevole = el.getAttribute("data-id");
+      if(!benevoleById(idBenevole)){ alert("Cette fiche n'existe plus."); return; }
+      benevoleModaleOpen = true; benevoleModaleId = idBenevole; benevoleModaleError = ""; renderModal();
+    }
+    else if(action==="cancel-benevole-modale"){ benevoleModaleOpen = false; benevoleModaleId = null; benevoleModaleError = ""; renderModal(); }
+    else if(action==="close-modal-benevole"){
+      if(e.target === el){ benevoleModaleOpen = false; benevoleModaleId = null; benevoleModaleError = ""; renderModal(); }
+    }
     else if(action==="open-login"){ loginFormOpen = true; loginError=""; loginInfo=""; renderAdminRow(); }
     else if(action==="cancel-login"){ loginFormOpen = false; loginError=""; loginInfo=""; renderAdminRow(); }
     else if(action==="open-gestionnaire"){ gestionnaireFormOpen = true; gestionnaireError=""; renderEquipe(); }
@@ -1600,21 +2162,30 @@
       if(!confirm("Supprimer définitivement " + (bd ? (bd.prenom+" "+bd.nom) : "ce bénévole") + " ? Cette action est irréversible.")) return;
       deleteDoc(doc(db,"benevoles", el.getAttribute("data-id"))).then(function(){
         logHistorique("suppression_benevole", bd ? (bd.prenom+" "+bd.nom) : "");
+        // Si la fiche supprimée était ouverte dans la modale, on la referme
+        // (elle n'a plus rien à montrer).
+        if(benevoleModaleId === (bd && bd.id)){ benevoleModaleOpen = false; benevoleModaleId = null; renderModal(); }
       }).catch(reportError);
     }
     else if(action==="valider-candidature"){
       var cId = el.getAttribute("data-id");
       var cand = state.candidatures.find(function(x){ return x.id === cId; });
       if(!cand) return;
-      // Email/téléphone ne sont pas demandés dans le formulaire de
-      // candidature (déjà connus via le dossier d'adhésion) : on les
-      // demande ici, au moment de créer la fiche bénévole. L'email sert
-      // d'identifiant unique de la fiche, il est donc obligatoire.
-      var emailValide = prompt("Email de " + cand.prenom + " " + cand.nom + " (d'après son dossier d'adhésion) :");
-      if(emailValide == null) return;
-      emailValide = emailValide.trim();
-      if(!emailValide){ alert("Email obligatoire pour créer la fiche bénévole."); return; }
-      var telValide = prompt("Téléphone (facultatif, laisser vide si inconnu) :") || "";
+      // Le candidat donne son email et son téléphone dans le formulaire de
+      // candidature (voir plus bas) : rien à ressaisir ici. Repli, pour une
+      // candidature envoyée avant l'ajout de ces champs au formulaire, qui
+      // n'aurait donc pas d'email enregistré : on redemande alors comme
+      // avant. L'email sert d'identifiant unique de la fiche, il est donc
+      // obligatoire dans tous les cas.
+      var emailValide = cand.email;
+      var telValide = cand.tel || "";
+      if(!emailValide){
+        emailValide = prompt("Email de " + cand.prenom + " " + cand.nom + " (candidature envoyée avant que le formulaire ne demande l'email) :");
+        if(emailValide == null) return;
+        emailValide = emailValide.trim();
+        if(!emailValide){ alert("Email obligatoire pour créer la fiche bénévole."); return; }
+        telValide = prompt("Téléphone (facultatif, laisser vide si inconnu) :") || "";
+      }
       setDoc(doc(db,"benevoles", emailValide.toLowerCase()), {
         prenom: cand.prenom, nom: cand.nom, email: emailValide, tel: telValide.trim(), poles: cand.poles || [], actif: true,
         dateCreation: serverTimestamp()
@@ -1656,6 +2227,16 @@
     else if(action==="changer-identite"){
       moiBenevoleId = null;
       sauvegarderMoiBenevoleId(null);
+      identiteFormOpen = false;
+      renderMissions();
+    }
+    else if(action==="open-identite"){
+      identiteFormOpen = true;
+      renderMissions();
+    }
+    else if(action==="cancel-identite"){
+      identiteFormOpen = false;
+      identiteError = "";
       renderMissions();
     }
     else if(action==="retirer"){
@@ -1713,13 +2294,15 @@
       var nouvelleListe = state.poles.filter(function(p){ return p !== poleNom; });
       setDoc(doc(db,"parametres","poles"), {liste: nouvelleListe}, {merge:true}).catch(reportError);
     }
+    else if(action==="delete-statut"){
+      var statutNom = el.getAttribute("data-statut");
+      if(!confirm("Retirer le statut « "+statutNom+" » de la liste proposée ? Les missions qui l'ont déjà ne seront pas modifiées.")) return;
+      var nouvelleListeStatuts = state.statutsMissions.filter(function(s){ return s !== statutNom; });
+      setDoc(doc(db,"parametres","poles"), {statutsMissions: nouvelleListeStatuts}, {merge:true}).catch(reportError);
+    }
     else if(action==="import-json"){
       var fileInput = document.getElementById("import-file-input");
       if(fileInput) fileInput.click();
-    }
-    else if(action==="trier-heures"){
-      heuresTri = el.getAttribute("data-tri");
-      renderHeures();
     }
     else if(action==="trier-historique"){
       historiqueTri = el.getAttribute("data-tri");
@@ -1733,11 +2316,6 @@
       missionsTri = el.getAttribute("data-tri");
       renderMissions();
     }
-    else if(action==="toggle-ligne-mission"){
-      var mId = el.getAttribute("data-id");
-      missionsDepliees[mId] = !missionsDepliees[mId];
-      renderMissions();
-    }
     else if(action==="basculer-vue-benevoles"){
       benevolesVue = benevolesVue === "tableau" ? "cartes" : "tableau";
       renderBenevoles();
@@ -1746,22 +2324,20 @@
       benevolesTri = el.getAttribute("data-tri");
       renderBenevoles();
     }
-    else if(action==="toggle-ligne-benevole"){
-      var bId = el.getAttribute("data-id");
-      benevolesDepliees[bId] = !benevolesDepliees[bId];
-      renderBenevoles();
-    }
     else if(action==="imprimer-selection-benevoles"){
       imprimerSelectionBenevoles();
     }
     else if(action==="imprimer-historique-benevoles"){
       imprimerHistoriqueBenevoles();
     }
+    else if(action==="imprimer-fiche-benevole"){
+      imprimerFicheBenevole(el.getAttribute("data-id"));
+    }
     else if(action==="imprimer-selection-missions"){
       imprimerSelectionMissions();
     }
-    else if(action==="imprimer-selection-heures"){
-      imprimerSelectionHeures();
+    else if(action==="imprimer-fiche-mission"){
+      imprimerFicheMission(el.getAttribute("data-id"));
     }
     else if(action==="imprimer-selection-historique"){
       imprimerSelectionHistorique();
@@ -1774,29 +2350,65 @@
       missionsSelection = {};
       renderMissions();
     }
-    else if(action==="vider-selection-heures"){
-      heuresSelection = {};
-      renderHeures();
-    }
     else if(action==="vider-selection-historique"){
       historiqueSelection = {};
       renderHistorique();
     }
+    else if(action==="reset-filtres-benevoles"){
+      resetFiltresBenevoles();
+      renderBenevoles();
+    }
+    else if(action==="reset-filtres-missions"){
+      resetFiltresMissions();
+      renderMissions();
+    }
+    else if(action==="ouvrir-stat"){
+      var statKey = el.getAttribute("data-stat");
+      // On repart toujours d'un onglet sans filtre ni sélection avant de
+      // poser celui de la tuile cliquée : sinon un filtre (ou une case
+      // cochée) laissé par une visite précédente de l'onglet se combinait
+      // avec celui de la tuile, et cliquer sur les tuiles à la suite finissait
+      // par ne plus rien afficher (signalé par Jluc).
+      if(statKey === "actifs"){
+        resetFiltresBenevoles();
+        benevolesFiltreEtat = "actif";
+        switchTab("benevoles");
+      } else if(statKey === "incomplet" || statKey === "places"){
+        // Les deux tuiles renvoient à la même vue : ce sont les missions
+        // incomplètes qui ont des places disponibles à pourvoir.
+        resetFiltresMissions();
+        missionsFiltreDispo = "incomplete";
+        switchTab("missions");
+      } else if(statKey === "heures"){
+        resetFiltresBenevoles();
+        benevolesTri = "heures";
+        switchTab("benevoles");
+      } else if(statKey === "averifier"){
+        resetFiltresMissions();
+        missionsFiltreStatut = "À vérifier";
+        switchTab("missions");
+      }
+      renderAll();
+    }
   });
 
-  // Recherche générale dans le tableau "Heures données", dans le module
-  // Bénévoles, dans l'Historique et dans la vue tableau des Missions :
-  // filtre en direct sans perdre le focus ni la position du curseur dans
-  // le champ.
-  document.addEventListener("input", function(e){
-    if(e.target.id === "heures-recherche"){
-      heuresRecherche = e.target.value;
-      var pos = e.target.selectionStart;
-      renderHeures();
-      var champ = document.getElementById("heures-recherche");
-      if(champ){ champ.focus(); champ.setSelectionRange(pos,pos); }
+  // Les tuiles cliquables du tableau de bord sont accessibles au clavier
+  // (tabindex + role="button", voir renderStats) : Entrée ou Espace
+  // déclenchent le même clic.
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Enter" || e.key === " "){
+      var elStat = e.target.closest && e.target.closest('[data-action="ouvrir-stat"]');
+      if(elStat){ e.preventDefault(); elStat.click(); }
+    } else if(e.key === "Escape" && missionFormOpen){
+      missionFormOpen = false; missionEnEdition = null; missionFormError = ""; renderModal();
     }
-    else if(e.target.id === "benevoles-recherche"){
+  });
+
+  // Recherche générale dans le module Bénévoles, dans l'Historique et dans
+  // la vue tableau des Missions : filtre en direct sans perdre le focus ni
+  // la position du curseur dans le champ.
+  document.addEventListener("input", function(e){
+    if(e.target.id === "benevoles-recherche"){
       benevolesRecherche = e.target.value;
       var pos2 = e.target.selectionStart;
       renderBenevoles();
@@ -1817,22 +2429,40 @@
       var champ4 = document.getElementById("missions-recherche");
       if(champ4){ champ4.focus(); champ4.setSelectionRange(pos4,pos4); }
     }
+    else if(e.target.id === "f-debut" || e.target.id === "f-fin"){
+      // Durée recalculée en direct dans la modale mission, sans re-render
+      // complet du formulaire (on ne touche qu'au champ affiché).
+      var champDuree = document.getElementById("f-duree-affichage");
+      var champDebut = document.getElementById("f-debut");
+      var champFin = document.getElementById("f-fin");
+      if(champDuree && champDebut && champFin){
+        champDuree.value = calculDureeAffichage(champDebut.value, champFin.value);
+      }
+    }
   });
 
-  // Listes déroulantes "Filtrer par pôle" (Bénévoles, Missions et Heures
-  // données), basées sur la liste des pôles de Paramètres.
+  // Listes déroulantes "Filtrer par pôle" (Bénévoles et Missions), basées
+  // sur la liste des pôles de Paramètres.
   document.addEventListener("change", function(e){
     if(e.target.id === "benevoles-filtre-pole"){
       benevolesFiltrePole = e.target.value;
+      renderBenevoles();
+    }
+    else if(e.target.id === "benevoles-filtre-etat"){
+      benevolesFiltreEtat = e.target.value;
       renderBenevoles();
     }
     else if(e.target.id === "missions-filtre-pole"){
       missionsFiltrePole = e.target.value;
       renderMissions();
     }
-    else if(e.target.id === "heures-filtre-pole"){
-      heuresFiltrePole = e.target.value;
-      renderHeures();
+    else if(e.target.id === "missions-filtre-statut"){
+      missionsFiltreStatut = e.target.value;
+      renderMissions();
+    }
+    else if(e.target.id === "missions-filtre-dispo"){
+      missionsFiltreDispo = e.target.value;
+      renderMissions();
     }
   });
 
@@ -1861,17 +2491,6 @@
         missionsSelection[cb.getAttribute("data-id")] = checkedM;
       });
       renderMissions();
-    }
-    else if(e.target.matches('[data-action="toggle-select-heure"]')){
-      heuresSelection[e.target.getAttribute("data-id")] = e.target.checked;
-      renderHeures();
-    }
-    else if(e.target.matches('[data-action="toggle-select-all-heures"]')){
-      var checkedHe = e.target.checked;
-      document.querySelectorAll('#panel-heures [data-action="toggle-select-heure"]').forEach(function(cb){
-        heuresSelection[cb.getAttribute("data-id")] = checkedHe;
-      });
-      renderHeures();
     }
     else if(e.target.matches('[data-action="toggle-select-historique"]')){
       historiqueSelection[e.target.getAttribute("data-id")] = e.target.checked;
@@ -1944,7 +2563,7 @@
       createUserWithEmailAndPassword(secondaryAuth, email, code).then(function(cred){
         var newUid = cred.user.uid;
         return setDoc(doc(db,"gestionnaires", newUid), {
-          nom: nom, actif: true, role: "gestionnaire", creeLe: serverTimestamp()
+          nom: nom, email: email, actif: true, role: "gestionnaire", creeLe: serverTimestamp()
         }).then(function(){
           return signOut(secondaryAuth);
         }).then(function(){
@@ -1981,9 +2600,10 @@
         moiBenevoleId = correspond.id;
         sauvegarderMoiBenevoleId(moiBenevoleId);
         identiteError = "";
+        identiteFormOpen = false;
         renderMissions();
       } else {
-        identiteError = "Aucune fiche bénévole ne correspond à ces informations. Vérifiez l'orthographe et l'email utilisé lors de la candidature.";
+        identiteError = "Aucune fiche bénévole validée ne correspond à ces informations.";
         renderMissions();
       }
       return;
@@ -1994,24 +2614,15 @@
       var polesC = Array.prototype.slice.call(fc.querySelectorAll('input[name="pole"]:checked')).map(function(i){ return i.value; });
       var candPrenom = fc.prenom.value.trim();
       var candNom = fc.nom.value.trim();
+      var candEmail = fc.email.value.trim();
+      var candTel = fc.tel.value.trim();
       addDoc(collection(db,"candidatures"), {
-        prenom: candPrenom, nom: candNom, poles: polesC, dateEnvoi: serverTimestamp()
+        prenom: candPrenom, nom: candNom, email: candEmail, tel: candTel, poles: polesC, dateEnvoi: serverTimestamp()
       }).then(function(){
         candidatureFormOpen = false; candidatureError = ""; candidatureEnvoyee = true;
+        // Pas d'envoi d'email automatique : la candidature apparaît dans
+        // l'onglet Candidatures, que les gestionnaires surveillent eux-mêmes.
         renderMissions();
-        // Ouvre le client mail du visiteur pour prévenir l'association, si une
-        // adresse a été configurée dans Paramètres (lien mailto : aucune
-        // infrastructure d'envoi d'email nécessaire). Pas d'email/téléphone
-        // du candidat dans ce message : il n'est pas demandé dans le
-        // formulaire (déjà connu via le dossier d'adhésion).
-        if(state.emailCandidature){
-          var sujet = "Nouvelle candidature bénévole — " + candPrenom + " " + candNom;
-          var corps = "Nouvelle candidature reçue sur le site des bénévoles :\n\n"
-            + "Prénom : " + candPrenom + "\nNom : " + candNom
-            + "\nPôles souhaités : " + (polesC.join(", ") || "aucun")
-            + "\n\nÀ valider dans l'onglet Candidatures du site (ses coordonnées vous seront demandées à la validation).";
-          window.location.href = "mailto:" + encodeURIComponent(state.emailCandidature) + "?subject=" + encodeURIComponent(sujet) + "&body=" + encodeURIComponent(corps);
-        }
       }).catch(function(err){
         candidatureError = "Erreur, réessayez.";
         renderMissions();
@@ -2043,27 +2654,69 @@
         renderBenevoles();
       });
     }
+    if(e.target.id === "form-benevole-modale"){
+      e.preventDefault();
+      var fbm = e.target;
+      var polesModale = Array.prototype.slice.call(fbm.querySelectorAll('input[name="pole"]:checked')).map(function(i){ return i.value; });
+      var champsBenevole = {
+        prenom: fbm.prenom.value.trim(),
+        nom: fbm.nom.value.trim(),
+        tel: fbm.tel.value.trim(),
+        poles: polesModale
+      };
+      updateDoc(doc(db,"benevoles", benevoleModaleId), champsBenevole).then(function(){
+        logHistorique("modification_benevole", champsBenevole.prenom + " " + champsBenevole.nom);
+        benevoleModaleOpen = false; benevoleModaleId = null; benevoleModaleError = ""; renderModal();
+      }).catch(function(err){
+        benevoleModaleError = "Erreur, réessayez.";
+        renderModal();
+      });
+    }
     if(e.target.id === "form-mission"){
       e.preventDefault();
       var f2 = e.target;
       var titre = f2.titre.value.trim();
-      var numeroMission = prochainNumeroMission();
-      addDoc(collection(db,"missions"), {
+      var placesSaisies = Math.max(1, parseInt(f2.placesTotal.value,10) || 1);
+      var champs = {
         titre: titre,
-        numero: numeroMission,
         pole: f2.pole.value,
+        statut: f2.statut.value,
         date: f2.date.value,
         lieu: f2.lieu.value.trim(),
         debut: f2.debut.value,
         fin: f2.fin.value,
-        placesTotal: Math.max(1, parseInt(f2.placesTotal.value,10) || 1),
+        placesTotal: placesSaisies,
         description: f2.description.value.trim(),
-        creePar: moiNom,
-        creeLe: serverTimestamp()
-      }).then(function(){
-        logHistorique("creation_mission", "M"+numeroMission+" — "+titre);
-        missionFormOpen = false; renderMissions();
-      }).catch(reportError);
+        commentaires: f2.commentaires.value.trim()
+      };
+
+      if(missionEnEdition){
+        // Modification d'une mission existante : on garde son numéro (M1,
+        // M2...), sa date de création et son créateur d'origine — seuls les
+        // champs du formulaire changent. On refuse de passer sous le nombre
+        // de bénévoles déjà inscrits, pour ne pas créer de surbooking.
+        var nbInscritsActuels = inscritsDe(missionEnEdition).length;
+        if(placesSaisies < nbInscritsActuels){
+          missionFormError = "Impossible : " + nbInscritsActuels + " bénévole(s) déjà inscrit(s), on ne peut pas descendre en dessous.";
+          renderModal();
+          return;
+        }
+        var missionAvant = missionById(missionEnEdition);
+        updateDoc(doc(db,"missions", missionEnEdition), champs).then(function(){
+          logHistorique("modification_mission", libelleMission(Object.assign({}, missionAvant, champs)));
+          missionFormOpen = false; missionEnEdition = null; missionFormError = ""; renderModal();
+        }).catch(reportError);
+      } else {
+        var numeroMission = prochainNumeroMission();
+        addDoc(collection(db,"missions"), Object.assign({}, champs, {
+          numero: numeroMission,
+          creePar: moiNom,
+          creeLe: serverTimestamp()
+        })).then(function(){
+          logHistorique("creation_mission", "M"+numeroMission+" — "+titre);
+          missionFormOpen = false; renderModal();
+        }).catch(reportError);
+      }
     }
     if(e.target.id === "form-pole"){
       e.preventDefault();
@@ -2075,12 +2728,14 @@
         fp.reset();
       }).catch(reportError);
     }
-    if(e.target.id === "form-email-candidature"){
+    if(e.target.id === "form-statut"){
       e.preventDefault();
-      var fec = e.target;
-      var emailC = fec.emailCandidature.value.trim();
-      setDoc(doc(db,"parametres","poles"), {emailCandidature: emailC}, {merge:true}).then(function(){
-        logHistorique("modification_email_candidature", emailC);
+      var fs = e.target;
+      var nomStatut = fs.nom.value.trim();
+      if(!nomStatut) return;
+      var nouvelleListeStatuts = state.statutsMissions.concat([nomStatut]).filter(function(v,i,arr){ return arr.indexOf(v) === i; });
+      setDoc(doc(db,"parametres","poles"), {statutsMissions: nouvelleListeStatuts}, {merge:true}).then(function(){
+        fs.reset();
       }).catch(reportError);
     }
   });
@@ -2240,6 +2895,39 @@
     Promise.all(ecritures).then(function(){ numerotationEnCours = false; });
   }
 
+  // Passage automatique en "À vérifier" des missions dont la date est
+  // dépassée (demande de Jluc). Ne touche QUE les missions encore au
+  // statut "En cours" : une mission déjà mise à "À vérifier", "Terminée"
+  // ou "Non effectuée" à la main n'est jamais réécrite — ce mécanisme ne
+  // fait qu'accélérer le premier passage, il ne remplace jamais une
+  // décision déjà prise par un·e gestionnaire. "Date dépassée" = strictement
+  // avant aujourd'hui (une mission du jour même n'est pas encore basculée).
+  // Comme pour la numérotation ci-dessus : seuls gestionnaire/Directeur
+  // déclenchent ce contrôle (un visiteur public n'a de toute façon pas le
+  // droit d'écrire dans Firestore), et le verrou évite de relancer la même
+  // écriture en boucle.
+  //
+  // Limite à connaître : ce contrôle ne s'exécute que quand quelqu'un
+  // (gestionnaire ou Directeur) a l'application ouverte dans son
+  // navigateur — il n'y a pas de tâche automatique côté serveur dans cette
+  // appli (pas de backend, juste ce fichier + Firebase). Si personne ne se
+  // connecte pendant plusieurs jours après la date d'une mission, le
+  // changement de statut n'a lieu qu'à la prochaine connexion.
+  var verificationStatutEnCours = false;
+  function verifierMissionsAPasser(){
+    if(role === "public" || verificationStatutEnCours) return;
+    var aujourdhui = aujourdhuiIso();
+    var aBasculer = state.missions.filter(function(m){
+      return m.date && m.date < aujourdhui && statutMission(m) === "En cours";
+    });
+    if(!aBasculer.length) return;
+    verificationStatutEnCours = true;
+    var ecritures = aBasculer.map(function(m){
+      return updateDoc(doc(db,"missions", m.id), { statut: "À vérifier" }).catch(function(){});
+    });
+    Promise.all(ecritures).then(function(){ verificationStatutEnCours = false; });
+  }
+
   var publicCollectionsAttached = false;
   var unsubBenevoles = null, unsubMissions = null, unsubAffectations = null, unsubParametres = null;
 
@@ -2260,6 +2948,7 @@
       state.missions = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
       sortMissions();
       completerNumerosMissions();
+      verifierMissionsAPasser();
       renderAll();
     }, reportError);
 
@@ -2270,7 +2959,9 @@
 
     unsubParametres = onSnapshot(doc(db,"parametres","poles"), function(snap){
       state.poles = (snap.exists() && Array.isArray(snap.data().liste) && snap.data().liste.length) ? snap.data().liste : POLES.slice();
-      state.emailCandidature = (snap.exists() && snap.data().emailCandidature) ? snap.data().emailCandidature : "";
+      state.statutsMissions = (snap.exists() && Array.isArray(snap.data().statutsMissions) && snap.data().statutsMissions.length)
+        ? snap.data().statutsMissions.map(function(s){ return s === "Terminées" ? "Terminée" : s; })
+        : STATUTS_MISSIONS.slice();
       renderAll();
     }, function(){ /* pas encore de liste personnalisée : on garde les valeurs par défaut */ });
   }
