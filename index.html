@@ -2301,6 +2301,21 @@
         if(!emailValide){ alert("Email obligatoire pour créer la fiche bénévole."); return; }
         telValide = prompt("Téléphone (facultatif, laisser vide si inconnu) :") || "";
       }
+      // Important : on ouvre l'email de confirmation ICI, de façon
+      // synchrone dans le clic (avant l'enregistrement Firestore), et pas
+      // après. Les navigateurs n'autorisent l'ouverture d'un lien mailto:
+      // (ils la traitent comme une popup) que si elle est déclenchée
+      // directement par le geste de l'utilisateur ; une fois qu'on a
+      // attendu la fin d'un enregistrement réseau (setDoc/deleteDoc, même
+      // rapide), ce geste n'est plus considéré comme valide et le
+      // navigateur bloque silencieusement l'ouverture — sans aucune erreur
+      // visible. C'est cette raison précise qui empêchait Outlook de
+      // s'ouvrir. Sources : MDN, "User activation"
+      // (https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/User_activation)
+      // et le rapport de bug Mozilla qui documente ce traitement pour les
+      // liens mailto: en particulier
+      // (https://bugzilla.mozilla.org/show_bug.cgi?id=299116).
+      ouvrirEmailConfirmationCandidature(cand, emailValide);
       setDoc(doc(db,"benevoles", emailValide.toLowerCase()), {
         prenom: cand.prenom, nom: cand.nom, email: emailValide, tel: telValide.trim(), poles: cand.poles || [], actif: true,
         dateCreation: serverTimestamp()
@@ -2308,7 +2323,6 @@
         return deleteDoc(doc(db,"candidatures", cId));
       }).then(function(){
         logHistorique("validation_candidature", cand.prenom + " " + cand.nom);
-        ouvrirEmailConfirmationCandidature(cand, emailValide);
       }).catch(reportError);
     }
     else if(action==="refuser-candidature"){
