@@ -730,6 +730,30 @@
     }).catch(function(e){ console.error("historique:", e); });
   }
 
+  // Après validation d'une candidature (action "valider-candidature"), on ne
+  // peut pas prévenir automatiquement le bénévole : l'appli n'a pas de
+  // serveur, donc rien ne peut partir toute seule vers son téléphone. La
+  // solution la plus simple sans service tiers ni compte à créer : ouvrir
+  // l'application email habituelle du gestionnaire (mailto:) avec un message
+  // déjà rédigé — il ne reste qu'un clic "Envoyer" de son côté. L'adresse de
+  // l'appli est déduite de la page en cours (window.location), pas codée en
+  // dur, pour rester juste même si l'URL change.
+  function ouvrirEmailConfirmationCandidature(cand, emailDestinataire){
+    if(!emailDestinataire) return;
+    var urlApp = window.location.origin + window.location.pathname;
+    var sujet = "Votre candidature est validée — Maison Pour Tous des Rancy";
+    var corps = "Bonjour " + cand.prenom + ",\n\n"
+      + "Votre candidature comme bénévole à la Maison Pour Tous des Rancy a été validée.\n\n"
+      + "Vous pouvez dès maintenant consulter les missions proposées et vous y inscrire ici :\n" + urlApp + "\n\n"
+      + "À bientôt,\nL'équipe de la Maison Pour Tous des Rancy";
+    var mailtoUrl = "mailto:" + encodeURIComponent(emailDestinataire)
+      + "?subject=" + encodeURIComponent(sujet)
+      + "&body=" + encodeURIComponent(corps);
+    var lien = document.createElement("a");
+    lien.href = mailtoUrl;
+    lien.click();
+  }
+
   // ---------- render: connexion / mode gestion ----------
   function renderAdminRow(){
     var el = document.getElementById("admin-row");
@@ -2284,6 +2308,7 @@
         return deleteDoc(doc(db,"candidatures", cId));
       }).then(function(){
         logHistorique("validation_candidature", cand.prenom + " " + cand.nom);
+        ouvrirEmailConfirmationCandidature(cand, emailValide);
       }).catch(reportError);
     }
     else if(action==="refuser-candidature"){
