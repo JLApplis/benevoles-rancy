@@ -1755,6 +1755,7 @@
     validation_candidature: "Candidature validée",
     refus_candidature: "Candidature refusée",
     ajout_gestionnaire: "Gestionnaire ajouté",
+    ajout_directeur: "Directeur ajouté",
     desactivation_gestionnaire: "Gestionnaire désactivé",
     reactivation_gestionnaire: "Gestionnaire réactivé",
     modification_email_candidature: "Email de candidature modifié",
@@ -1865,8 +1866,9 @@
         + '<div class="field"><label for="g-nom">Nom complet</label><input id="g-nom" name="nom" required></div>'
         + '<div class="field"><label for="g-email">Email (réel, pour la récupération du code)</label><input id="g-email" name="email" type="email" required></div>'
         + '<div class="field"><label for="g-code">Code initial (6 caractères min.)</label><input id="g-code" name="code" type="text" minlength="6" required></div>'
+        + '<div class="field"><label for="g-role">Rôle</label><select id="g-role" name="role"><option value="gestionnaire">Gestionnaire</option><option value="directeur">Directeur (tous les droits)</option></select></div>'
         + '</div>'
-        + '<div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter ce gestionnaire</button>'
+        + '<div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter cette personne</button>'
         + '<button type="button" class="btn btn-ghost" data-action="cancel-gestionnaire">Annuler</button>'
         + (gestionnaireError ? '<span class="error-text">'+escapeHtml(gestionnaireError)+'</span>' : '')
         + '</div></form>';
@@ -2784,14 +2786,15 @@
       var nom = fg.nom.value.trim();
       var email = fg.email.value.trim();
       var code = fg.code.value;
+      var roleChoisi = (fg.role && fg.role.value === "directeur") ? "directeur" : "gestionnaire";
       createUserWithEmailAndPassword(secondaryAuth, email, code).then(function(cred){
         var newUid = cred.user.uid;
         return setDoc(doc(db,"gestionnaires", newUid), {
-          nom: nom, email: email, actif: true, role: "gestionnaire", creeLe: serverTimestamp()
+          nom: nom, email: email, actif: true, role: roleChoisi, creeLe: serverTimestamp()
         }).then(function(){
           return signOut(secondaryAuth);
         }).then(function(){
-          logHistorique("ajout_gestionnaire", nom);
+          logHistorique(roleChoisi === "directeur" ? "ajout_directeur" : "ajout_gestionnaire", nom);
           gestionnaireFormOpen = false; gestionnaireError = "";
           renderEquipe();
         });
