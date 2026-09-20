@@ -730,28 +730,56 @@
     }).catch(function(e){ console.error("historique:", e); });
   }
 
-  // Après validation d'une candidature (action "valider-candidature"), on ne
-  // peut pas prévenir automatiquement le bénévole : l'appli n'a pas de
-  // serveur, donc rien ne peut partir toute seule vers son téléphone. La
-  // solution la plus simple sans service tiers ni compte à créer : ouvrir
-  // l'application email habituelle du gestionnaire (mailto:) avec un message
-  // déjà rédigé — il ne reste qu'un clic "Envoyer" de son côté. L'adresse de
-  // l'appli est déduite de la page en cours (window.location), pas codée en
-  // dur, pour rester juste même si l'URL change.
-  function ouvrirEmailConfirmationCandidature(cand, emailDestinataire){
+  // Après validation OU refus d'une candidature, on ne peut pas prévenir
+  // automatiquement le candidat : l'appli n'a pas de serveur, donc rien ne
+  // peut partir toute seule vers son téléphone. La solution la plus simple
+  // sans service tiers ni compte à créer : ouvrir l'application email
+  // habituelle du gestionnaire (mailto:) avec un message déjà rédigé — il ne
+  // reste qu'un clic "Envoyer" de son côté.
+  // Important : cette fonction doit être appelée de façon SYNCHRONE, dans le
+  // clic d'origine (avant tout enregistrement Firestore), jamais après un
+  // .then() : les navigateurs traitent mailto: comme une popup et bloquent
+  // silencieusement son ouverture si elle n'est plus directement liée au
+  // geste de l'utilisateur (voir le commentaire dans "valider-candidature",
+  // sources : MDN "User activation" et Bugzilla #299116).
+  function ouvrirMailto(emailDestinataire, sujet, corps){
     if(!emailDestinataire) return;
-    var urlApp = window.location.origin + window.location.pathname;
-    var sujet = "Votre candidature est validée — Maison Pour Tous des Rancy";
-    var corps = "Bonjour " + cand.prenom + ",\n\n"
-      + "Votre candidature comme bénévole à la Maison Pour Tous des Rancy a été validée.\n\n"
-      + "Vous pouvez dès maintenant consulter les missions proposées et vous y inscrire ici :\n" + urlApp + "\n\n"
-      + "À bientôt,\nL'équipe de la Maison Pour Tous des Rancy";
     var mailtoUrl = "mailto:" + encodeURIComponent(emailDestinataire)
       + "?subject=" + encodeURIComponent(sujet)
       + "&body=" + encodeURIComponent(corps);
     var lien = document.createElement("a");
     lien.href = mailtoUrl;
     lien.click();
+  }
+
+  // L'adresse de l'appli est déduite de la page en cours (window.location),
+  // pas codée en dur, pour rester juste même si l'URL change.
+  function ouvrirEmailConfirmationCandidature(cand, emailDestinataire){
+    var urlApp = window.location.origin + window.location.pathname;
+    var sujet = "Votre candidature est validée — Maison Pour Tous des Rancy";
+    var corps = "Bonjour " + cand.prenom + ",\n\n"
+      + "Votre candidature comme bénévole à la Maison Pour Tous des Rancy a été validée.\n\n"
+      + "Vous pouvez dès maintenant consulter les missions proposées et vous y inscrire ici :\n" + urlApp + "\n\n"
+      + "À bientôt,\nL'équipe de la Maison Pour Tous des Rancy";
+    ouvrirMailto(emailDestinataire, sujet, corps);
+  }
+
+  // Refus d'une candidature (action "refuser-candidature") : demande de
+  // Jluc, pour le cas où les informations données ne correspondent à rien
+  // (erreur de saisie, ou personne non inscrite/non reconnue) — le candidat
+  // n'a sinon aucun moyen de savoir que sa candidature n'a pas été retenue.
+  // Message volontairement neutre : on ne sait jamais, de ce côté-ci, s'il
+  // s'agit d'une vraie erreur de saisie ou d'autre chose — on ne l'affirme
+  // donc pas, on laisse la porte ouverte à un nouvel envoi.
+  function ouvrirEmailAnomalieCandidature(cand, emailDestinataire){
+    var sujet = "Votre candidature n'a pas pu être validée — Maison Pour Tous des Rancy";
+    var corps = "Bonjour " + cand.prenom + ",\n\n"
+      + "Nous n'avons pas pu valider votre candidature de bénévole à la Maison Pour Tous des Rancy : "
+      + "les informations transmises ne correspondent à aucune inscription connue de notre côté "
+      + "(il peut s'agir d'une simple erreur de saisie dans le formulaire).\n\n"
+      + "N'hésitez pas à nous recontacter ou à renvoyer votre candidature en vérifiant vos coordonnées.\n\n"
+      + "Cordialement,\nL'équipe de la Maison Pour Tous des Rancy";
+    ouvrirMailto(emailDestinataire, sujet, corps);
   }
 
   // ---------- render: connexion / mode gestion ----------
@@ -2275,12 +2303,24 @@
     else if(action==="delete-benevole"){
       var bd = benevoleById(el.getAttribute("data-id"));
       if(!confirm("Supprimer définitivement " + (bd ? (bd.prenom+" "+bd.nom) : "ce bénévole") + " ? Cette action est irréversible.")) return;
-      deleteDoc(doc(db,"benevoles", el.getAttribute("data-id"))).then(function(){
-        logHistorique("suppression_benevole", bd ? (bd.prenom+" "+bd.nom) : "");
-        // Si la fiche supprimée était ouverte dans la modale, on la referme
-        // (elle n'a plus rien à montrer).
-        if(benevoleModaleId === (bd && bd.id)){ benevoleModaleOpen = false; benevoleModaleId = null; renderModal(); }
-      }).catch(reportError);
+      var idBenevoleSupprime = el.getAttribute("data-id");
+      // Bug corrigé : supprimer un bénévole sans supprimer ses inscriptions
+      // (affectations) laissait ces inscriptions orphelines en base. Elles
+      // continuaient alors à compter comme une place prise sur la mission
+      // concernée (voir placesRestantes/inscritsDe), pour toujours, sans plus
+      // rien à l'écran pour l'expliquer ni la retirer — puisque la ligne
+      // correspondante ne s'affiche plus (le bénévole n'existe plus). On
+      // supprime donc d'abord ses inscriptions, puis sa fiche.
+      var affectationsDuBenevole = state.affectations.filter(function(a){ return a.benevoleId === idBenevoleSupprime; });
+      Promise.all(affectationsDuBenevole.map(function(a){ return deleteDoc(doc(db,"affectations", a.id)); }))
+        .then(function(){
+          return deleteDoc(doc(db,"benevoles", idBenevoleSupprime));
+        }).then(function(){
+          logHistorique("suppression_benevole", bd ? (bd.prenom+" "+bd.nom) : "");
+          // Si la fiche supprimée était ouverte dans la modale, on la referme
+          // (elle n'a plus rien à montrer).
+          if(benevoleModaleId === (bd && bd.id)){ benevoleModaleOpen = false; benevoleModaleId = null; renderModal(); }
+        }).catch(reportError);
     }
     else if(action==="valider-candidature"){
       var cId = el.getAttribute("data-id");
@@ -2329,6 +2369,11 @@
       var cId2 = el.getAttribute("data-id");
       var cand2 = state.candidatures.find(function(x){ return x.id === cId2; });
       if(!confirm("Refuser et supprimer la candidature de " + (cand2 ? cand2.prenom+" "+cand2.nom : "cette personne") + " ? Cette action est irréversible.")) return;
+      // Mail d'anomalie ouvert ici, avant l'enregistrement Firestore (voir le
+      // commentaire de ouvrirMailto) — seulement si on a une adresse email
+      // (candidature ancienne sans email : rien à envoyer, on refuse quand
+      // même, comme avant).
+      if(cand2 && cand2.email){ ouvrirEmailAnomalieCandidature(cand2, cand2.email); }
       deleteDoc(doc(db,"candidatures", cId2)).then(function(){
         logHistorique("refus_candidature", cand2 ? (cand2.prenom + " " + cand2.nom) : "");
       }).catch(reportError);
@@ -2397,9 +2442,24 @@
     else if(action==="delete-mission"){
       var mDel = missionById(el.getAttribute("data-id"));
       if(!confirm("Supprimer définitivement la mission « " + (mDel?libelleMission(mDel):"") + " » ? Cette action est irréversible.")) return;
-      deleteDoc(doc(db,"missions", el.getAttribute("data-id"))).then(function(){
-        logHistorique("suppression_mission", mDel ? libelleMission(mDel) : "");
-      }).catch(reportError);
+      var idMissionSupprimee = el.getAttribute("data-id");
+      // Même correction que pour "delete-benevole" : sans ça, les inscriptions
+      // liées à cette mission restaient orphelines en base (invisibles à
+      // l'écran, mais jamais nettoyées). On les supprime d'abord.
+      var affectationsDeLaMission = state.affectations.filter(function(a){ return a.missionId === idMissionSupprimee; });
+      Promise.all(affectationsDeLaMission.map(function(a){ return deleteDoc(doc(db,"affectations", a.id)); }))
+        .then(function(){
+          return deleteDoc(doc(db,"missions", idMissionSupprimee));
+        }).then(function(){
+          logHistorique("suppression_mission", mDel ? libelleMission(mDel) : "");
+          // Corrigé : si la suppression était lancée depuis l'intérieur de la
+          // modale de la mission, celle-ci restait ouverte ensuite (elle se
+          // retrouvait à afficher, sans le dire, le formulaire vide "Créer une
+          // mission" puisque la mission qu'elle éditait n'existe plus). On la
+          // referme maintenant explicitement.
+          missionFormOpen = false; missionEnEdition = null; missionFormError = "";
+          renderModal();
+        }).catch(reportError);
     }
     else if(action==="export-json"){
       // Corrigé : il y avait deux blocs "export-json" identiques (un mort,
