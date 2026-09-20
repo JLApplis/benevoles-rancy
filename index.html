@@ -97,6 +97,12 @@
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
   .btn-primary:hover{filter:brightness(1.05);}
+  /* Bouton "Refuser" d'une candidature (demande de Jluc) : même gabarit que
+     .btn-primary (donc que "Valider", à côté), mais en rouge — pour que les
+     deux choix soient aussi visibles et faciles à cliquer l'un que l'autre,
+     plutôt qu'une petite croix discrète. */
+  .btn-danger{background:var(--danger);border-color:var(--danger);color:#fff;}
+  .btn-danger:hover{filter:brightness(1.05);}
   .btn-ghost{background:none;border-color:transparent;color:var(--ink-soft);padding:8px 10px;}
   .admin-row .btn-ghost{color:#fff;}
   .btn-danger-ghost{background:none;border-color:transparent;color:var(--danger);padding:6px 8px;font-size:.82rem;}
@@ -1146,8 +1152,8 @@
         + '</div>'
         + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun pôle renseigné</span>')+'</div>'
         + '<div class="card-footrow"><span></span><span style="display:flex;gap:6px;">'
+        + '<button class="btn btn-danger btn-sm" data-action="refuser-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Refuser</button>'
         + '<button class="btn btn-primary btn-sm" data-action="valider-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Valider</button>'
-        + '<button class="btn-danger-ghost" data-action="refuser-candidature" data-id="'+c.id+'" title="Refuser">✕</button>'
         + '</span></div>'
         + '</div>';
     }).join("");
@@ -2368,7 +2374,16 @@
     else if(action==="refuser-candidature"){
       var cId2 = el.getAttribute("data-id");
       var cand2 = state.candidatures.find(function(x){ return x.id === cId2; });
-      if(!confirm("Refuser et supprimer la candidature de " + (cand2 ? cand2.prenom+" "+cand2.nom : "cette personne") + " ? Cette action est irréversible.")) return;
+      // Pas de window.confirm() ici (corrigé — bug remonté par Jluc) : une
+      // boîte de dialogue intercalée entre le clic et l'ouverture du mail
+      // suffit à faire échouer cette dernière, silencieusement, dans
+      // certains navigateurs (mailto: est traité comme une popup, très
+      // strictement liée au geste de clic d'origine — voir le commentaire de
+      // ouvrirMailto). C'est exactement pour ça que "Valider" fonctionnait
+      // et pas "Refuser" : seul "Refuser" avait cette boîte de dialogue.
+      // Le bouton "Refuser" étant désormais gros, rouge et explicite (et non
+      // plus une petite croix ambiguë), le risque de clic accidentel est
+      // déjà limité — la confirmation n'est plus nécessaire.
       // Mail d'anomalie ouvert ici, avant l'enregistrement Firestore (voir le
       // commentaire de ouvrirMailto) — seulement si on a une adresse email
       // (candidature ancienne sans email : rien à envoyer, on refuse quand
