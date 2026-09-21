@@ -244,8 +244,9 @@
   .statut-avenir{color:var(--accent-soft-ink);font-weight:600;}
   .statut-nonrealisee{color:var(--danger);font-weight:600;}
 
-  .mission-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
-  .mission-title{font-family:"Fraunces",serif;font-size:1.1rem;font-weight:600;}
+  .mission-head{display:flex;justify-content:space-between;gap:10px;align-items:center;}
+  .mission-code{color:var(--accent-soft-ink);font-size:.78rem;font-weight:700;letter-spacing:.02em;}
+  .mission-title{font-family:"Fraunces",serif;font-size:1.1rem;font-weight:600;margin-top:2px;}
   .mission-when{color:var(--ink-soft);font-size:.85rem;margin-top:2px;}
   .mission-meta{color:var(--ink-faint);font-size:.78rem;}
   .places-badge{font-variant-numeric:tabular-nums;font-size:.78rem;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent-soft-ink);white-space:nowrap;}
@@ -1239,7 +1240,7 @@
       var moi = moiBenevoleId ? benevoleById(moiBenevoleId) : null;
       var moiDejaInscrit = moi && inscrits.some(function(a){ return a.benevoleId === moi.id; });
       if(!moi){
-        selectHtml = '<div class="benevole-contact">Indiquez qui vous êtes en haut de la page pour vous inscrire.</div>';
+        selectHtml = '<div class="benevole-contact">Identifiez-vous pour pouvoir vous inscrire à cette mission.</div>';
       } else if(moiDejaInscrit){
         selectHtml = '';
       } else {
@@ -1261,9 +1262,21 @@
     var moiEstInscrit = role === "public" && moiBenevoleId && inscrits.some(function(a){ return a.benevoleId === moiBenevoleId; });
 
     return '<div class="card">'
-      + '<div class="mission-head"><div><div class="mission-title">'+escapeHtml(libelleMission(m))+'</div>'
-      + '<div class="mission-when">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+' · '+escapeHtml(m.lieu)+'</div></div>'
+      // Ordre demandé par Jluc (21/09/2026) : 1) code mission + places
+      // restantes sur la même ligne, 2) objet, 3) date et heure, 4) adresse
+      // — chacun sur sa propre ligne, avant le badge de pôle/statut, la
+      // description, puis (pour le public non identifié) le message
+      // d'identification, dans missionInscritsSectionHtml().
+      // Le badge ne partage la ligne qu'avec "M1" (pas avec tout le bloc
+      // titre/date/adresse) pour que ces lignes utilisent toute la largeur
+      // de la carte, au lieu de laisser un vide à droite sur toute la
+      // hauteur de l'en-tête (défaut corrigé le 21/09/2026).
+      + '<div class="mission-head">'
+      + '<div class="mission-code">'+(m.numero ? 'M'+m.numero : '')+'</div>'
       + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>'
+      + '<div class="mission-title">'+escapeHtml(m.titre||'')+'</div>'
+      + '<div class="mission-when">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</div>'
+      + '<div class="mission-when">'+escapeHtml(m.lieu)+'</div>'
       + (role !== "public" && statutMission(m) === "À vérifier"
           ? '<div class="mission-a-pointer">⚠ Statut « À vérifier » : pensez à cocher qui est venu ci-dessous.</div>'
           : '')
