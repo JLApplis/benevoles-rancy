@@ -72,15 +72,24 @@
   .msg-error{color:var(--danger);font-size:.85rem;}
   .msg-ok{color:var(--success-soft-ink);font-size:.85rem;}
 
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:20px;}
-  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);border-left:4px solid var(--accent);}
+  /* Tuiles réduites (demande de Jluc, 21/09/2026) pour que les 7 tuiles
+     possibles (4 habituelles + jusqu'à 3 d'alerte) tiennent sur une seule
+     ligne dès qu'il y a un peu de place à l'écran — validé sur maquette
+     avant d'être appliqué ici. Seul le chiffre reste presque à sa taille
+     d'origine (1.6rem → 1.4rem) ; le libellé, lui, est nettement réduit. */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px;margin-top:20px;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;box-shadow:var(--shadow-sm);border-left:3px solid var(--accent);}
   .stat-clic{cursor:pointer;}
   .stat-clic:hover,.stat-clic:focus-visible{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);outline:none;}
-  .stat-alerte{border-left-color:var(--warm);}
-  .stat-alerte .stat-value{color:var(--warm);}
+  /* Tuiles d'alerte plus visibles (demande de Jluc, 21/09/2026) : tout le
+     fond en orange pâle (pas juste le liseré comme avant), chiffre dans un
+     orange plus foncé que --warm pour bien ressortir sur ce fond clair. */
+  .stat-alerte{background:var(--warm-soft);border-left-color:var(--warm);}
+  .stat-alerte .stat-value{color:#8a4b0a;}
+  .stat-alerte .stat-label{color:var(--warm-soft-ink);}
   .mission-a-pointer{background:var(--warm-soft);color:var(--warm-soft-ink);border:1px solid var(--warm);border-radius:8px;padding:6px 10px;font-size:.85rem;font-weight:600;margin:8px 0;}
-  .stat-value{font-family:"Fraunces",serif;font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);}
-  .stat-label{color:var(--ink-soft);font-size:.82rem;margin-top:2px;}
+  .stat-value{font-family:"Fraunces",serif;font-size:1.4rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);}
+  .stat-label{color:var(--ink-soft);font-size:.68rem;margin-top:1px;line-height:1.25;}
 
   .tabs{display:flex;gap:18px;margin-top:26px;border-bottom:1px solid var(--line);overflow-x:auto;}
   .tab{background:none;border:none;border-bottom:3px solid transparent;padding:10px 2px;font-weight:600;color:var(--ink-soft);white-space:nowrap;}
@@ -164,6 +173,11 @@
   .mission-creele{color:var(--ink-soft);font-size:.8rem;margin-top:2px;}
   .mission-date-detail{color:var(--ink-soft);font-size:.86rem;margin-top:2px;}
   .badge-inactif{color:var(--danger);font-size:.8rem;}
+  /* Drapeau "demande de désinscription" (demande de Jluc, 21/09/2026),
+     affiché à côté du nom d'un inscrit dans la modale Missions — mêmes
+     couleurs que .mission-a-pointer, pour rester cohérent avec les autres
+     signaux d'attention de l'appli. */
+  .badge-indisponible{background:var(--warm-soft);color:var(--warm-soft-ink);border-radius:6px;padding:2px 6px;font-size:.76rem;font-weight:600;white-space:nowrap;}
   .missions-table{table-layout:fixed;}
   .missions-table th:nth-child(1),.missions-table td:nth-child(1){width:4%;}
   .missions-table th:nth-child(2),.missions-table td:nth-child(2){width:22%;}
@@ -848,27 +862,43 @@
     // et "Heures données" sont retirées, ce sont des chiffres internes sans
     // repère pour quelqu'un qui découvre l'appli. Ne restent que "Missions
     // proposées incomplètes" et "Places disponibles", qui donnent tout de
-    // suite l'envie de descendre voir la liste des missions. Gestionnaire et
-    // Directeur gardent les 4 tuiles, inchangées.
-    var tuiles = role === "public"
-      ? [
-          stat(aVenirPublic, "Missions proposées incomplètes", false, "incomplet"),
-          stat(placesPublic, "Places disponibles", false, "places")
-        ]
-      : [
-          stat(actifs, "Bénévoles actifs", false, "actifs"),
-          stat(aVenir, "Missions proposées incomplètes", false, "incomplet"),
-          stat(places, "Places disponibles", false, "places"),
-          stat((Math.round(totalHeures*10)/10) + " h", "Heures données", false, "heures")
-        ];
-    // Tuile "Missions à vérifier" : réservé à Gestionnaire/Directeur (c'est
-    // une tâche à faire de leur côté, sans intérêt pour le public), et
-    // affichée seulement s'il y en a au moins une. Basée sur le statut
-    // choisi à la main (onglet Missions / Paramètres) — si le statut
-    // "À vérifier" est renommé ou supprimé dans Paramètres, cette tuile ne
-    // comptera plus rien : elle est volontairement liée à ce libellé précis.
-    if(role !== "public" && aVerifier > 0){
-      tuiles.push(stat(aVerifier, "Mission" + (aVerifier>1?"s":"") + " à vérifier", true, "averifier"));
+    // suite l'envie de descendre voir la liste des missions.
+    var tuiles;
+    if(role === "public"){
+      tuiles = [
+        stat(aVenirPublic, "Missions proposées incomplètes", false, "incomplet"),
+        stat(placesPublic, "Places disponibles", false, "places")
+      ];
+    } else {
+      // Ordre demandé par Jluc (21/09/2026) : les tuiles d'alerte D'ABORD
+      // (le plus urgent à traiter en premier sur la ligne), puis les 4
+      // tuiles habituelles — inverse de l'ordre précédent, qui mettait
+      // "Bénévoles actifs" en tête même quand une alerte plus loin sur la
+      // ligne, ou carrément invisible sans faire défiler, attendait d'être
+      // traitée. Chaque tuile d'alerte n'apparaît que si son chiffre est
+      // différent de 0 (comme avant).
+      tuiles = [];
+      // "Missions à vérifier" : basée sur le statut choisi à la main
+      // (onglet Missions / Paramètres) — si le statut "À vérifier" est
+      // renommé ou supprimé dans Paramètres, cette tuile ne comptera plus
+      // rien : elle est volontairement liée à ce libellé précis.
+      if(aVerifier > 0){
+        tuiles.push(stat(aVerifier, "Mission" + (aVerifier>1?"s":"") + " à vérifier", true, "averifier"));
+      }
+      var candidaturesEnAttente = state.candidatures.length;
+      if(candidaturesEnAttente > 0){
+        tuiles.push(stat(candidaturesEnAttente, "Candidature" + (candidaturesEnAttente>1?"s":"") + " en attente", true, "candidatures"));
+      }
+      var desinscriptionsEnAttente = state.affectations.filter(function(a){ return a.demandeDesinscription; }).length;
+      if(desinscriptionsEnAttente > 0){
+        tuiles.push(stat(desinscriptionsEnAttente, "Demande" + (desinscriptionsEnAttente>1?"s":"") + " de désinscription", true, "desinscriptions"));
+      }
+      tuiles.push(
+        stat(aVenir, "Missions proposées incomplètes", false, "incomplet"),
+        stat(places, "Places disponibles", false, "places"),
+        stat((Math.round(totalHeures*10)/10) + " h", "Heures données", false, "heures"),
+        stat(actifs, "Bénévoles actifs", false, "actifs")
+      );
     }
     document.getElementById("stats").innerHTML = tuiles.join("");
 
@@ -1297,39 +1327,60 @@
       var inscritsHtml = inscrits.map(function(a){
         var b = benevoleById(a.benevoleId);
         if(!b) return "";
+        // Demande de désinscription (demande de Jluc, 21/09/2026) : un
+        // bénévole public peut signaler qu'il n'est plus disponible (voir
+        // plus bas, cas "moiDejaInscrit"). Ça ne le désinscrit pas tout
+        // seul — ça pose juste ce petit drapeau, visible ici par les
+        // Gestionnaires/Directeur, à côté de son nom. C'est à eux de
+        // retirer l'inscription (bouton ✕ déjà existant) ou de marquer la
+        // demande comme traitée sans retirer (bouton dédié) si finalement
+        // ils gardent la personne inscrite.
+        var badgeIndispoHtml = a.demandeDesinscription
+          ? ' <span class="badge-indisponible" title="A signalé son indisponibilité, en attente de traitement">⚠ Indisponible</span>'
+          : '';
         var actionsHtml = '<label class="realise-toggle"><input type="checkbox" data-action="toggle-realise" data-id="'+a.id+'" '+(a.statut==="realise"?"checked":"")+'> réalisé</label>'
+          + (a.demandeDesinscription ? '<button type="button" class="link-btn" data-action="traiter-desinscription" data-id="'+a.id+'" title="Ne pas retirer, juste effacer le drapeau">Marquer traité</button>' : '')
           + '<button class="btn-danger-ghost" data-action="retirer" data-id="'+a.id+'" title="Retirer l\'inscription">✕</button>';
         return '<div class="inscrit-row"><div class="inscrit-name inscrit-name-clic" data-action="open-benevole-modale" data-id="'+b.id+'" title="Voir la fiche de '+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'"><span class="avatar">'+initiales(b)+'</span>'
-          + escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
+          + escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+badgeIndispoHtml+'</div>'
           + '<div class="inscrit-actions">'+actionsHtml+'</div></div>';
       }).join("");
       inscritsListeHtml = '<div class="inscrits-list">'+(inscritsHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>';
     }
 
     var selectHtml;
-    if(restantes<=0){
-      selectHtml = '';
-    } else if(role !== "public"){
-      // Gestionnaire/Directeur : peut inscrire n'importe quel bénévole
-      // (utile quand quelqu'un s'inscrit par téléphone, par exemple).
-      var disponibles = state.benevoles.filter(function(b){
-        return b.actif && !inscrits.some(function(a){ return a.benevoleId === b.id; });
-      }).sort(function(a,b){
-        return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
-          || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
-      });
-      selectHtml = disponibles.length
-        ? '<div class="inscrire-row"><select id="sel-'+m.id+'">'
-          + disponibles.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.nom)+' '+escapeHtml(b.prenom)+'</option>'; }).join("")
-          + '</select><button class="btn btn-sm" data-action="inscrire" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>Inscrire</button></div>'
-        : '<div class="benevole-contact">Tous les bénévoles actifs sont déjà inscrits.</div>';
+    if(role !== "public"){
+      if(restantes<=0){
+        selectHtml = '';
+      } else {
+        // Gestionnaire/Directeur : peut inscrire n'importe quel bénévole
+        // (utile quand quelqu'un s'inscrit par téléphone, par exemple).
+        var disponibles = state.benevoles.filter(function(b){
+          return b.actif && !inscrits.some(function(a){ return a.benevoleId === b.id; });
+        }).sort(function(a,b){
+          return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
+            || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
+        });
+        selectHtml = disponibles.length
+          ? '<div class="inscrire-row"><select id="sel-'+m.id+'">'
+            + disponibles.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.nom)+' '+escapeHtml(b.prenom)+'</option>'; }).join("")
+            + '</select><button class="btn btn-sm" data-action="inscrire" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>Inscrire</button></div>'
+          : '<div class="benevole-contact">Tous les bénévoles actifs sont déjà inscrits.</div>';
+      }
     } else {
       // Visiteur public : ne peut s'inscrire que lui-même, une fois identifié.
       var moi = moiBenevoleId ? benevoleById(moiBenevoleId) : null;
-      var moiDejaInscrit = moi && inscrits.some(function(a){ return a.benevoleId === moi.id; });
+      var moiAffectation = moi ? inscrits.filter(function(a){ return a.benevoleId === moi.id; })[0] : null;
       if(!moi){
         selectHtml = '<div class="benevole-contact">Identifiez-vous pour pouvoir vous inscrire à cette mission.</div>';
-      } else if(moiDejaInscrit){
+      } else if(moiAffectation){
+        // Toujours affiché, même si la mission est complète (restantes<=0) :
+        // c'est justement quand il n'y a plus de place que se désinscrire
+        // rend un service (ça libère la place pour quelqu'un d'autre).
+        selectHtml = moiAffectation.demandeDesinscription
+          ? '<div class="benevole-contact">Votre demande de désinscription a bien été transmise, un·e responsable va la traiter.</div>'
+          : '<div class="inscrire-row"><button class="btn btn-ghost btn-sm" data-action="demander-desinscription" data-id="'+moiAffectation.id+'" '+(authReady?"":"disabled")+'>Je ne suis plus disponible</button></div>';
+      } else if(restantes<=0){
         selectHtml = '';
       } else {
         selectHtml = '<div class="inscrire-row"><button class="btn btn-sm btn-primary" data-action="inscrire-moi" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>M\'inscrire ('+escapeHtml(moi.prenom)+')</button></div>';
@@ -1459,9 +1510,13 @@
 
       var lignesHtml = lignes.map(function(m){
         var inscritsLigne = inscritsDe(m.id);
+        // "⚠" après le nom : demande de désinscription en attente (demande
+        // de Jluc, 21/09/2026) — visible directement dans le tableau, sans
+        // avoir à ouvrir chaque mission une par une pour le repérer (voir
+        // aussi la tuile "Demandes de désinscription" du tableau de bord).
         var nomsInscrits = inscritsLigne.map(function(a){
           var b = benevoleById(a.benevoleId);
-          return b ? escapeHtml(b.prenom)+' '+escapeHtml(b.nom) : "";
+          return b ? escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+(a.demandeDesinscription?' ⚠':'') : "";
         }).filter(Boolean).join(", ");
         var coche = !!missionsSelection[m.id];
         // Clic sur la ligne = ouvre directement la modale de gestion de la
@@ -1772,6 +1827,12 @@
       + '<button type="button" class="btn btn-ghost" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>'
       + '<button type="button" class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'">Supprimer la fiche</button>'
       + '<button type="button" class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-fiche-benevole" data-id="'+b.id+'">Imprimer la fiche</button>'
+      // Lien direct vers l'onglet Historique, recherche déjà remplie avec le
+      // nom de ce bénévole (demande de Jluc, 21/09/2026) : c'est là
+      // qu'apparaissent, entre autres, ses éventuelles demandes de
+      // désinscription passées — utile pour juger de sa fiabilité dans la
+      // durée, même après qu'une inscription a été retirée.
+      + '<button type="button" class="btn btn-ghost btn-sm" data-action="voir-historique-benevole" data-id="'+b.id+'">Voir dans l\'historique</button>'
       + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
       + '</div>'
       + (b.dateCreation ? '<div class="benevole-contact">Fiche créée le '+fmtDateTime(b.dateCreation)+'</div>' : '')
@@ -1868,6 +1929,7 @@
     modification_email_candidature: "Email de candidature modifié",
     import_donnees: "Données importées",
     inscription_publique: "Inscription publique à une mission",
+    demande_desinscription_publique: "Demande de désinscription (indisponibilité signalée)",
     reinitialisation_application: "Application réinitialisée"
   };
 
@@ -2395,6 +2457,14 @@
     else if(action==="close-modal-benevole"){
       if(e.target === el){ benevoleModaleOpen = false; benevoleModaleId = null; benevoleModaleError = ""; renderModal(); }
     }
+    else if(action==="voir-historique-benevole"){
+      var bPourHisto = benevoleById(el.getAttribute("data-id"));
+      benevoleModaleOpen = false; benevoleModaleId = null; benevoleModaleError = "";
+      historiqueRecherche = bPourHisto ? (bPourHisto.prenom+" "+bPourHisto.nom) : "";
+      historiqueSelection = {};
+      switchTab("historique");
+      renderAll();
+    }
     else if(action==="open-login"){ loginFormOpen = true; loginError=""; loginInfo=""; renderAdminRow(); }
     else if(action==="cancel-login"){ loginFormOpen = false; loginError=""; loginInfo=""; renderAdminRow(); }
     else if(action==="open-gestionnaire"){ gestionnaireFormOpen = true; gestionnaireError=""; renderEquipe(); }
@@ -2569,6 +2639,34 @@
         logHistorique("suppression_inscription", (bb?bb.prenom+" "+bb.nom:"") + (mm?" — "+libelleMission(mm):""));
       }).catch(reportError);
     }
+    // Demande de désinscription (demande de Jluc, 21/09/2026) : le
+    // visiteur public ne peut modifier QUE ce champ précis sur SA propre
+    // inscription (voir la règle Firestore dédiée) — il ne peut ni la
+    // retirer lui-même, ni toucher aux inscriptions des autres. C'est
+    // volontairement un simple drapeau, pas une suppression : voir le
+    // choix fait avec Jluc à ce sujet.
+    else if(action==="demander-desinscription"){
+      var affIdDemande = el.getAttribute("data-id");
+      var affPourLog = state.affectations.find(function(x){ return x.id === affIdDemande; });
+      var missionPourLogD = affPourLog ? missionById(affPourLog.missionId) : null;
+      var moiPourLogD = affPourLog ? benevoleById(affPourLog.benevoleId) : null;
+      updateDoc(doc(db,"affectations", affIdDemande), {demandeDesinscription: true}).then(function(){
+        // Trace permanente dans l'historique (demande de Jluc, 21/09/2026) :
+        // contrairement au drapeau posé ci-dessus, qui disparaît dès que le
+        // Gestionnaire retire l'inscription ou clique "Marquer traité", cette
+        // ligne d'historique reste pour toujours — c'est elle qui permet de
+        // juger la fiabilité d'un bénévole dans la durée (ex. quelqu'un qui
+        // se désiste souvent), pas seulement de traiter la demande du jour.
+        logHistoriquePublic(
+          "demande_desinscription_publique",
+          missionPourLogD ? libelleMission(missionPourLogD) : "",
+          moiPourLogD ? (moiPourLogD.prenom+" "+moiPourLogD.nom) : ""
+        );
+      }).catch(reportError);
+    }
+    else if(action==="traiter-desinscription"){
+      updateDoc(doc(db,"affectations", el.getAttribute("data-id")), {demandeDesinscription: false}).catch(reportError);
+    }
     else if(action==="delete-mission"){
       var mDel = missionById(el.getAttribute("data-id"));
       if(!confirm("Supprimer définitivement la mission « " + (mDel?libelleMission(mDel):"") + " » ? Cette action est irréversible.")) return;
@@ -2737,6 +2835,16 @@
       } else if(statKey === "averifier"){
         resetFiltresMissions();
         missionsFiltreStatut = "À vérifier";
+        switchTab("missions");
+      } else if(statKey === "candidatures"){
+        resetFiltresCandidatures();
+        switchTab("candidatures");
+      } else if(statKey === "desinscriptions"){
+        // Pas de filtre dédié : le drapeau ⚠ apparaît directement dans la
+        // colonne "Inscrits" du tableau des missions (voir renderMissions),
+        // donc la vue tableau suffit à toutes les repérer d'un coup d'œil.
+        resetFiltresMissions();
+        missionsVue = "tableau";
         switchTab("missions");
       }
       renderAll();
