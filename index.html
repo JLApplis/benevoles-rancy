@@ -1145,8 +1145,41 @@
   }
 
   // ---------- render: candidatures (visible gestionnaires + Directeur) ----------
+  // Vue tableau (demande de Jluc, 21/09/2026) : au-delà de quelques
+  // candidatures en attente, la vue cartes devient jolie mais impossible à
+  // gérer (il faut tout faire défiler). Même principe que pour Missions et
+  // Bénévoles : recherche + tri + bascule cartes/tableau. Cet onglet n'est
+  // de toute façon jamais visible du public (voir updateTabsVisibility),
+  // donc pas besoin ici des vérifications "role !== public" qu'on trouve
+  // dans renderMissions()/renderBenevoles().
+  var candidaturesVue = "tableau"; // "cartes" | "tableau"
+  var candidaturesRecherche = "";
+  var candidaturesTri = "date"; // "date" (plus ancienne d'abord, comme avant) | "nom"
+
+  function resetFiltresCandidatures(){
+    candidaturesRecherche = "";
+  }
+
   function renderCandidatures(){
-    var liste = state.candidatures.slice().sort(function(a,b){
+    var recherche = candidaturesRecherche.trim().toLowerCase();
+    var liste = state.candidatures.filter(function(c){
+      if(!recherche) return true;
+      var poles = (c.poles||[]).join(" ").toLowerCase();
+      return (c.nom||"").toLowerCase().indexOf(recherche) >= 0
+        || (c.prenom||"").toLowerCase().indexOf(recherche) >= 0
+        || (c.email||"").toLowerCase().indexOf(recherche) >= 0
+        || (c.tel||"").toLowerCase().indexOf(recherche) >= 0
+        || poles.indexOf(recherche) >= 0;
+    });
+
+    liste.sort(function(a,b){
+      if(candidaturesTri === "nom"){
+        var cmpN = (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
+          || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
+        if(cmpN !== 0) return cmpN;
+      }
+      // Par défaut (et à égalité sur les autres tris) : la plus ancienne
+      // d'abord — comportement historique de cet onglet.
       var da = a.dateEnvoi && a.dateEnvoi.toMillis ? a.dateEnvoi.toMillis() : 0;
       var db2 = b.dateEnvoi && b.dateEnvoi.toMillis ? b.dateEnvoi.toMillis() : 0;
       return da - db2;
@@ -1170,9 +1203,53 @@
         + '</div>';
     }).join("");
 
+    var tableauHtml = "";
+    if(candidaturesVue === "tableau"){
+      function thTriCandidature(label, triKey){
+        var active = candidaturesTri === triKey;
+        return '<th><button type="button" class="th-tri'+(active?" active":"")+'" data-action="trier-candidatures" data-tri="'+triKey+'">'
+          + label + (active ? ' <span class="tri-arrow">▼</span>' : '')
+          + '</button></th>';
+      }
+
+      var lignesHtml = liste.map(function(c){
+        var tags = (c.poles||[]).map(poleTag).join("");
+        return '<tr>'
+          + '<td>'+escapeHtml(c.nom)+'</td>'
+          + '<td>'+escapeHtml(c.prenom)+'</td>'
+          + '<td>'+(c.email ? escapeHtml(c.email) : '<em>Non renseigné</em>')+'</td>'
+          + '<td>'+(c.tel ? escapeHtml(c.tel) : '—')+'</td>'
+          + '<td>'+(tags || '—')+'</td>'
+          + '<td>'+(c.dateEnvoi ? fmtDateTime(c.dateEnvoi) : '—')+'</td>'
+          + '<td style="display:flex;gap:6px;">'
+          + '<button class="btn btn-danger btn-sm" data-action="refuser-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Refuser</button>'
+          + '<button class="btn btn-primary btn-sm" data-action="valider-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Valider</button>'
+          + '</td>'
+          + '</tr>';
+      }).join("");
+
+      tableauHtml = liste.length
+        ? '<div class="table-scroll"><table class="heures-table"><thead><tr>'
+          + thTriCandidature("Nom","nom") + '<th>Prénom</th><th>Email</th><th>Téléphone</th><th>Pôles</th>'
+          + thTriCandidature("Reçue le","date") + '<th>Actions</th>'
+          + '</tr></thead><tbody>'+lignesHtml+'</tbody></table></div>'
+        : '<div class="empty-state">Aucune candidature ne correspond.</div>';
+    }
+
+    var vueToggleBtn = '<button class="btn btn-badge badge-vue btn-sm" data-action="basculer-vue-candidatures">'+(candidaturesVue==="tableau" ? "Vue cartes" : "Vue tableau")+'</button>';
+
+    var candidaturesFiltreActif = !!candidaturesRecherche.trim();
+    var rechercheHtml = '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
+      + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="candidatures-recherche">Recherche</label>'
+      + '<input type="search" id="candidatures-recherche" placeholder="Nom, prénom, email, téléphone ou pôle…" value="'+escapeHtml(candidaturesRecherche)+'"></div>'
+      + btnSupprimerFiltres("reset-filtres-candidatures", candidaturesFiltreActif)
+      + '</div>';
+
     document.getElementById("panel-candidatures").innerHTML =
-      '<div class="toolbar"><div><h2>Candidatures</h2><div class="toolbar-meta">'+liste.length+' candidature(s) en attente de validation</div></div></div>'
-      + (liste.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune candidature en attente.</div>');
+      '<div class="toolbar"><div><h2>Candidatures</h2><div class="toolbar-meta">'+state.candidatures.length+' candidature(s) en attente de validation</div></div>'
+      + '<div style="display:flex;gap:8px;">'+vueToggleBtn+'</div></div>'
+      + rechercheHtml
+      + (candidaturesVue === "tableau" ? tableauHtml : (liste.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune candidature ne correspond.</div>'));
   }
 
   // ---------- render: missions ----------
@@ -2578,6 +2655,18 @@
       missionsTri = el.getAttribute("data-tri");
       renderMissions();
     }
+    else if(action==="basculer-vue-candidatures"){
+      candidaturesVue = candidaturesVue === "tableau" ? "cartes" : "tableau";
+      renderCandidatures();
+    }
+    else if(action==="trier-candidatures"){
+      candidaturesTri = el.getAttribute("data-tri");
+      renderCandidatures();
+    }
+    else if(action==="reset-filtres-candidatures"){
+      resetFiltresCandidatures();
+      renderCandidatures();
+    }
     else if(action==="basculer-vue-benevoles"){
       benevolesVue = benevolesVue === "tableau" ? "cartes" : "tableau";
       renderBenevoles();
@@ -2690,6 +2779,13 @@
       renderMissions();
       var champ4 = document.getElementById("missions-recherche");
       if(champ4){ champ4.focus(); champ4.setSelectionRange(pos4,pos4); }
+    }
+    else if(e.target.id === "candidatures-recherche"){
+      candidaturesRecherche = e.target.value;
+      var pos5 = e.target.selectionStart;
+      renderCandidatures();
+      var champ5 = document.getElementById("candidatures-recherche");
+      if(champ5){ champ5.focus(); champ5.setSelectionRange(pos5,pos5); }
     }
     else if(e.target.id === "f-debut" || e.target.id === "f-fin"){
       // Durée recalculée en direct dans la modale mission, sans re-render
