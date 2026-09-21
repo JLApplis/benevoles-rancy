@@ -1299,12 +1299,18 @@
   var missionsFiltrePole = "";
   var missionsFiltreStatut = "";
   var missionsFiltreDispo = ""; // "" | "incomplete" | "complete"
+  // Filtre posé uniquement par un clic sur la tuile "Demande(s) de
+  // désinscription" (demande de Jluc, 21/09/2026) : ne garde que les
+  // missions ayant au moins un·e inscrit·e avec demandeDesinscription.
+  // Pas de menu déroulant dédié pour ce filtre (il n'a de sens que via la
+  // tuile) ; il se retire comme les autres, via "Supprimer les filtres".
+  var missionsFiltreDesinscription = false;
   var missionsSelection = {}; // { [missionId]: true } — cases cochées pour l'impression
 
   // Même principe que resetFiltresBenevoles() : remet à zéro recherche,
   // filtres et sélection de l'onglet Missions (mais pas le tri).
   function resetFiltresMissions(){
-    missionsRecherche = ""; missionsFiltrePole = ""; missionsFiltreStatut = ""; missionsFiltreDispo = "";
+    missionsRecherche = ""; missionsFiltrePole = ""; missionsFiltreStatut = ""; missionsFiltreDispo = ""; missionsFiltreDesinscription = false;
     missionsSelection = {};
   }
 
@@ -1468,6 +1474,7 @@
         if(missionsFiltreStatut && statutMission(m) !== missionsFiltreStatut) return false;
         if(missionsFiltreDispo === "incomplete" && placesRestantes(m) <= 0) return false;
         if(missionsFiltreDispo === "complete" && placesRestantes(m) > 0) return false;
+        if(missionsFiltreDesinscription && !inscritsDe(m.id).some(function(a){ return a.demandeDesinscription; })) return false;
         if(!rechercheM) return true;
         return (m.titre||"").toLowerCase().indexOf(rechercheM) >= 0
           || (m.pole||"").toLowerCase().indexOf(rechercheM) >= 0
@@ -1554,8 +1561,11 @@
       // cases cochées à vider : le bouton "Supprimer tous les filtres" fait
       // maintenant aussi office de "Vider la sélection" (demande de Jluc).
       var nbSelectionnesMissionsFiltre = state.missions.filter(function(m){ return missionsSelection[m.id]; }).length;
-      var missionsFiltreActif = !!(missionsRecherche.trim() || missionsFiltrePole || missionsFiltreStatut || missionsFiltreDispo || nbSelectionnesMissionsFiltre > 0);
-      tableauHtml = '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
+      var missionsFiltreActif = !!(missionsRecherche.trim() || missionsFiltrePole || missionsFiltreStatut || missionsFiltreDispo || missionsFiltreDesinscription || nbSelectionnesMissionsFiltre > 0);
+      tableauHtml = (missionsFiltreDesinscription
+          ? '<div class="mission-a-pointer">⚠ Filtré sur les missions avec une demande de désinscription en attente — cliquez « Supprimer les filtres » pour tout revoir.</div>'
+          : '')
+        + '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
         + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="missions-recherche">Recherche</label>'
         + '<input type="search" id="missions-recherche" placeholder="Titre, pôle, lieu, description…" value="'+escapeHtml(missionsRecherche)+'"></div>'
         + selectFiltrePoleHtml("missions-filtre-pole", missionsFiltrePole)
@@ -2840,10 +2850,13 @@
         resetFiltresCandidatures();
         switchTab("candidatures");
       } else if(statKey === "desinscriptions"){
-        // Pas de filtre dédié : le drapeau ⚠ apparaît directement dans la
-        // colonne "Inscrits" du tableau des missions (voir renderMissions),
-        // donc la vue tableau suffit à toutes les repérer d'un coup d'œil.
+        // Filtre dédié (demande de Jluc, 21/09/2026) : n'affiche que les
+        // missions ayant au moins une demande de désinscription en attente,
+        // au lieu de renvoyer vers toutes les missions. Le ⚠ reste aussi
+        // visible dans la colonne "Inscrits" (voir renderMissions) pour
+        // repérer directement le nom concerné sur ces missions-là.
         resetFiltresMissions();
+        missionsFiltreDesinscription = true;
         missionsVue = "tableau";
         switchTab("missions");
       }
