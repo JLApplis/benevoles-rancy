@@ -2996,8 +2996,8 @@
   });
 
   function importerDonnees(data){
-    var promesses = [];
     var nbPolesAjoutes = 0;
+    var premierLot = [];
     // Restaure les pôles du fichier exporté : ajoutés à la liste actuelle
     // sans rien retirer (même logique que pour bénévoles/missions/inscriptions
     // ci-dessous — un import ne supprime jamais ce qui existe déjà en ligne).
@@ -3007,28 +3007,36 @@
       });
       nbPolesAjoutes = polesFusionnes.length - state.poles.length;
       if(nbPolesAjoutes > 0){
-        promesses.push(setDoc(doc(db,"parametres","poles"), {liste: polesFusionnes}, {merge:true}));
+        premierLot.push(setDoc(doc(db,"parametres","poles"), {liste: polesFusionnes}, {merge:true}));
       }
     }
     (data.benevoles||[]).forEach(function(b){
       if(!b || !b.id) return;
       var copie = Object.assign({}, b);
       delete copie.id;
-      promesses.push(setDoc(doc(db,"benevoles", b.id), copie));
+      premierLot.push(setDoc(doc(db,"benevoles", b.id), copie));
     });
     (data.missions||[]).forEach(function(m){
       if(!m || !m.id) return;
       var copie = Object.assign({}, m);
       delete copie.id;
-      promesses.push(setDoc(doc(db,"missions", m.id), copie));
+      premierLot.push(setDoc(doc(db,"missions", m.id), copie));
     });
-    (data.affectations||[]).forEach(function(a){
-      if(!a || !a.id) return;
-      var copie = Object.assign({}, a);
-      delete copie.id;
-      promesses.push(setDoc(doc(db,"affectations", a.id), copie));
-    });
-    Promise.all(promesses).then(function(){
+    // Important : les inscriptions sont écrites APRÈS que bénévoles et
+    // missions soient confirmés enregistrés (deuxième Promise.all, pas dans
+    // le même lot). Depuis le correctif de sécurité du 21/09/2026, la règle
+    // Firestore sur "affectations" vérifie que la mission et le bénévole
+    // visés existent déjà au moment de l'écriture — s'ils étaient importés
+    // en même temps (en parallèle), l'ordre d'arrivée ne serait pas garanti
+    // et l'import des inscriptions pourrait échouer par pur hasard.
+    Promise.all(premierLot).then(function(){
+      var lotAffectations = (data.affectations||[]).filter(function(a){ return a && a.id; }).map(function(a){
+        var copie = Object.assign({}, a);
+        delete copie.id;
+        return setDoc(doc(db,"affectations", a.id), copie);
+      });
+      return Promise.all(lotAffectations);
+    }).then(function(){
       importStatus = "Import terminé : " + (data.benevoles||[]).length + " bénévole(s), " + (data.missions||[]).length + " mission(s), " + (data.affectations||[]).length + " inscription(s)"
         + (nbPolesAjoutes > 0 ? ", " + nbPolesAjoutes + " pôle(s) ajouté(s)" : "") + " traité(s).";
       importError = false;
