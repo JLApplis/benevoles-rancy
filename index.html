@@ -387,7 +387,7 @@
     sendPasswordResetEmail, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
   import {
-    getFirestore, collection, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, doc, serverTimestamp
+    getFirestore, collection, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, doc, getDoc, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -1197,29 +1197,25 @@
     var restantes = placesRestantes(m);
     var inscrits = inscritsDe(m.id);
 
-    var inscritsHtml = inscrits.map(function(a){
-      var b = benevoleById(a.benevoleId);
-      if(!b) return "";
-      var actionsHtml = "";
-      if(role !== "public"){
-        actionsHtml += '<label class="realise-toggle"><input type="checkbox" data-action="toggle-realise" data-id="'+a.id+'" '+(a.statut==="realise"?"checked":"")+'> réalisé</label>';
-      } else if(a.statut === "realise"){
-        actionsHtml += '<span class="realise-toggle">✓ réalisé</span>';
-      }
-      if(role !== "public"){
-        actionsHtml += '<button class="btn-danger-ghost" data-action="retirer" data-id="'+a.id+'" title="Retirer l\'inscription">✕</button>';
-      }
-      return '<div class="inscrit-row"><div class="inscrit-name"><span class="avatar">'+initiales(b)+'</span>'
-        + escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
-        + '<div class="inscrit-actions">'+actionsHtml+'</div></div>';
-    }).join("");
-
-    var disponibles = state.benevoles.filter(function(b){
-      return b.actif && !inscrits.some(function(a){ return a.benevoleId === b.id; });
-    }).sort(function(a,b){
-      return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
-        || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
-    });
+    // La liste "qui est inscrit" n'est montrée qu'aux Gestionnaires/Directeur
+    // (demande de Jluc, 21/09/2026) : certains bénévoles ne souhaitent pas
+    // que leur participation à une mission soit visible publiquement. Le
+    // visiteur public ne voit que le nombre de places restantes (déjà
+    // affiché sur la carte, voir missionCardHtml) et, s'il est concerné,
+    // le badge "Vous êtes inscrit·e".
+    var inscritsListeHtml = "";
+    if(role !== "public"){
+      var inscritsHtml = inscrits.map(function(a){
+        var b = benevoleById(a.benevoleId);
+        if(!b) return "";
+        var actionsHtml = '<label class="realise-toggle"><input type="checkbox" data-action="toggle-realise" data-id="'+a.id+'" '+(a.statut==="realise"?"checked":"")+'> réalisé</label>'
+          + '<button class="btn-danger-ghost" data-action="retirer" data-id="'+a.id+'" title="Retirer l\'inscription">✕</button>';
+        return '<div class="inscrit-row"><div class="inscrit-name"><span class="avatar">'+initiales(b)+'</span>'
+          + escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
+          + '<div class="inscrit-actions">'+actionsHtml+'</div></div>';
+      }).join("");
+      inscritsListeHtml = '<div class="inscrits-list">'+(inscritsHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>';
+    }
 
     var selectHtml;
     if(restantes<=0){
@@ -1227,6 +1223,12 @@
     } else if(role !== "public"){
       // Gestionnaire/Directeur : peut inscrire n'importe quel bénévole
       // (utile quand quelqu'un s'inscrit par téléphone, par exemple).
+      var disponibles = state.benevoles.filter(function(b){
+        return b.actif && !inscrits.some(function(a){ return a.benevoleId === b.id; });
+      }).sort(function(a,b){
+        return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
+          || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
+      });
       selectHtml = disponibles.length
         ? '<div class="inscrire-row"><select id="sel-'+m.id+'">'
           + disponibles.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</option>'; }).join("")
@@ -1245,8 +1247,7 @@
       }
     }
 
-    return '<div class="inscrits-list">'+(inscritsHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>'
-      + selectHtml;
+    return inscritsListeHtml + selectHtml;
   }
 
   // Construit la carte détaillée d'une mission (titre, inscrits, actions).
@@ -2419,6 +2420,7 @@
     else if(action==="changer-identite"){
       moiBenevoleId = null;
       sauvegarderMoiBenevoleId(null);
+      state.benevoles = [];
       identiteFormOpen = false;
       monHistoriqueOpen = false;
       renderMissions();
@@ -2815,24 +2817,37 @@
       // Prénom + nom + email doivent correspondre exactement à une fiche
       // bénévole déjà validée et active : ça remplace l'ancienne liste
       // déroulante ouverte, qui permettait de s'inscrire sous le nom de
-      // n'importe qui. L'email n'étant plus affiché nulle part publiquement,
-      // seul le bénévole concerné (ou quelqu'un à qui il l'a donné) le connaît.
-      var correspond = state.benevoles.find(function(b){
-        return b.actif
+      // n'importe qui.
+      //
+      // Depuis le 21/09/2026 : un visiteur public n'a plus accès à la liste
+      // complète des bénévoles (voir attachRoleCollections/attachPublic-
+      // Collections plus bas, et les règles de sécurité Firestore) — la
+      // collection entière était sinon téléchargée dans le navigateur de
+      // TOUT visiteur, avec les emails et téléphones de tous les bénévoles.
+      // La vérification se fait donc désormais en base, sur la SEULE fiche
+      // dont l'identifiant (l'email) correspond exactement à ce qui a été
+      // saisi, au lieu de chercher dans une liste déjà téléchargée.
+      identiteError = "";
+      getDoc(doc(db,"benevoles", eSaisi)).then(function(snap){
+        var b = snap.exists() ? Object.assign({id:snap.id}, snap.data()) : null;
+        var correspond = b && b.actif
           && (b.prenom||"").trim().toLowerCase() === pSaisi
           && (b.nom||"").trim().toLowerCase() === nSaisi
           && (b.email||"").trim().toLowerCase() === eSaisi;
+        if(correspond){
+          moiBenevoleId = b.id;
+          sauvegarderMoiBenevoleId(moiBenevoleId);
+          state.benevoles = [b];
+          identiteError = "";
+          identiteFormOpen = false;
+        } else {
+          identiteError = "Aucune fiche bénévole validée ne correspond à ces informations.";
+        }
+        renderMissions();
+      }).catch(function(){
+        identiteError = "Connexion impossible, réessayez.";
+        renderMissions();
       });
-      if(correspond){
-        moiBenevoleId = correspond.id;
-        sauvegarderMoiBenevoleId(moiBenevoleId);
-        identiteError = "";
-        identiteFormOpen = false;
-        renderMissions();
-      } else {
-        identiteError = "Aucune fiche bénévole validée ne correspond à ces informations.";
-        renderMissions();
-      }
       return;
     }
     if(e.target.id === "form-candidature"){
@@ -3114,6 +3129,16 @@
   // ---------- collections réservées gestionnaires/Directeur ----------
   function attachRoleCollections(){
     if(unsubGestionnaires) return;
+    // La liste complète des bénévoles (emails, téléphones) n'est chargée
+    // qu'ici, pour Gestionnaire/Directeur — jamais pour un visiteur public
+    // (voir attachPublicCollections plus bas, et les règles de sécurité
+    // Firestore). Avant le 21/09/2026, elle était chargée pour tout
+    // visiteur du site, à cause de la connexion anonyme automatique.
+    unsubBenevoles = onSnapshot(collection(db,"benevoles"), function(snap){
+      state.benevoles = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      sortBenevoles();
+      renderAll();
+    }, function(){ /* accès révoqué : silencieux */ });
     unsubGestionnaires = onSnapshot(collection(db,"gestionnaires"), function(snap){
       state.gestionnaires = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); })
         .sort(function(a,b){ return (a.nom||"").localeCompare(b.nom||""); });
@@ -3130,12 +3155,34 @@
   }
 
   function detachRoleCollections(){
+    if(unsubBenevoles){ unsubBenevoles(); unsubBenevoles = null; }
     if(unsubGestionnaires){ unsubGestionnaires(); unsubGestionnaires = null; }
     if(unsubHistorique){ unsubHistorique(); unsubHistorique = null; }
     if(unsubCandidatures){ unsubCandidatures(); unsubCandidatures = null; }
     state.gestionnaires = [];
     state.historique = [];
     state.candidatures = [];
+    state.benevoles = [];
+  }
+
+  // Recharge uniquement la fiche du visiteur public déjà identifié (si
+  // moiBenevoleId est connu depuis une visite précédente), sans jamais
+  // charger la liste complète des bénévoles — à appeler après chaque
+  // passage en rôle "public" (voir onAuthStateChanged plus bas).
+  function rafraichirMoiBenevole(){
+    if(role !== "public"){ return; }
+    if(!moiBenevoleId){ state.benevoles = []; renderAll(); return; }
+    getDoc(doc(db,"benevoles", moiBenevoleId)).then(function(snap){
+      if(snap.exists()){
+        state.benevoles = [Object.assign({id:snap.id}, snap.data())];
+      } else {
+        // Fiche introuvable (supprimée entre-temps) : on oublie cette identité.
+        moiBenevoleId = null;
+        sauvegarderMoiBenevoleId(null);
+        state.benevoles = [];
+      }
+      renderAll();
+    }).catch(function(){ /* pas grave : on retentera à la prochaine action */ });
   }
 
   // ---------- Firebase wiring ----------
@@ -3149,6 +3196,7 @@
     if(unsubMoi){ unsubMoi(); unsubMoi = null; }
     detachRoleCollections();
     role = "public"; moiNom = ""; moiUid = null;
+    rafraichirMoiBenevole();
 
     var isPasswordUser = !!(user && user.providerData.some(function(p){ return p.providerId === "password"; }));
     if(user && isPasswordUser){
@@ -3258,11 +3306,10 @@
     if(publicCollectionsAttached) return;
     publicCollectionsAttached = true;
 
-    unsubBenevoles = onSnapshot(collection(db,"benevoles"), function(snap){
-      state.benevoles = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
-      sortBenevoles();
-      renderAll();
-    }, reportError);
+    // La liste complète des bénévoles n'est plus chargée ici depuis le
+    // 21/09/2026 — voir attachRoleCollections (réservé Gestionnaire/
+    // Directeur) et rafraichirMoiBenevole (fiche du visiteur identifié
+    // uniquement, sur demande, jamais la collection entière).
 
     unsubMissions = onSnapshot(collection(db,"missions"), function(snap){
       state.missions = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
@@ -3290,7 +3337,6 @@
     // À appeler juste avant une déconnexion : le court instant sans session
     // (entre la déconnexion et la reconnexion anonyme automatique) ferait
     // sinon échouer ces écoutes déjà ouvertes avec une alerte d'erreur.
-    if(unsubBenevoles){ unsubBenevoles(); unsubBenevoles = null; }
     if(unsubMissions){ unsubMissions(); unsubMissions = null; }
     if(unsubAffectations){ unsubAffectations(); unsubAffectations = null; }
     if(unsubParametres){ unsubParametres(); unsubParametres = null; }
