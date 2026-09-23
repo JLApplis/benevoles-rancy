@@ -153,7 +153,7 @@
   .modal-close{background:rgba(255,255,255,.16);border:none;font-size:1.05rem;line-height:1;color:#fff;cursor:pointer;padding:7px 11px;border-radius:999px;}
   .modal-close:hover{background:rgba(255,255,255,.32);color:#fff;}
   /* Champs "colorés" : label en couleur + bordure/fond assortis, pour
-     repérer d'un coup d'œil le pôle, le statut... (même esprit que les
+     repérer d'un coup d'œil le secteur, le statut... (même esprit que les
      fiches colorées de PICS). --fc / --fc-soft sont fixés en style inline
      par missionChampHtml/missionSelectChampHtml selon le champ. */
   .field.champ-colore label{color:var(--fc);font-weight:700;}
@@ -432,7 +432,7 @@
   var POLE_HUES = {"Accueil":150,"Ateliers":28,"Numérique (EPN)":205,"Événements":340,"Communication":260,"Logistique":45};
   // Cycle de vie d'une mission, décidé par Jluc : le premier statut de la
   // liste est celui donné par défaut à toute nouvelle mission. Modifiable
-  // dans Paramètres, comme les pôles. "Non effectuée" est mis à la main par
+  // dans Paramètres, comme les secteurs (mot affiché ; la donnée reste "pole" en interne). "Non effectuée" est mis à la main par
   // le/la gestionnaire (jamais automatiquement) une fois qu'il/elle a
   // vérifié qu'une mission "À vérifier" n'a en fait pas eu lieu.
   var STATUTS_MISSIONS = ["En cours","À vérifier","Terminée","Non effectuée"];
@@ -625,12 +625,14 @@
     return '<span class="tag"><span class="dot" style="background:hsl('+hue+',55%,45%)"></span>'+escapeHtml(pole)+'</span>';
   }
 
-  // Liste déroulante de filtrage par pôle, construite à partir de la liste
-  // des pôles définie dans Paramètres (state.poles) — utilisée à l'identique
-  // dans Bénévoles et Missions pour rester cohérent.
+  // Liste déroulante de filtrage par secteur (mot affiché à l'écran depuis
+  // le 22/09/2026, demande du Directeur des Rancy — la donnée en base et le
+  // code restent "pole", seul le libellé visible change), construite à
+  // partir de la liste définie dans Paramètres (state.poles) — utilisée à
+  // l'identique dans Bénévoles et Missions pour rester cohérent.
   function selectFiltrePoleHtml(id, valeurActuelle){
-    return '<div class="field" style="max-width:220px;margin-bottom:14px;"><label for="'+id+'">Filtrer par pôle</label>'
-      + '<select id="'+id+'"><option value="">Tous les pôles</option>'
+    return '<div class="field" style="max-width:220px;margin-bottom:14px;"><label for="'+id+'">Filtrer par secteur</label>'
+      + '<select id="'+id+'"><option value="">Tous les secteurs</option>'
       + state.poles.map(function(p){ return '<option value="'+escapeHtml(p)+'"'+(p===valeurActuelle?' selected':'')+'>'+escapeHtml(p)+'</option>'; }).join("")
       + '</select></div>';
   }
@@ -995,7 +997,7 @@
     return '<div class="card">'
       + '<div><div class="benevole-name">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'</div>'
       + '<div class="benevole-contact">'+escapeHtml(b.email)+'<br>'+escapeHtml(b.tel)+'</div></div>'
-      + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun pôle renseigné</span>')+'</div>'
+      + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun secteur renseigné</span>')+'</div>'
       + '<div class="card-footrow"><span><strong>'+h+' h</strong> données au total</span>'
       + (actions ? '<span style="display:flex;gap:6px;">'+actions+'</span>' : '')
       + '</div>'
@@ -1023,9 +1025,9 @@
     });
     var recherche = benevolesRecherche.trim().toLowerCase();
 
-    // Recherche générale : nom, prénom, email, téléphone ou pôle. Filtre en
-    // plus, si choisi, par un pôle précis (liste déroulante basée sur les
-    // pôles définis dans Paramètres).
+    // Recherche générale : nom, prénom, email, téléphone ou secteur. Filtre en
+    // plus, si choisi, par un secteur précis (liste déroulante basée sur les
+    // secteurs définis dans Paramètres).
     var listeFiltree = state.benevoles.filter(function(b){
       if(benevolesFiltrePole && (b.poles||[]).indexOf(benevolesFiltrePole) === -1) return false;
       if(benevolesFiltreEtat === "actif" && !b.actif) return false;
@@ -1096,7 +1098,7 @@
 
       tableauHtml = listeFiltree.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr>'
           + '<th class="col-select"><input type="checkbox" data-action="toggle-select-all-benevoles" '+(touTochesB?"checked":"")+'></th>'
-          + thTriBenevole("Nom","nom") + thTriBenevole("Prénom","prenom") + '<th>Email</th>' + thTriBenevole("Pôles","poles")
+          + thTriBenevole("Nom","nom") + thTriBenevole("Prénom","prenom") + '<th>Email</th>' + thTriBenevole("Secteurs","poles")
           + thTriBenevole("Missions réalisées","missions",true) + thTriBenevole("Heures données","heures",true)
           + '</tr></thead><tbody>'+lignesHtml+'</tbody></table></div>'
         : '<div class="empty-state">'+(state.benevoles.length ? 'Aucune fiche ne correspond.' : 'Aucun bénévole enregistré pour l\'instant.')+'</div>';
@@ -1116,7 +1118,7 @@
         + field("Email","email",true,"email")
         + field("Téléphone","tel",false,"tel")
         + '</div>'
-        + '<div class="field"><label>Pôles / domaines</label><div class="checkbox-group">'
+        + '<div class="field"><label>Secteurs / domaines</label><div class="checkbox-group">'
         + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'"> '+escapeHtml(p)+'</label>'; }).join("")
         + '</div></div>'
         + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>Ajouter le bénévole</button>'
@@ -1150,7 +1152,7 @@
     var benevolesFiltreActif = !!(benevolesRecherche.trim() || benevolesFiltrePole || benevolesFiltreEtat || nbSelectionnesB > 0);
     var rechercheHtml = '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
       + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="benevoles-recherche">Recherche</label>'
-      + '<input type="search" id="benevoles-recherche" placeholder="Nom, prénom, email, téléphone ou pôle…" value="'+escapeHtml(benevolesRecherche)+'"></div>'
+      + '<input type="search" id="benevoles-recherche" placeholder="Nom, prénom, email, téléphone ou secteur…" value="'+escapeHtml(benevolesRecherche)+'"></div>'
       + selectFiltrePoleHtml("benevoles-filtre-pole", benevolesFiltrePole)
       + selectFiltreEtatBenevoleHtml("benevoles-filtre-etat", benevolesFiltreEtat)
       + btnSupprimerFiltres("reset-filtres-benevoles", benevolesFiltreActif)
@@ -1225,7 +1227,7 @@
           + (c.tel ? '<br>'+escapeHtml(c.tel) : '')+'</div>'
         + (c.dateEnvoi ? '<div class="benevole-contact">Reçue le '+fmtDateTime(c.dateEnvoi)+'</div>' : '')
         + '</div>'
-        + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun pôle renseigné</span>')+'</div>'
+        + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun secteur renseigné</span>')+'</div>'
         + '<div class="card-footrow"><span></span><span style="display:flex;gap:6px;">'
         + '<button class="btn btn-danger btn-sm" data-action="refuser-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Refuser</button>'
         + '<button class="btn btn-primary btn-sm" data-action="valider-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Valider</button>'
@@ -1260,7 +1262,7 @@
 
       tableauHtml = liste.length
         ? '<div class="table-scroll"><table class="heures-table"><thead><tr>'
-          + thTriCandidature("Nom","nom") + '<th>Prénom</th><th>Email</th><th>Téléphone</th><th>Pôles</th>'
+          + thTriCandidature("Nom","nom") + '<th>Prénom</th><th>Email</th><th>Téléphone</th><th>Secteurs</th>'
           + thTriCandidature("Reçue le","date") + '<th>Actions</th>'
           + '</tr></thead><tbody>'+lignesHtml+'</tbody></table></div>'
         : '<div class="empty-state">Aucune candidature ne correspond.</div>';
@@ -1271,7 +1273,7 @@
     var candidaturesFiltreActif = !!candidaturesRecherche.trim();
     var rechercheHtml = '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
       + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="candidatures-recherche">Recherche</label>'
-      + '<input type="search" id="candidatures-recherche" placeholder="Nom, prénom, email, téléphone ou pôle…" value="'+escapeHtml(candidaturesRecherche)+'"></div>'
+      + '<input type="search" id="candidatures-recherche" placeholder="Nom, prénom, email, téléphone ou secteur…" value="'+escapeHtml(candidaturesRecherche)+'"></div>'
       + btnSupprimerFiltres("reset-filtres-candidatures", candidaturesFiltreActif)
       + '</div>';
 
@@ -1289,6 +1291,14 @@
   // mission. Même formulaire, même bouton "+ Créer une mission" / "Modifier",
   // pour rester le plus simple possible.
   var missionEnEdition = null;
+  // Pré-remplissage lors d'une duplication (A2, demande du Directeur via
+  // Jluc, 22/09/2026) : quand ce n'est pas null, le formulaire est en mode
+  // "création" (missionEnEdition reste null, pour obtenir un numéro M.. tout
+  // neuf) mais certains champs sont pré-remplis à partir de la mission
+  // source. Uniquement Titre/Secteur/Lieu/Heure début/Heure fin/Places
+  // proposées/Description — jamais Date/Statut/Commentaires (validé par
+  // Jluc). Toujours remis à null en quittant la modale.
+  var missionDupliquerDonnees = null;
   var missionFormError = "";
   // Vue tableau (gestionnaires/Directeur uniquement) : utile dès que la
   // liste de missions grandit, pour trier/rechercher au lieu de faire
@@ -1356,7 +1366,13 @@
 
     var selectHtml;
     if(role !== "public"){
-      if(restantes<=0){
+      if(missionEstPassee(m)){
+        // Mission terminée (demande du Directeur des Rancy, point A1,
+        // 22/09/2026) : plus moyen d'inscrire quelqu'un de nouveau, quel
+        // que soit le nombre de places restantes. Retirer/marquer réalisé/
+        // traiter une désinscription restent possibles juste au-dessus.
+        selectHtml = '';
+      } else if(restantes<=0){
         selectHtml = '';
       } else {
         // Gestionnaire/Directeur : peut inscrire n'importe quel bénévole
@@ -1386,7 +1402,10 @@
         selectHtml = moiAffectation.demandeDesinscription
           ? '<div class="benevole-contact">Votre demande de désinscription a bien été transmise, un·e responsable va la traiter.</div>'
           : '<div class="inscrire-row"><button class="btn btn-ghost btn-sm" data-action="demander-desinscription" data-id="'+moiAffectation.id+'" '+(authReady?"":"disabled")+'>Je ne suis plus disponible</button></div>';
-      } else if(restantes<=0){
+      } else if(missionEstPassee(m) || restantes<=0){
+        // missionEstPassee : par sécurité, même si une mission terminée ne
+        // devrait déjà plus être proposée sur la page de garde publique
+        // (voir missionsNonPasseesPublic) — point A1, 22/09/2026.
         selectHtml = '';
       } else {
         selectHtml = '<div class="inscrire-row"><button class="btn btn-sm btn-primary" data-action="inscrire-moi" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>M\'inscrire ('+escapeHtml(moi.prenom)+')</button></div>';
@@ -1409,7 +1428,7 @@
     return '<div class="card">'
       // Ordre demandé par Jluc (21/09/2026) : 1) code mission + places
       // restantes sur la même ligne, 2) objet, 3) date et heure, 4) adresse
-      // — chacun sur sa propre ligne, avant le badge de pôle/statut, la
+      // — chacun sur sa propre ligne, avant le badge de secteur/statut, la
       // description, puis (pour le public non identifié) le message
       // d'identification, dans missionInscritsSectionHtml().
       // Le badge ne partage la ligne qu'avec "M1" (pas avec tout le bloc
@@ -1567,7 +1586,7 @@
           : '')
         + '<div style="display:flex;gap:14px;flex-wrap:wrap;">'
         + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="missions-recherche">Recherche</label>'
-        + '<input type="search" id="missions-recherche" placeholder="Titre, pôle, lieu, description…" value="'+escapeHtml(missionsRecherche)+'"></div>'
+        + '<input type="search" id="missions-recherche" placeholder="Titre, secteur, lieu, description…" value="'+escapeHtml(missionsRecherche)+'"></div>'
         + selectFiltrePoleHtml("missions-filtre-pole", missionsFiltrePole)
         + selectFiltreStatutHtml("missions-filtre-statut", missionsFiltreStatut)
         + selectFiltreDispoMissionHtml("missions-filtre-dispo", missionsFiltreDispo)
@@ -1577,7 +1596,7 @@
             + '<th class="col-select"><input type="checkbox" data-action="toggle-select-all-missions" '+(touTochesM?"checked":"")+'></th>'
             + thTriMission("Date","date") + thTriMission("Titre","titre")
             + thTriMission("Places","places") + thTriMission("Inscrits","inscrits")
-            + thTriMission("Pôle","pole") + thTriMission("Statut","statut")
+            + thTriMission("Secteur","pole") + thTriMission("Statut","statut")
             + '</tr></thead><tbody>'+lignesHtml+'</tbody></table></div>'
           : '<div class="empty-state">'+(missionsAffichees.length ? 'Aucune mission ne correspond.' : 'Aucune mission proposée pour l\'instant.')+'</div>');
     }
@@ -1613,7 +1632,7 @@
           + missionChampHtml("Email","email",true,"email")
           + missionChampHtml("Téléphone","tel",false,"tel")
           + '</div>'
-          + '<div class="field"><label>Pôles / domaines</label><div class="checkbox-group">'
+          + '<div class="field"><label>Secteurs / domaines</label><div class="checkbox-group">'
           + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'"> '+escapeHtml(p)+'</label>'; }).join("")
           + '</div></div>'
           + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>Envoyer ma candidature</button>'
@@ -1698,22 +1717,24 @@
   // `couleur`, optionnel, est un objet {fc, fcSoft} (voir couleurNommee /
   // couleurPole ci-dessous) qui colore le libellé et le cadre du champ —
   // inspiré des fiches colorées de PICS.
-  function missionChampHtml(label, name, required, type, value, couleur){
+  // `desactive` (demande de Jluc, 22/09/2026, point A1) : rend le champ
+  // "disabled" une fois la mission terminée — voir missionFormModalHtml.
+  function missionChampHtml(label, name, required, type, value, couleur, desactive){
     var classeCol = couleur ? ' champ-colore' : '';
     var styleCol = couleur ? ' style="--fc:'+couleur.fc+';--fc-soft:'+couleur.fcSoft+';"' : '';
     return '<div class="field'+classeCol+'"'+styleCol+'><label for="f-'+name+'">'+label+'</label>'
-      + '<input id="f-'+name+'" name="'+name+'" type="'+(type||"text")+'" '+(type==="number"?'min="1"':'')+' '+(required ? "required" : "")
+      + '<input id="f-'+name+'" name="'+name+'" type="'+(type||"text")+'" '+(type==="number"?'min="1"':'')+' '+(required ? "required" : "")+(desactive?" disabled":"")
       + (value!=null && value!=="" ? ' value="'+escapeHtml(String(value))+'"' : '') + '></div>';
   }
-  function missionSelectChampHtml(label,name,options,selected,couleur){
+  function missionSelectChampHtml(label,name,options,selected,couleur,desactive){
     var classeCol = couleur ? ' champ-colore' : '';
     var styleCol = couleur ? ' style="--fc:'+couleur.fc+';--fc-soft:'+couleur.fcSoft+';"' : '';
-    return '<div class="field'+classeCol+'"'+styleCol+'><label for="f-'+name+'">'+label+'</label><select id="f-'+name+'" name="'+name+'">'
+    return '<div class="field'+classeCol+'"'+styleCol+'><label for="f-'+name+'">'+label+'</label><select id="f-'+name+'" name="'+name+'"'+(desactive?" disabled":"")+'>'
       + options.map(function(o){ return '<option value="'+escapeHtml(o)+'"'+(selected===o?' selected':'')+'>'+escapeHtml(o)+'</option>'; }).join("")
       + '</select></div>';
   }
   // Couleur fixe (accent/warm/success/danger, mêmes teintes que le reste du
-  // site) ou couleur dynamique liée au pôle (même teinte que son badge,
+  // site) ou couleur dynamique liée au secteur (même teinte que son badge,
   // voir poleTag/hueForPole) — deux petites usines à {fc, fcSoft}.
   function couleurNommee(nom){
     return { fc: 'var(--'+nom+')', fcSoft: 'var(--'+nom+'-soft)' };
@@ -1734,14 +1755,34 @@
   // l'onglet en dessous (Bénévoles, Missions, peu importe : on n'a jamais
   // bougé). Présentation inspirée des modales de gestion de PICS (demande
   // de Jluc) : bandeau de titre coloré, et champs identifiants (Titre,
-  // Pôle, Statut, Commentaires) mis en couleur pour se repérer d'un coup
-  // d'œil — le Pôle et le Statut reprennent exactement la même teinte que
+  // Secteur, Statut, Commentaires) mis en couleur pour se repérer d'un coup
+  // d'œil — le Secteur et le Statut reprennent exactement la même teinte que
   // leurs badges habituels (hueForPole / STATUT_COULEUR), pour rester
   // cohérent avec le reste du site plutôt que d'inventer une palette à
   // part. Quand on crée une mission (missionEnEdition vide), il n'y a bien
   // sûr encore ni badges ni inscrits à afficher.
   function missionFormModalHtml(){
     var missionEdit = missionEnEdition ? missionById(missionEnEdition) : null;
+    // Mission terminée = plus modifiable (demande du Directeur des Rancy,
+    // point A1, 22/09/2026) : champs désactivés, bouton "Enregistrer" caché,
+    // un bandeau l'explique. Se base sur missionEstPassee() (heure de fin
+    // dépassée), déjà utilisée ailleurs pour l'affichage public. Ce qui
+    // reste possible : voir la fiche, l'imprimer, la supprimer (Directeur),
+    // et gérer les inscrits déjà là (présence "réalisé", retrait, demandes
+    // de désinscription) — seule l'INSCRIPTION DE NOUVEAUX bénévoles est
+    // bloquée en plus (voir missionInscritsSectionHtml).
+    var missionPassee = !!(missionEdit && missionEstPassee(missionEdit));
+
+    // A2 (duplication d'une mission, demande du Directeur via Jluc,
+    // 22/09/2026) : "source" fournit les valeurs par défaut des champs.
+    // En modification, c'est la mission elle-même. En duplication
+    // (missionEnEdition vide mais missionDupliquerDonnees renseigné), ce
+    // sont les valeurs copiées de la mission d'origine. Sinon (création
+    // normale via "+ Créer une mission"), le formulaire reste vide.
+    // Volontairement absents de missionDupliquerDonnees : date, statut,
+    // commentaires — validé avec Jluc pour éviter de recopier une date déjà
+    // passée ou un statut qui n'a plus de sens.
+    var source = missionEdit || missionDupliquerDonnees;
 
     var enteteHtml = "";
     if(missionEdit){
@@ -1750,10 +1791,15 @@
       var badgeTxt = restantes <= 0 ? "Complet" : (restantes + " place" + (restantes>1?"s":"") + " restante" + (restantes>1?"s":""));
       enteteHtml = '<div class="mission-head" style="margin-bottom:10px;">'
         + '<div class="tags">'+poleTag(missionEdit.pole)+statutTag(statutMission(missionEdit))+'</div>'
-        + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>';
+        + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>'
+        + (missionPassee ? '<div class="mission-a-pointer">⏱ Mission terminée : les informations ne sont plus modifiables. Vous pouvez toujours imprimer la fiche et gérer les inscrits déjà présents (présence, retrait) ci-dessous.</div>' : '');
+    } else if(missionDupliquerDonnees){
+      enteteHtml = '<div class="mission-a-pointer">📋 Mission pré-remplie à partir de M'+missionDupliquerDonnees.numeroSource+' (« '+escapeHtml(missionDupliquerDonnees.titre)+' ») — pensez à vérifier la Date et le Statut avant d\'enregistrer.</div>';
     }
 
-    var poleActuel = missionEdit ? missionEdit.pole : (state.poles[0]||"");
+    var poleActuel = source ? source.pole : (state.poles[0]||"");
+    // Statut : jamais pré-rempli depuis une duplication (voir remarque
+    // ci-dessus), seulement depuis une vraie modification.
     var statutActuel = missionEdit ? statutMission(missionEdit) : state.statutsMissions[0];
     var couleurStatut = couleurNommee(STATUT_COULEUR[statutActuel] || "accent");
 
@@ -1761,31 +1807,34 @@
 
     var formMissionHtml = '<form class="form" id="form-mission">'
       + enteteHtml
-      + missionChampHtml(labelTitre,"titre",true,"text",missionEdit?missionEdit.titre:"",couleurNommee("accent"))
+      + missionChampHtml(labelTitre,"titre",true,"text",source?source.titre:"",couleurNommee("accent"),missionPassee)
       + '<div class="field-row">'
-      + missionSelectChampHtml("Pôle","pole",state.poles,missionEdit?missionEdit.pole:"",couleurPole(poleActuel))
-      + missionSelectChampHtml("Statut","statut",state.statutsMissions,statutActuel,couleurStatut)
+      + missionSelectChampHtml("Secteur","pole",state.poles,source?source.pole:"",couleurPole(poleActuel),missionPassee)
+      + missionSelectChampHtml("Statut","statut",state.statutsMissions,statutActuel,couleurStatut,missionPassee)
       + '</div>'
       + '<div class="field-row">'
-      + missionChampHtml("Date","date",true,"date",missionEdit?missionEdit.date:"")
-      + missionChampHtml("Lieu","lieu",true,"text",missionEdit?missionEdit.lieu:"")
+      + missionChampHtml("Date","date",true,"date",missionEdit?missionEdit.date:"",null,missionPassee)
+      + missionChampHtml("Lieu","lieu",true,"text",source?source.lieu:"",null,missionPassee)
       + '</div>'
       + '<div class="field-row" style="grid-template-columns:repeat(4,1fr);">'
-      + missionChampHtml("Heure de début","debut",true,"time",missionEdit?missionEdit.debut:"")
-      + missionChampHtml("Heure de fin","fin",true,"time",missionEdit?missionEdit.fin:"")
-      + '<div class="field"><label for="f-duree-affichage">Durée</label><input id="f-duree-affichage" type="text" readonly value="'+calculDureeAffichage(missionEdit?missionEdit.debut:"", missionEdit?missionEdit.fin:"")+'"></div>'
-      + missionChampHtml("Places proposées","placesTotal",true,"number",missionEdit?missionEdit.placesTotal:"")
+      + missionChampHtml("Heure de début","debut",true,"time",source?source.debut:"",null,missionPassee)
+      + missionChampHtml("Heure de fin","fin",true,"time",source?source.fin:"",null,missionPassee)
+      + '<div class="field"><label for="f-duree-affichage">Durée</label><input id="f-duree-affichage" type="text" readonly value="'+calculDureeAffichage(source?source.debut:"", source?source.fin:"")+'"></div>'
+      + missionChampHtml("Places proposées","placesTotal",true,"number",source?source.placesTotal:"",null,missionPassee)
       + '</div>'
-      + '<div class="field"><label for="f-description">Description</label><textarea id="f-description" name="description" rows="2">'+escapeHtml(missionEdit?missionEdit.description:"")+'</textarea></div>'
+      + '<div class="field"><label for="f-description">Description</label><textarea id="f-description" name="description" rows="2" '+(missionPassee?"disabled":"")+'>'+escapeHtml(source?source.description:"")+'</textarea></div>'
       // Commentaires : champ demandé par Jluc pour le suivi interne (jamais
       // montré au public, voir missionCardHtml) — distinct de la
-      // Description, qui elle est publique.
+      // Description, qui elle est publique. Jamais copié lors d'une
+      // duplication (uniquement missionEdit, pas "source").
       + '<div class="field champ-colore" style="--fc:var(--warm);--fc-soft:var(--warm-soft);">'
         + '<label for="f-commentaires">Commentaires <span class="form-hint">(usage interne, jamais visible du public)</span></label>'
-        + '<textarea id="f-commentaires" name="commentaires" rows="2">'+escapeHtml(missionEdit?missionEdit.commentaires:"")+'</textarea></div>'
+        + '<textarea id="f-commentaires" name="commentaires" rows="2" '+(missionPassee?"disabled":"")+'>'+escapeHtml(missionEdit?missionEdit.commentaires:"")+'</textarea></div>'
       + (missionFormError ? '<div class="error-text" style="margin-bottom:8px;">'+escapeHtml(missionFormError)+'</div>' : '')
-      + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>💾 '+(missionEdit?"Enregistrer les modifications":"Créer la mission")+'</button>'
-      + '<button type="button" class="btn btn-ghost" data-action="cancel-mission">Annuler</button>'
+      + '<div class="form-actions">'
+      + (missionPassee ? '' : '<button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>💾 '+(missionEdit?"Enregistrer les modifications":"Créer la mission")+'</button>')
+      + '<button type="button" class="btn btn-ghost" data-action="cancel-mission">'+(missionPassee?"Fermer":"Annuler")+'</button>'
+      + (missionEdit ? '<button type="button" class="btn btn-sm" data-action="dupliquer-mission" data-id="'+missionEdit.id+'">📋 Dupliquer</button>' : '')
       + (missionEdit && role === "directeur" ? '<button type="button" class="btn-danger-ghost" data-action="delete-mission" data-id="'+missionEdit.id+'">Supprimer la mission</button>' : '')
       + (missionEdit ? '<button type="button" class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-fiche-mission" data-id="'+missionEdit.id+'">Imprimer la fiche</button>' : '')
       + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
@@ -1828,7 +1877,7 @@
       + '<div class="field"><label>Email</label><input type="email" value="'+escapeHtml(b.email||"")+'" readonly></div>'
       + missionChampHtml("Téléphone","tel",false,"tel",b.tel||"")
       + '</div>'
-      + '<div class="field"><label>Pôles / domaines</label><div class="checkbox-group">'
+      + '<div class="field"><label>Secteurs / domaines</label><div class="checkbox-group">'
       + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'" '+((b.poles||[]).indexOf(p)>=0?"checked":"")+'> '+escapeHtml(p)+'</label>'; }).join("")
       + '</div></div>'
       + (benevoleModaleError ? '<div class="error-text" style="margin-bottom:8px;">'+escapeHtml(benevoleModaleError)+'</div>' : '')
@@ -1912,7 +1961,7 @@
   }
 
   // L'onglet "Heures données" (qui vivait ici) faisait doublon avec le
-  // tableau de l'onglet Bénévoles (Nom/Prénom/Pôles/Heures) : supprimé à la
+  // tableau de l'onglet Bénévoles (Nom/Prénom/Secteurs/Heures) : supprimé à la
   // demande de Jluc. Ses deux informations propres (Missions réalisées, tri
   // par nombre de missions) ont été reprises dans le tableau Bénévoles (voir
   // renderBenevoles et imprimerSelectionBenevoles). La tuile "Heures
@@ -2061,7 +2110,7 @@
       + (rows || '<div class="empty-state">Aucun gestionnaire pour l\'instant.</div>');
   }
 
-  // ---------- render: paramètres (pôles, statuts des missions) ----------
+  // ---------- render: paramètres (secteurs, statuts des missions) ----------
   function renderParametres(){
     var lignesPoles = state.poles.map(function(p){
       return '<div class="list-row"><div class="list-row-main"><span class="list-row-title">'+escapeHtml(p)+'</span></div>'
@@ -2074,20 +2123,20 @@
     }).join("");
 
     document.getElementById("panel-parametres").innerHTML =
-      '<div class="toolbar"><div><h2>Paramètres</h2><div class="toolbar-meta">Pôles / domaines et statuts proposés dans les formulaires</div></div></div>'
+      '<div class="toolbar"><div><h2>Paramètres</h2><div class="toolbar-meta">Secteurs / domaines et statuts proposés dans les formulaires</div></div></div>'
       + '<div class="form-hint" style="margin-bottom:18px;">Les nouvelles candidatures apparaissent dans l\'onglet Candidatures : pensez à le consulter régulièrement pour les valider.</div>'
-      + '<h3 style="margin:0 0 8px;">Pôles / domaines</h3>'
+      + '<h3 style="margin:0 0 8px;">Secteurs / domaines</h3>'
       + '<form class="form" id="form-pole"><div class="field-row">'
-      + '<div class="field"><label for="p-nom">Nouveau pôle</label><input id="p-nom" name="nom" required placeholder="Ex : Jardinage"></div>'
-      + '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter ce pôle</button></div></form>'
-      + (lignesPoles || '<div class="empty-state">Aucun pôle défini.</div>')
-      + '<div class="form-hint" style="margin:10px 0 26px;">Retirer un pôle ne modifie pas les bénévoles ou missions qui l\'utilisent déjà — seuls les nouveaux formulaires ne le proposeront plus.</div>'
+      + '<div class="field"><label for="p-nom">Nouveau secteur</label><input id="p-nom" name="nom" required placeholder="Ex : Jardinage"></div>'
+      + '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter ce secteur</button></div></form>'
+      + (lignesPoles || '<div class="empty-state">Aucun secteur défini.</div>')
+      + '<div class="form-hint" style="margin:10px 0 26px;">Retirer un secteur ne modifie pas les bénévoles ou missions qui l\'utilisent déjà — seuls les nouveaux formulaires ne le proposeront plus.</div>'
       + '<h3 style="margin:0 0 8px;">Statuts des missions</h3>'
       + '<form class="form" id="form-statut"><div class="field-row">'
       + '<div class="field"><label for="p-statut-nom">Nouveau statut</label><input id="p-statut-nom" name="nom" required placeholder="Ex : Annulée"></div>'
       + '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter ce statut</button></div></form>'
       + (lignesStatuts || '<div class="empty-state">Aucun statut défini.</div>')
-      + '<div class="form-hint" style="margin-top:10px;">Chaque mission a un statut (visible et modifiable par les gestionnaires/Directeur, pas par le public), utile pour suivre où elle en est et faire un retour aux responsables de pôle. Retirer un statut ne modifie pas les missions qui l\'utilisent déjà.</div>';
+      + '<div class="form-hint" style="margin-top:10px;">Chaque mission a un statut (visible et modifiable par les gestionnaires/Directeur, pas par le public), utile pour suivre où elle en est et faire un retour aux responsables de secteur. Retirer un statut ne modifie pas les missions qui l\'utilisent déjà.</div>';
   }
 
   // ---------- render: données (export / import) ----------
@@ -2101,8 +2150,8 @@
       + '</div>'
       + '<div class="card" style="max-width:520px;margin-top:14px;">'
       + '<div class="benevole-name">Importer</div>'
-      + '<div class="benevole-contact">Restaure des bénévoles / missions / inscriptions / pôles à partir d\'un fichier exporté avec le bouton ci-dessus. '
-      + 'Un enregistrement du fichier qui existe déjà en ligne (même identifiant) est mis à jour avec le contenu du fichier ; les enregistrements en ligne absents du fichier ne sont jamais supprimés. Pour les pôles, ceux du fichier sont ajoutés à la liste actuelle, sans rien retirer. '
+      + '<div class="benevole-contact">Restaure des bénévoles / missions / inscriptions / secteurs à partir d\'un fichier exporté avec le bouton ci-dessus. '
+      + 'Un enregistrement du fichier qui existe déjà en ligne (même identifiant) est mis à jour avec le contenu du fichier ; les enregistrements en ligne absents du fichier ne sont jamais supprimés. Pour les secteurs, ceux du fichier sont ajoutés à la liste actuelle, sans rien retirer. '
       + 'Les gestionnaires ne sont pas concernés par l\'import : ce sont de vrais comptes de connexion, à recréer via l\'onglet Équipe.</div>'
       + '<div><input type="file" id="import-file-input" accept="application/json" hidden>'
       + '<button class="btn" data-action="import-json">Importer des données (JSON)</button></div>'
@@ -2110,14 +2159,14 @@
       + '</div>'
       // Réservé au Directeur comme le reste de cet onglet (voir
       // updateTabsVisibility). Ne touche jamais aux comptes Gestionnaire/
-      // Directeur ni aux pôles/statuts : même exception que pour l'import
+      // Directeur ni aux secteurs/statuts : même exception que pour l'import
       // ci-dessus, ce sont de vrais comptes de connexion / de la
       // configuration, pas des données à réinitialiser (demande de Jluc).
       + '<div class="card" style="max-width:520px;margin-top:14px;">'
       + '<div class="benevole-name">Réinitialiser l\'application</div>'
       + '<div class="benevole-contact">Supprime définitivement tous les bénévoles, missions, inscriptions et candidatures — par exemple pour repartir d\'une base vide après une démonstration. '
       + 'L\'historique des actions est aussi vidé si les règles de sécurité Firestore l\'autorisent (sur certaines bases, il est protégé contre la suppression pour rester un journal fiable — le message après réinitialisation précise ce qui a effectivement été fait). '
-      + 'Les comptes Gestionnaire/Directeur et la configuration (pôles, statuts) sont conservés. Pensez à exporter une copie avant (bouton ci-dessus) si vous voulez pouvoir revenir en arrière.</div>'
+      + 'Les comptes Gestionnaire/Directeur et la configuration (secteurs, statuts) sont conservés. Pensez à exporter une copie avant (bouton ci-dessus) si vous voulez pouvoir revenir en arrière.</div>'
       + '<div><button type="button" class="btn-danger-ghost" data-action="reinitialiser-application">Réinitialiser l\'application</button></div>'
       + (reinitialisationStatus ? '<div class="'+(reinitialisationError?"msg-error":"msg-ok")+'" style="margin-top:6px;">'+escapeHtml(reinitialisationStatus)+'</div>' : '')
       + '</div>';
@@ -2248,7 +2297,7 @@
     document.getElementById("impression").innerHTML =
       impressionEnteteHtml()
       + '<h2>Bénévoles ('+liste.length+')</h2>'
-      + '<table><thead><tr><th>Nom</th><th>Prénom</th><th>Pôles</th><th>Missions réalisées</th><th>Heures données</th></tr></thead>'
+      + '<table><thead><tr><th>Nom</th><th>Prénom</th><th>Secteurs</th><th>Missions réalisées</th><th>Heures données</th></tr></thead>'
       + '<tbody>'+lignes+'</tbody></table>'
       + impressionPiedHtml("Bénévoles");
     window.print();
@@ -2281,7 +2330,7 @@
   // Impression de l'historique complet des inscriptions (réalisées / à
   // venir / non réalisées) des bénévoles sélectionnés — volontairement
   // séparée du bouton "Imprimer la sélection" (qui reste le tableau simple
-  // Nom/Prénom/Pôles/Heures) : chaque bénévole a ici son propre bloc, bien
+  // Nom/Prénom/Secteurs/Heures) : chaque bénévole a ici son propre bloc, bien
   // délimité des autres, avec le détail mission par mission.
   function imprimerHistoriqueBenevoles(){
     var liste = state.benevoles.filter(function(b){ return benevolesSelection[b.id]; });
@@ -2309,7 +2358,7 @@
     var heuresMap = heuresParBenevole();
     var h = Math.round((heuresMap[b.id]||0)*10)/10;
 
-    var ficheHtml = '<table><thead><tr><th>Nom</th><th>Prénom</th><th>Email</th><th>Téléphone</th><th>Pôles</th><th>Statut</th><th>Heures données</th></tr></thead>'
+    var ficheHtml = '<table><thead><tr><th>Nom</th><th>Prénom</th><th>Email</th><th>Téléphone</th><th>Secteurs</th><th>Statut</th><th>Heures données</th></tr></thead>'
       + '<tbody><tr><td class="impression-col-principale">'+escapeHtml(b.nom)+'</td><td>'+escapeHtml(b.prenom)+'</td>'
       + '<td>'+escapeHtml(b.email||"—")+'</td><td>'+escapeHtml(b.tel||"—")+'</td>'
       + '<td>'+escapeHtml((b.poles||[]).join(", ")||"—")+'</td>'
@@ -2354,7 +2403,7 @@
     document.getElementById("impression").innerHTML =
       impressionEnteteHtml()
       + '<h2>Missions ('+liste.length+')</h2>'
-      + '<table><thead><tr><th>Statut</th><th>Date</th><th>Titre</th><th>Pôle</th><th>Lieu</th><th>Places</th><th>Inscrits</th></tr></thead>'
+      + '<table><thead><tr><th>Statut</th><th>Date</th><th>Titre</th><th>Secteur</th><th>Lieu</th><th>Places</th><th>Inscrits</th></tr></thead>'
       + '<tbody>'+lignes+'</tbody></table>'
       + impressionPiedHtml("Missions");
     window.print();
@@ -2370,7 +2419,7 @@
     if(!m) return;
     var inscrits = inscritsAvecStatutDe(id);
 
-    var ficheHtml = '<table><thead><tr><th>Statut</th><th>Date</th><th>Horaire</th><th>Durée</th><th>Pôle</th><th>Lieu</th><th>Places</th></tr></thead>'
+    var ficheHtml = '<table><thead><tr><th>Statut</th><th>Date</th><th>Horaire</th><th>Durée</th><th>Secteur</th><th>Lieu</th><th>Places</th></tr></thead>'
       + '<tbody><tr><td>'+impressionStatutMissionHtml(m)+'</td><td>'+fmtDate(m.date)+'</td>'
       + '<td>'+m.debut+'–'+m.fin+'</td><td>'+dureeHeures(m)+' h</td>'
       + '<td>'+escapeHtml(m.pole||"—")+'</td><td>'+escapeHtml(m.lieu||"—")+'</td>'
@@ -2440,18 +2489,40 @@
     else if(action==="cancel-benevole"){ benevoleFormOpen = false; renderBenevoles(); }
     else if(action==="open-candidature"){ candidatureFormOpen = true; candidatureError=""; candidatureEnvoyee=false; renderMissions(); }
     else if(action==="cancel-candidature"){ candidatureFormOpen = false; renderMissions(); }
-    else if(action==="open-mission"){ missionFormOpen = true; missionEnEdition = null; missionFormError = ""; renderModal(); }
+    else if(action==="open-mission"){ missionFormOpen = true; missionEnEdition = null; missionDupliquerDonnees = null; missionFormError = ""; renderModal(); }
     else if(action==="edit-mission"){
       var idAModifier = el.getAttribute("data-id");
       if(!missionById(idAModifier)){ alert("Cette mission n'existe plus."); return; }
-      missionFormOpen = true; missionEnEdition = idAModifier; missionFormError = ""; renderModal();
+      missionFormOpen = true; missionEnEdition = idAModifier; missionDupliquerDonnees = null; missionFormError = ""; renderModal();
     }
-    else if(action==="cancel-mission"){ missionFormOpen = false; missionEnEdition = null; missionFormError = ""; renderModal(); }
+    else if(action==="dupliquer-mission"){
+      // A2 (demande du Directeur via Jluc, 22/09/2026) : repart du
+      // formulaire de CRÉATION (missionEnEdition = null, donc un numéro M..
+      // tout neuf sera attribué à l'enregistrement, voir prochainNumeroMission),
+      // mais pré-rempli avec une partie des champs de la mission source.
+      var idASourcer = el.getAttribute("data-id");
+      var mSource = missionById(idASourcer);
+      if(!mSource){ alert("Cette mission n'existe plus."); return; }
+      missionDupliquerDonnees = {
+        titre: mSource.titre,
+        pole: mSource.pole,
+        lieu: mSource.lieu,
+        debut: mSource.debut,
+        fin: mSource.fin,
+        placesTotal: mSource.placesTotal,
+        description: mSource.description,
+        numeroSource: mSource.numero
+      };
+      missionEnEdition = null;
+      missionFormError = "";
+      renderModal();
+    }
+    else if(action==="cancel-mission"){ missionFormOpen = false; missionEnEdition = null; missionDupliquerDonnees = null; missionFormError = ""; renderModal(); }
     else if(action==="close-modal-mission"){
       // Ne ferme que si le clic est bien sur le fond gris lui-même, pas sur
       // un élément à l'intérieur de la boîte (le fond englobe toute la
       // boîte, donc closest() le retrouverait aussi pour un clic dedans).
-      if(e.target === el){ missionFormOpen = false; missionEnEdition = null; missionFormError = ""; renderModal(); }
+      if(e.target === el){ missionFormOpen = false; missionEnEdition = null; missionDupliquerDonnees = null; missionFormError = ""; renderModal(); }
     }
     else if(action==="open-benevole-modale"){
       var idBenevole = el.getAttribute("data-id");
@@ -2589,6 +2660,10 @@
     }
     else if(action==="inscrire"){
       var missionId = el.getAttribute("data-mission");
+      // Garde-fou (point A1, 22/09/2026) : le bouton "Inscrire" n'est déjà
+      // plus affiché pour une mission terminée (voir
+      // missionInscritsSectionHtml) — sécurité supplémentaire au cas où.
+      if(missionEstPassee(missionById(missionId))) return;
       var sel = document.getElementById("sel-"+missionId);
       if(sel && sel.value){
         addDoc(collection(db,"affectations"), {missionId:missionId, benevoleId:sel.value, statut:"inscrit"}).catch(reportError);
@@ -2596,6 +2671,8 @@
     }
     else if(action==="inscrire-moi"){
       var missionIdMoi = el.getAttribute("data-mission");
+      // Même garde-fou côté public.
+      if(missionEstPassee(missionById(missionIdMoi))) return;
       if(moiBenevoleId){
         var moiPourLog = benevoleById(moiBenevoleId);
         var missionPourLog = missionById(missionIdMoi);
@@ -2695,14 +2772,14 @@
           // retrouvait à afficher, sans le dire, le formulaire vide "Créer une
           // mission" puisque la mission qu'elle éditait n'existe plus). On la
           // referme maintenant explicitement.
-          missionFormOpen = false; missionEnEdition = null; missionFormError = "";
+          missionFormOpen = false; missionEnEdition = null; missionDupliquerDonnees = null; missionFormError = "";
           renderModal();
         }).catch(reportError);
     }
     else if(action==="export-json"){
       // Corrigé : il y avait deux blocs "export-json" identiques (un mort,
       // jamais exécuté) — celui qui s'exécutait réellement oubliait les
-      // pôles. Un seul bloc désormais, qui inclut bien la liste des pôles.
+      // secteurs. Un seul bloc désormais, qui inclut bien la liste des secteurs.
       var exportData = {
         exporteLe: new Date().toISOString(),
         poles: state.poles,
@@ -2734,7 +2811,7 @@
     }
     else if(action==="delete-pole"){
       var poleNom = el.getAttribute("data-pole");
-      if(!confirm("Retirer le pôle « "+poleNom+" » de la liste proposée ? Les bénévoles/missions qui l'ont déjà ne seront pas modifiés.")) return;
+      if(!confirm("Retirer le secteur « "+poleNom+" » de la liste proposée ? Les bénévoles/missions qui l'ont déjà ne seront pas modifiés.")) return;
       var nouvelleListe = state.poles.filter(function(p){ return p !== poleNom; });
       setDoc(doc(db,"parametres","poles"), {liste: nouvelleListe}, {merge:true}).catch(reportError);
     }
@@ -2872,7 +2949,7 @@
       var elStat = e.target.closest && e.target.closest('[data-action="ouvrir-stat"]');
       if(elStat){ e.preventDefault(); elStat.click(); }
     } else if(e.key === "Escape" && missionFormOpen){
-      missionFormOpen = false; missionEnEdition = null; missionFormError = ""; renderModal();
+      missionFormOpen = false; missionEnEdition = null; missionDupliquerDonnees = null; missionFormError = ""; renderModal();
     }
   });
 
@@ -2920,8 +2997,8 @@
     }
   });
 
-  // Listes déroulantes "Filtrer par pôle" (Bénévoles et Missions), basées
-  // sur la liste des pôles de Paramètres.
+  // Listes déroulantes "Filtrer par secteur" (Bénévoles et Missions), basées
+  // sur la liste des secteurs de Paramètres.
   document.addEventListener("change", function(e){
     if(e.target.id === "benevoles-filtre-pole"){
       benevolesFiltrePole = e.target.value;
@@ -3167,6 +3244,15 @@
     }
     if(e.target.id === "form-mission"){
       e.preventDefault();
+      // Garde-fou (point A1, 22/09/2026) : les champs sont déjà "disabled"
+      // et le bouton "Enregistrer" caché pour une mission terminée (voir
+      // missionFormModalHtml), donc ce cas ne devrait jamais se produire en
+      // usage normal — sécurité supplémentaire au cas où.
+      if(missionEnEdition && missionEstPassee(missionById(missionEnEdition))){
+        missionFormError = "Cette mission est terminée, elle ne peut plus être modifiée.";
+        renderModal();
+        return;
+      }
       var f2 = e.target;
       var titre = f2.titre.value.trim();
       var placesSaisies = Math.max(1, parseInt(f2.placesTotal.value,10) || 1);
@@ -3197,7 +3283,7 @@
         var missionAvant = missionById(missionEnEdition);
         updateDoc(doc(db,"missions", missionEnEdition), champs).then(function(){
           logHistorique("modification_mission", libelleMission(Object.assign({}, missionAvant, champs)));
-          missionFormOpen = false; missionEnEdition = null; missionFormError = ""; renderModal();
+          missionFormOpen = false; missionEnEdition = null; missionDupliquerDonnees = null; missionFormError = ""; renderModal();
         }).catch(reportError);
       } else {
         var numeroMission = prochainNumeroMission();
@@ -3207,7 +3293,7 @@
           creeLe: serverTimestamp()
         })).then(function(){
           logHistorique("creation_mission", "M"+numeroMission+" — "+titre);
-          missionFormOpen = false; renderModal();
+          missionFormOpen = false; missionDupliquerDonnees = null; renderModal();
         }).catch(reportError);
       }
     }
@@ -3236,7 +3322,7 @@
   function importerDonnees(data){
     var nbPolesAjoutes = 0;
     var premierLot = [];
-    // Restaure les pôles du fichier exporté : ajoutés à la liste actuelle
+    // Restaure les secteurs du fichier exporté : ajoutés à la liste actuelle
     // sans rien retirer (même logique que pour bénévoles/missions/inscriptions
     // ci-dessous — un import ne supprime jamais ce qui existe déjà en ligne).
     if(Array.isArray(data.poles) && data.poles.length){
@@ -3276,7 +3362,7 @@
       return Promise.all(lotAffectations);
     }).then(function(){
       importStatus = "Import terminé : " + (data.benevoles||[]).length + " bénévole(s), " + (data.missions||[]).length + " mission(s), " + (data.affectations||[]).length + " inscription(s)"
-        + (nbPolesAjoutes > 0 ? ", " + nbPolesAjoutes + " pôle(s) ajouté(s)" : "") + " traité(s).";
+        + (nbPolesAjoutes > 0 ? ", " + nbPolesAjoutes + " secteur(s) ajouté(s)" : "") + " traité(s).";
       importError = false;
       logHistorique("import_donnees", importStatus);
       renderDonnees();
@@ -3292,7 +3378,7 @@
   // pour repartir d'une base vide — typiquement après une démonstration
   // faite avec le jeu de données fictif. Ne touche JAMAIS aux comptes
   // Gestionnaire/Directeur (de vrais accès de connexion, voir
-  // importerDonnees ci-dessus) ni à la configuration (pôles, statuts).
+  // importerDonnees ci-dessus) ni à la configuration (secteurs, statuts).
   // Confirmation par saisie d'un mot exact plutôt qu'un simple confirm() :
   // vu l'ampleur (tout est supprimé d'un coup, contrairement à "Supprimer
   // la mission"/"Supprimer la fiche" qui ne touchent qu'un seul
@@ -3315,7 +3401,7 @@
     var saisie = prompt(
       "Ceci va supprimer DÉFINITIVEMENT tous les bénévoles, missions, inscriptions "
       + "et candidatures. Les comptes Gestionnaire/Directeur et la configuration "
-      + "(pôles, statuts) sont conservés. L'historique des actions sera aussi vidé "
+      + "(secteurs, statuts) sont conservés. L'historique des actions sera aussi vidé "
       + "si les règles de sécurité Firestore l'autorisent (sinon il reste tel quel).\n\n"
       + "Pensez à exporter une copie avant si vous voulez pouvoir revenir en arrière "
       + "(bouton \"Exporter horodaté\" ci-dessus).\n\n"
