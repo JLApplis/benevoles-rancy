@@ -169,6 +169,21 @@
   .form-actions{display:flex;gap:10px;margin-top:6px;align-items:center;flex-wrap:wrap;}
   .form-hint{color:var(--ink-faint);font-size:.8rem;}
 
+  /* Liste déroulante à cases à cocher (ex. "Filtrer par auteur" dans
+     l'Historique, 29/09/2026, demande de Jluc) : <details>/<summary>
+     natif habillé pour ressembler à un vrai champ de type <select> — vert,
+     comme les badges Secteurs — plutôt qu'au pavé de cases à cocher brut
+     du premier essai. Le contenu (cases à cocher) est positionné en
+     absolu pour flotter par-dessus le reste au lieu de pousser la mise en
+     page vers le bas à l'ouverture. */
+  .select-dropdown{position:relative;}
+  .select-dropdown > summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:var(--success-soft);color:var(--success-soft-ink);border:1px solid var(--success);border-radius:var(--radius-sm);padding:9px 12px;font-weight:600;font-size:.85rem;white-space:nowrap;}
+  .select-dropdown > summary::-webkit-details-marker{display:none;}
+  .select-dropdown > summary::marker{content:"";}
+  .select-dropdown > summary .chevron{font-size:.7rem;}
+  .select-dropdown[open] > summary{border-radius:var(--radius-sm) var(--radius-sm) 0 0;}
+  .select-dropdown-panel{position:absolute;top:100%;left:0;z-index:20;margin-top:2px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px;min-width:260px;box-shadow:0 6px 18px rgba(0,0,0,.14);}
+
   /* Modale (ex. formulaire "Créer/Modifier une mission") : par-dessus le
      reste de l'écran, pour ne pas perdre sa place dans le tableau en
      modifiant une ligne (demande de Jluc). */
@@ -3070,11 +3085,59 @@
   var historiqueTri = "date"; // "date" (plus récent d'abord) | "action" | "cible" | "par"
   var historiqueSelection = {}; // { [historiqueId]: true } — cases cochées pour l'impression
 
+  // Filtre par auteur (29/09/2026, demande de Jluc) : liste déroulante à
+  // cases à cocher, plusieurs auteurs à la fois. [] = tous les auteurs
+  // (pas de filtre). historiqueMenuAuteursOuvert garde la liste ouverte
+  // d'un rendu à l'autre (chaque coche déclenche un rendu complet du
+  // panneau, voir renderHistorique).
+  var historiqueFiltreAuteurs = [];
+  var historiqueMenuAuteursOuvert = false;
+
+  // Ajouté le 29/09/2026 (demande de Jluc) : même bouton "Supprimer tous
+  // les filtres" que sur Bénévoles/Missions, qui vide aussi la sélection.
+  // Ne remet pas le tri à "date" (comme resetFiltresBenevoles/Missions ne
+  // touchent pas non plus au tri de leur onglet) : seuls la recherche, le
+  // filtre par auteur et la sélection sont considérés comme des "filtres"
+  // à retirer.
+  function resetFiltresHistorique(){
+    historiqueRecherche = ""; historiqueFiltreAuteurs = []; historiqueSelection = {};
+  }
+
+  // Le nom stocké dans l'historique (parNom) est toujours "Prénom Nom" en
+  // une seule chaîne (voir logHistorique/logHistoriquePublic, pas de champ
+  // séparé). Corrigé le 29/09/2026 (Jluc a signalé que le tri "Par" triait
+  // en réalité par PRÉNOM, premier mot de la chaîne) : on prend le DERNIER
+  // mot comme nom de famille pour trier/lister — correct pour l'immense
+  // majorité des noms de l'appli, y compris les noms composés avec trait
+  // d'union (ex. "MAYET-ALVAREZ", qui reste un seul mot). Limite connue et
+  // acceptée : un nom de famille contenant lui-même un espace (rare, non
+  // rencontré dans les données actuelles) ne serait pas isolé correctement.
+  function nomFamilleHistorique(parNom){
+    var mots = (parNom||"").trim().split(/\s+/);
+    return mots.length > 1 ? mots[mots.length-1] : (parNom||"");
+  }
+
+  // Liste des auteurs distincts déjà apparus dans l'historique, triée par
+  // nom de famille — sert à la fois au tri "Par" et à la liste déroulante
+  // du filtre par auteur.
+  function listeAuteursHistorique(){
+    var auteurs = [];
+    state.historique.forEach(function(h){
+      var nomAuteur = h.parNom || "";
+      if(auteurs.indexOf(nomAuteur) === -1) auteurs.push(nomAuteur);
+    });
+    auteurs.sort(function(a,b){ return nomFamilleHistorique(a).localeCompare(nomFamilleHistorique(b), "fr", {sensitivity:"base"}); });
+    return auteurs;
+  }
+
   function renderHistorique(){
     var recherche = historiqueRecherche.trim().toLowerCase();
+    var auteursHistorique = listeAuteursHistorique();
 
-    // Recherche générale : date, action, concerne ou personne.
+    // Filtre par auteur (cases cochées dans la liste déroulante), puis
+    // recherche générale : date, action, concerne ou personne.
     var rows = state.historique.filter(function(h){
+      if(historiqueFiltreAuteurs.length && historiqueFiltreAuteurs.indexOf(h.parNom||"") === -1) return false;
       if(!recherche) return true;
       var actionLabel = (ACTION_LABELS[h.action]||h.action||"").toLowerCase();
       var parLabel = (h.parNom||"") + " " + (h.parRole==="directeur"?"directeur":"gestionnaire");
@@ -3100,7 +3163,7 @@
         var cmpCible = (a.cible||"").localeCompare(b.cible||"", "fr", {sensitivity:"base"});
         if(cmpCible !== 0) return cmpCible;
       } else if(historiqueTri === "par"){
-        var cmpPar = (a.parNom||"").localeCompare(b.parNom||"", "fr", {sensitivity:"base"});
+        var cmpPar = nomFamilleHistorique(a.parNom).localeCompare(nomFamilleHistorique(b.parNom), "fr", {sensitivity:"base"});
         if(cmpPar !== 0) return cmpPar;
       }
       return tb - ta;
@@ -3127,11 +3190,48 @@
     var imprimerBtnHi = '<button class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-selection-historique"'+(nbSelectionnesHi>0?"":" disabled")+'>Imprimer la sélection ('+nbSelectionnesHi+')</button>'
       + '<button class="btn btn-badge badge-vider btn-sm" data-action="vider-selection-historique"'+(nbSelectionnesHi>0?"":" disabled")+'>Vider la sélection</button>';
 
+    // Même principe que Bénévoles/Missions (29/09/2026, demande de Jluc) :
+    // le bouton "Supprimer tous les filtres" fait aussi office de "Vider
+    // la sélection".
+    var historiqueFiltreActif = !!(historiqueRecherche.trim() || historiqueFiltreAuteurs.length || nbSelectionnesHi > 0);
+
+    // Liste déroulante à cases à cocher pour filtrer par un ou plusieurs
+    // auteurs (29/09/2026, demande de Jluc — deuxième passe : un vrai
+    // champ déroulant, vert comme les badges Secteurs, plutôt que le pavé
+    // de cases à cocher brut du premier essai, voir classes CSS
+    // .select-dropdown/.select-dropdown-panel). <details>/<summary>
+    // natif : pas de gestion JS de l'ouverture/fermeture au clic à
+    // l'extérieur, la plus simple solution — historiqueMenuAuteursOuvert
+    // garde juste l'état ouvert/fermé d'un rendu à l'autre (chaque coche
+    // redessine tout le panneau). Le panneau de cases à cocher est en
+    // position absolue (.select-dropdown-panel) pour flotter par-dessus
+    // le reste de la page au lieu de pousser "Supprimer tous les filtres"
+    // sur une autre ligne à l'ouverture.
+    var menuAuteursHtml = auteursHistorique.length ? ('<details class="select-dropdown"'+(historiqueMenuAuteursOuvert?" open":"")+' style="align-self:flex-end;margin-bottom:14px;">'
+      + '<summary data-action="toggle-menu-auteurs-historique">Filtrer par auteur'+(historiqueFiltreAuteurs.length ? ' ('+historiqueFiltreAuteurs.length+')' : '')+' <span class="chevron">▾</span></summary>'
+      + '<div class="select-dropdown-panel">'
+      + '<div class="checkbox-group">'
+      + auteursHistorique.map(function(nomAuteur){
+          var coche = historiqueFiltreAuteurs.indexOf(nomAuteur) >= 0;
+          return '<label class="checkbox-chip"><input type="checkbox" data-action="toggle-auteur-historique" data-auteur="'+escapeHtml(nomAuteur)+'" '+(coche?"checked":"")+'> '+escapeHtml(nomAuteur||"(non renseigné)")+'</label>';
+        }).join("")
+      + '</div>'
+      + '<div class="form-actions" style="margin-top:10px;">'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-action="tout-cocher-auteurs-historique">Tout cocher</button>'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-action="tout-decocher-auteurs-historique">Tout décocher</button>'
+      + '</div>'
+      + '</div>'
+      + '</details>') : '';
+
     document.getElementById("panel-historique").innerHTML =
       '<div class="toolbar"><h2>Historique</h2>'
       + '<div style="display:flex;gap:8px;">'+imprimerBtnHi+'</div></div>'
+      + '<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">'
       + '<div class="field" style="max-width:420px;margin-bottom:14px;"><label for="historique-recherche">Recherche</label>'
       + '<input type="search" id="historique-recherche" placeholder="Date, action, concerne ou personne…" value="'+escapeHtml(historiqueRecherche)+'"></div>'
+      + menuAuteursHtml
+      + btnSupprimerFiltres("reset-filtres-historique", historiqueFiltreActif)
+      + '</div>'
       + (rows.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr>'
           + '<th class="col-select"><input type="checkbox" data-action="toggle-select-all-historique" '+(touTochesHi?"checked":"")+'></th>'
           + thTri("Date","date") + thTri("Action","action") + thTri("Concerne","cible") + thTri("Par","par")
@@ -4540,6 +4640,29 @@
     else if(action==="reset-filtres-missions"){
       resetFiltresMissions();
       renderMissions();
+    }
+    else if(action==="reset-filtres-historique"){
+      resetFiltresHistorique();
+      renderHistorique();
+    }
+    else if(action==="toggle-menu-auteurs-historique"){
+      historiqueMenuAuteursOuvert = !historiqueMenuAuteursOuvert;
+      renderHistorique();
+    }
+    else if(action==="toggle-auteur-historique"){
+      var nomAuteurClic = el.getAttribute("data-auteur");
+      var posAuteur = historiqueFiltreAuteurs.indexOf(nomAuteurClic);
+      if(posAuteur >= 0){ historiqueFiltreAuteurs.splice(posAuteur, 1); }
+      else { historiqueFiltreAuteurs.push(nomAuteurClic); }
+      renderHistorique();
+    }
+    else if(action==="tout-cocher-auteurs-historique"){
+      historiqueFiltreAuteurs = listeAuteursHistorique();
+      renderHistorique();
+    }
+    else if(action==="tout-decocher-auteurs-historique"){
+      historiqueFiltreAuteurs = [];
+      renderHistorique();
     }
     else if(action==="stats-mois-courant"){
       statsPeriodeDebut = premierJourMoisCourantIso();
