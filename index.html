@@ -679,6 +679,15 @@
   var alerteMissionOuverte = null; // null, ou {numero, titre} de la mission qui vient d'être créée
   var alerteMissionCopieOk = false; // true juste après un clic réussi sur "Copier", pour afficher une confirmation
 
+  // Fenêtre "Écrire à tous les bénévoles inscrits" (29/09/2026, demande de
+  // Jluc, bouton dans l'onglet Groupes) : même principe que la fenêtre
+  // d'alerte mission ci-dessus (liste copiable, aucun envoi automatique),
+  // mais sans lien avec une mission — tous les bénévoles inscrits, sans
+  // filtre (voir emailsTousLesBenevoles). booléen simple, pas besoin d'un
+  // objet {numero, titre} ici.
+  var alerteTousBenevolesOuverte = false;
+  var alerteTousBenevolesCopieOk = false;
+
   // Petite fenêtre de choix "Nouvelle mission" / "Mission modifiée" avant
   // d'ouvrir le mailto groupe (demande de Jluc, 23/09/2026 : "Dans un cas
   // 'nouvelle mission' si modifiée 'mission modifiée'" — Jluc a choisi que
@@ -2916,6 +2925,30 @@
       + contenuHtml + '</div></div>';
   }
 
+  // Fenêtre "Écrire à tous les bénévoles inscrits" (29/09/2026, demande de
+  // Jluc, capture d'écran à l'appui : bouton dans l'onglet Groupes, "qui
+  // ouvre comme pour les missions à la liste totale des mails à copier
+  // pour un mailto en masse"). Calquée sur alerteNouvelleMissionModaleHtml
+  // ci-dessus, sans référence à une mission précise — la liste couvre TOUS
+  // les bénévoles inscrits, sans filtre (voir emailsTousLesBenevoles).
+  function alerteTousBenevolesModaleHtml(){
+    if(!alerteTousBenevolesOuverte) return "";
+    var emailsTous = emailsTousLesBenevoles();
+    var listeTous = emailsTous.join(", ");
+    var contenuTousHtml = '<div class="form-hint" style="margin-bottom:12px;">Pour écrire à tous les bénévoles inscrits ('+emailsTous.length+'), copiez la liste ci-dessous et collez-la dans votre outil d\'envoi en nombre. Aucun email n\'est envoyé automatiquement par l\'application.</div>'
+      + '<textarea readonly rows="6" style="width:100%;resize:vertical;" onclick="this.select()" id="alerte-tous-benevoles-textarea">'+escapeHtml(listeTous)+'</textarea>'
+      + '<div class="form-actions" style="margin-top:14px;align-items:center;gap:10px;">'
+      + '<button type="button" class="btn btn-primary" data-action="copier-liste-emails-tous-benevoles">📋 Copier la liste</button>'
+      + (alerteTousBenevolesCopieOk ? '<span class="form-hint" style="color:var(--success-soft-ink);">✅ Copié</span>' : '')
+      + '<button type="button" class="btn btn-ghost" data-action="fermer-alerte-tous-benevoles">Fermer</button>'
+      + '</div>';
+
+    return '<div class="modal-backdrop" data-action="close-modal-alerte-tous-benevoles">'
+      + '<div class="modal-box"><div class="modal-box-head"><h3>Écrire à tous les bénévoles inscrits</h3>'
+      + '<button type="button" class="modal-close" data-action="fermer-alerte-tous-benevoles" aria-label="Fermer">✕</button></div>'
+      + contenuTousHtml + '</div></div>';
+  }
+
   // Fenêtre de choix "Nouvelle mission" / "Mission modifiée" (23/09/2026,
   // demande de Jluc), ouverte avant tout mailto groupe (badges 🔒 et bouton
   // "Envoyer un mail" sur une mission à Groupes — voir l'action
@@ -2966,6 +2999,7 @@
       missionFormOpen, missionEnEdition, missionFormError, missionModifOk,
       monHistoriqueOpen,
       alerteMissionOuverte, alerteMissionCopieOk,
+      alerteTousBenevolesOuverte, alerteTousBenevolesCopieOk,
       choixMailGroupeMission
     ]);
     if(signatureModale === derniereSignatureModale) return;
@@ -2983,6 +3017,7 @@
     if(benevoleModaleOpen && benevoleModaleDepuisMission) html += benevoleModaleHtml();
     if(monHistoriqueOpen) html += monHistoriqueModaleHtml();
     if(alerteMissionOuverte) html += alerteNouvelleMissionModaleHtml();
+    if(alerteTousBenevolesOuverte) html += alerteTousBenevolesModaleHtml();
     if(choixMailGroupeMission) html += choixMailGroupeModaleHtml();
     racine.innerHTML = html;
   }
@@ -3239,6 +3274,12 @@
           + '<div class="field"><label for="ge-prenom">Prénom</label><input id="ge-prenom" name="prenom" value="'+escapeHtml(g.prenom||"")+'" required></div>'
           + '<div class="field"><label for="ge-nom">Nom</label><input id="ge-nom" name="nom" value="'+escapeHtml(g.nom||"")+'" required></div>'
           + '</div>'
+          // Ajouté le 29/09/2026, avec les Secteurs eux-mêmes (voir plus haut
+          // dans ce fichier, formulaire de création) : mêmes cases à cocher,
+          // pour pouvoir corriger les Secteurs d'un compte après coup.
+          + '<div class="field"><label>Secteurs</label><div class="checkbox-group">'
+          + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'" '+((g.poles||[]).indexOf(p)>=0?"checked":"")+'> '+escapeHtml(p)+'</label>'; }).join("")
+          + '</div></div>'
           + '<div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>'
           + '<button type="button" class="btn btn-ghost btn-sm" data-action="cancel-edit-gestionnaire">Annuler</button>'
           + (gestionnaireEditError ? '<span class="error-text">'+escapeHtml(gestionnaireEditError)+'</span>' : '')
@@ -3252,8 +3293,20 @@
           actionsHtml += '<button class="btn btn-ghost btn-sm" data-action="toggle-gestionnaire" data-id="'+g.id+'">'+(g.actif ? "Désactiver" : "Réactiver")+'</button>';
         }
       }
+      // Secteurs affichés à titre d'information (voir commentaire du
+      // 29/09/2026 sur le formulaire de création) — petits badges verts
+      // (demande de Jluc, 29/09/2026), réutilisant la couleur --success déjà
+      // utilisée ailleurs dans l'appli pour ce genre de badge discret (ex.
+      // le tag "Actif" d'une fiche bénévole), plutôt qu'une nouvelle couleur.
+      var secteursHtml = (g.poles && g.poles.length)
+        ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;">'
+          + g.poles.map(function(p){ return '<span class="tag" style="background:var(--success-soft);color:var(--success-soft-ink);">'+escapeHtml(p)+'</span>'; }).join("")
+          + '</div>'
+        : '<div class="list-row-meta" style="margin-top:3px;">Aucun secteur</div>';
       return '<div class="list-row"><div class="list-row-main"><span class="list-row-title">'+escapeHtml(((g.prenom||"")+' '+(g.nom||"")).trim())+'</span>'
-        + '<span class="list-row-meta">'+escapeHtml(g.email||"—")+' · '+(g.actif ? "Actif" : "Inactif")+'</span></div>'
+        + '<span class="list-row-meta">'+escapeHtml(g.email||"—")+' · '+(g.actif ? "Actif" : "Inactif")+'</span>'
+        + secteursHtml
+        + '</div>'
         + '<div style="display:flex;align-items:center;gap:10px;"><span class="'+pillCls+'">'+(g.role==="directeur"?"Directeur":"Gestionnaire")+'</span>'+actionsHtml+'</div></div>';
     }).join("");
 
@@ -3274,6 +3327,21 @@
         // précision déplacée ici en dessous du formulaire (même principe
         // que les autres indications de ce genre dans l'appli).
         + '<div class="form-hint" style="margin-top:8px;">L\'email doit être réel : c\'est lui qui sert à récupérer le code de connexion.</div>'
+        // Ajouté le 29/09/2026 (demande de Jluc) : Secteurs attribués à un
+        // compte Gestionnaire/Directeur, à titre PUREMENT INFORMATIF pour
+        // l'instant — aucune règle Firestore ni restriction d'accès ne s'y
+        // appuie (Jluc doit d'abord en discuter avec le Directeur). Champ
+        // séparé `poles` sur le document `gestionnaires`, volontairement
+        // distinct du champ `poles` de la fiche bénévole liée automatiquement
+        // (qui représente les domaines où CETTE PERSONNE fait elle-même du
+        // bénévolat, pas ceux qu'elle administrerait en tant que
+        // Gestionnaire — les deux peuvent légitimement différer). Mêmes
+        // cases à cocher que pour un bénévole, réutilisant la liste
+        // Secteurs définie dans Paramètres (state.poles).
+        + '<div class="field" style="margin-top:8px;"><label>Secteurs</label><div class="checkbox-group">'
+        + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'"> '+escapeHtml(p)+'</label>'; }).join("")
+        + '</div></div>'
+        + '<div class="form-hint">À titre d\'information pour l\'instant : ne limite pas encore ses droits dans l\'application.</div>'
         + '<div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter cette personne</button>'
         + '<button type="button" class="btn btn-ghost" data-action="cancel-gestionnaire">Annuler</button>'
         + (gestionnaireError ? '<span class="error-text">'+escapeHtml(gestionnaireError)+'</span>' : '')
@@ -3287,7 +3355,15 @@
       + (lignesEquipe || '<div class="empty-state">Aucun gestionnaire pour l\'instant.</div>');
 
     document.getElementById("panel-groupes").innerHTML =
-      '<div class="toolbar"><div><h2>Groupes</h2><div class="toolbar-meta">Listes de diffusion et missions réservées — un pavé par groupe, avec ses membres</div></div></div>'
+      '<div class="toolbar"><div><h2>Groupes</h2><div class="toolbar-meta">Listes de diffusion et missions réservées — un pavé par groupe, avec ses membres</div></div>'
+      // Ajouté le 29/09/2026 (demande de Jluc, capture d'écran à l'appui) :
+      // pendant complémentaire de "Écrire au groupe" (ci-dessus, par pavé),
+      // pour TOUS les bénévoles inscrits d'un coup — même principe que
+      // l'alerte mission (liste copiable, pas de mailto direct, pour coller
+      // dans un outil d'envoi en nombre). Pas de restriction de rôle, comme
+      // "Écrire au groupe" : non destructif.
+      + '<button type="button" class="btn btn-primary" data-action="alerter-tous-benevoles">✉ Écrire à tous les bénévoles inscrits</button>'
+      + '</div>'
       + formGroupeHtml
       + (lignesGroupes ? '<div class="card-grid">'+lignesGroupes+'</div>' : '<div class="empty-state">Aucun groupe défini.</div>')
       + '<div class="form-hint" style="margin-top:16px;">Un groupe sert à deux choses : écrire par email à tous les bénévoles actifs qui en font partie (bouton ✉ ci-dessus, ouvre votre messagerie), et réserver une mission aux bénévoles d\'un ou plusieurs groupes (case à cocher dans la fiche mission) — une mission sans groupe coché reste visible par tout le monde, comme avant. On peut aussi cocher un groupe directement sur la fiche d\'un bénévole, dans l\'onglet Bénévoles. Retirer un groupe ne modifie pas les bénévoles ou missions qui l\'utilisent déjà.</div>'
@@ -4156,6 +4232,34 @@
     else if(action==="close-modal-alerte-mission"){
       if(e.target === el){ alerteMissionOuverte = null; alerteMissionCopieOk = false; renderModal(); }
     }
+    else if(action==="alerter-tous-benevoles"){
+      // Bouton "Écrire à tous les bénévoles inscrits" (onglet Groupes,
+      // 29/09/2026, demande de Jluc) : ouvre la fenêtre liste copiable,
+      // même principe que "alerter-benevoles-mission" ci-dessus mais sans
+      // mission associée.
+      alerteTousBenevolesOuverte = true;
+      alerteTousBenevolesCopieOk = false;
+      renderModal();
+    }
+    else if(action==="fermer-alerte-tous-benevoles"){
+      alerteTousBenevolesOuverte = false; alerteTousBenevolesCopieOk = false; renderModal();
+    }
+    else if(action==="close-modal-alerte-tous-benevoles"){
+      if(e.target === el){ alerteTousBenevolesOuverte = false; alerteTousBenevolesCopieOk = false; renderModal(); }
+    }
+    else if(action==="copier-liste-emails-tous-benevoles"){
+      var texteAreaListeTous = document.getElementById("alerte-tous-benevoles-textarea");
+      var texteListeTous = texteAreaListeTous ? texteAreaListeTous.value : emailsTousLesBenevoles().join(", ");
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(texteListeTous).then(function(){
+          alerteTousBenevolesCopieOk = true; renderModal();
+        }).catch(function(){
+          if(texteAreaListeTous){ texteAreaListeTous.select(); }
+        });
+      } else if(texteAreaListeTous){
+        texteAreaListeTous.select();
+      }
+    }
     else if(action==="choisir-mail-mission"){
       // Ouvre la fenêtre de choix "Nouvelle mission"/"Mission modifiée"
       // avant le mailto groupe (23/09/2026, demande de Jluc) — déclenché
@@ -4289,7 +4393,7 @@
         benevoles: state.benevoles,
         missions: state.missions,
         affectations: state.affectations,
-        gestionnaires: state.gestionnaires.map(function(g){ return {prenom:g.prenom||"", nom:g.nom, role:g.role, actif:g.actif}; }),
+        gestionnaires: state.gestionnaires.map(function(g){ return {prenom:g.prenom||"", nom:g.nom, role:g.role, actif:g.actif, poles:g.poles||[]}; }),
         historique: state.historique
       };
       var jsonStr = JSON.stringify(exportData, null, 2);
@@ -4698,7 +4802,10 @@
       var prenomEdit = fge.prenom.value.trim();
       var nomEdit = fge.nom.value.trim();
       var idEdit = gestionnaireEditId;
-      updateDoc(doc(db,"gestionnaires", idEdit), {prenom: prenomEdit, nom: nomEdit}).then(function(){
+      // Secteurs (29/09/2026) : mêmes cases à cocher "pole" que sur le
+      // formulaire de création, lues de la même façon que pour un bénévole.
+      var polesEdit = Array.prototype.slice.call(fge.querySelectorAll('input[name="pole"]:checked')).map(function(cb){ return cb.value; });
+      updateDoc(doc(db,"gestionnaires", idEdit), {prenom: prenomEdit, nom: nomEdit, poles: polesEdit}).then(function(){
         if(idEdit === moiUid){ moiNom = (prenomEdit+' '+nomEdit).trim(); }
         logHistorique("modification_gestionnaire", (prenomEdit+' '+nomEdit).trim());
         gestionnaireEditId = null; gestionnaireEditError = "";
@@ -4717,6 +4824,9 @@
       var email = fg.email.value.trim();
       var code = fg.code.value;
       var roleChoisi = (fg.role && fg.role.value === "directeur") ? "directeur" : "gestionnaire";
+      // Secteurs (29/09/2026, demande de Jluc) : voir le commentaire détaillé
+      // sur le champ correspondant du formulaire, plus haut dans ce fichier.
+      var polesChoisis = Array.prototype.slice.call(fg.querySelectorAll('input[name="pole"]:checked')).map(function(cb){ return cb.value; });
       // Correctif (25/09/2026, demande de Jluc) : un Gestionnaire/Directeur
       // n'apparaissait jamais dans l'onglet Groupes (ni dans le mailto
       // "Écrire au groupe"), qui ne regarde que la collection benevoles —
@@ -4746,7 +4856,7 @@
       createUserWithEmailAndPassword(secondaryAuth, email, code).then(function(cred){
         var newUid = cred.user.uid;
         return setDoc(doc(db,"gestionnaires", newUid), {
-          prenom: prenom, nom: nom, email: email, actif: true, role: roleChoisi, creeLe: serverTimestamp()
+          prenom: prenom, nom: nom, email: email, actif: true, role: roleChoisi, poles: polesChoisis, creeLe: serverTimestamp()
         }).then(function(){
           // Ne jamais écraser une fiche bénévole déjà existante sous cet
           // email (ex. quelqu'un qui était déjà bénévole avant d'être promu
