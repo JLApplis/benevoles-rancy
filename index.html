@@ -3170,6 +3170,14 @@
         });
       var emailsGroupe = membres.filter(function(b){ return b.actif && b.email; }).map(function(b){ return b.email; });
       var nb = emailsGroupe.length;
+      // Correctif du 29/09/2026 (signalé par Jluc, capture d'écran à l'appui) :
+      // ce lien restait un simple <a href="mailto:...">, resté en dehors du
+      // correctif ouvrirLienMailto() du 25/09/2026 (qui ne couvrait que les
+      // mailto déclenchés par un bouton data-action : alerte mission,
+      // "commentaire ajouté"). Sous Firefox avec "Utiliser Gmail" comme
+      // gestionnaire mailto, il remplaçait donc encore l'onglet de l'appli au
+      // lieu d'ouvrir un nouvel onglet. La valeur est maintenant stockée pour
+      // être lue depuis un bouton (voir plus bas) plutôt que posée en href.
       var mailtoHref = nb ? ('mailto:?bcc=' + encodeURIComponent(emailsGroupe.join(","))) : "";
 
       var membresHtml = membres.length
@@ -3204,7 +3212,7 @@
         + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span class="benevole-name">'+escapeHtml(g)+'</span>'
         + (role === "directeur" ? '<button class="btn-danger-ghost" data-action="delete-groupe" data-groupe="'+escapeHtml(g)+'" title="Retirer ce groupe">✕</button>' : '')
         + '</div>'
-        + '<div class="benevole-contact">'+nb+' bénévole'+(nb>1?'s':'')+' actif'+(nb>1?'s':'')+' avec email'+(nb ? ' — <a href="'+mailtoHref+'">✉ Écrire au groupe</a>' : '')+'</div>'
+        + '<div class="benevole-contact">'+nb+' bénévole'+(nb>1?'s':'')+' actif'+(nb>1?'s':'')+' avec email'+(nb ? ' — <button type="button" class="link-btn" data-action="ecrire-groupe" data-mailto="'+mailtoHref+'">✉ Écrire au groupe</button>' : '')+'</div>'
         + membresHtml
         + ajoutHtml
         + '</div>';
@@ -4341,6 +4349,13 @@
       if(!confirm("Retirer le groupe « "+groupeNom+" » de la liste proposée ? Les bénévoles/missions qui l'ont déjà ne seront pas modifiés.")) return;
       var nouvelleListeGroupes = state.groupes.filter(function(g){ return g !== groupeNom; });
       setDoc(doc(db,"parametres","poles"), {groupes: nouvelleListeGroupes}, {merge:true}).catch(reportError);
+    }
+    // Correctif du 29/09/2026 (voir commentaire sur mailtoHref, onglet
+    // Groupes) : "Écrire au groupe" passe maintenant par ouvrirLienMailto(),
+    // comme tous les autres mailto de l'appli, pour ouvrir un nouvel onglet
+    // au lieu de remplacer celui de l'application sous Firefox/Gmail.
+    else if(action==="ecrire-groupe"){
+      ouvrirLienMailto(el.getAttribute("data-mailto"));
     }
     else if(action==="import-json"){
       var fileInput = document.getElementById("import-file-input");
