@@ -1,0 +1,199 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function estConnecte() { return request.auth != null; }
+    function estGestionnaire() {
+      return estConnecte() &&
+        exists(/databases/$(database)/documents/gestionnaires/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/gestionnaires/$(request.auth.uid)).data.actif == true;
+    }
+    function estDirecteur() {
+      return estGestionnaire() &&
+        get(/databases/$(database)/documents/gestionnaires/$(request.auth.uid)).data.role == "directeur";
+    }
+    match /benevoles/{email} {
+      // Modifié le 21/09/2026 : un visiteur public (même en connexion
+      // anonyme automatique, voir signInAnonymously dans l'appli) peut
+      // consulter UNE seule fiche s'il connaît déjà son email exact
+      // (c'est ce que fait le formulaire "Je m'identifie", qui interroge
+      // la fiche par son identifiant). Il ne peut plus parcourir ni
+      // télécharger la collection entière : ça, c'est réservé aux
+      // Gestionnaires/Directeur. Avant ce changement, "allow read" seul
+      // autorisait aussi le "list" (parcours de toute la collection) pour
+      // n'importe quel visiteur, à cause de la connexion anonyme
+      // automatique de l'application.
+      allow get: if estConnecte();
+      allow list: if estGestionnaire();
+      allow create: if estGestionnaire();
+      // Modifié le 22/09/2026 (point A3) : un visiteur connecté (y compris
+      // en connexion anonyme) peut aussi modifier sa fiche, mais seulement
+      // pour poser une demande de suppression (ces deux champs précis, à
+      // true) — jamais pour changer un autre champ (nom, poles, actif...),
+      // ni pour annuler lui-même la demande (seul un Gestionnaire peut,
+      // via l'appli, "Marquer traité"). Même principe et même risque
+      // accepté que pour "demandeDesinscription" sur /affectations : comme
+      // il n'y a pas de vrai compte avec mot de passe pour un bénévole,
+      // impossible de garantir qu'il ne pose ce drapeau QUE sur sa propre
+      // fiche. Au pire, quelqu'un le pose par erreur ou par malveillance
+      // sur la fiche d'un autre — un Gestionnaire le verra affiché et
+      // pourra l'ignorer, sans qu'aucune suppression n'ait réellement lieu
+      // (la suppression elle-même reste réservée à estGestionnaire()
+      // ci-dessous, aucun changement sur ce point).
+      // Modifié le 30/09/2026 (point A17, demande de Jluc) : un visiteur
+      // connecté peut aussi modifier sa fiche pour couper ou réactiver
+      // lui-même les mails que l'application lui envoie (bouton "Ne plus
+      // recevoir de mails de l'application" / "Recevoir à nouveau les
+      // mails", depuis son identification publique — voir pauseMails dans
+      // benevoles-rancy.html). Seul ce champ précis peut changer dans cette
+      // écriture ; contrairement à demandeSuppression ci-dessus, il peut
+      // être remis à false par le bénévole lui-même (pas besoin d'un
+      // Gestionnaire pour "annuler" — c'est une simple préférence
+      // personnelle, pas une demande à traiter). Même risque accepté que
+      // pour demandeSuppression/demandeDesinscription : pas de vrai compte
+      // avec mot de passe, donc impossible de garantir qu'un visiteur ne
+      // pose ce drapeau QUE sur sa propre fiche — au pire, quelqu'un
+      // l'active ou le désactive par erreur ou par malveillance sur la
+      // fiche d'un autre, sans autre conséquence que ce bénévole reçoive ou
+      // ne reçoive pas les mails de l'application.
+      allow update: if estGestionnaire()
+        || (estConnecte()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["demandeSuppression","demandeSuppressionCommentaire"])
+            && request.resource.data.demandeSuppression == true)
+        || (estConnecte()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["pauseMails"])
+            && request.resource.data.pauseMails is bool);
+      allow delete: if estGestionnaire();
+    }
+    match /missions/{missionId} {
+      allow read: if estConnecte();
+      allow create: if estGestionnaire();
+      // Modifié le 25/09/2026 (demande de Jluc) : la modification complète
+      // d'une mission reste réservée au Directeur, comme avant. On ajoute
+      // une exception étroite pour un Gestionnaire : il peut mettre à jour
+      // une mission, mais UNIQUEMENT les champs "statut" et/ou
+      // "commentaires" — jamais titre, date, secteur, horaires, places,
+      // groupes ou description. Sert à pouvoir classer une mission passée
+      // en "Terminée"/"Non effectuée" et y laisser un commentaire, sans
+      // rouvrir tout le formulaire à la modification pour un Gestionnaire.
+      // Même principe déjà utilisé plus haut pour "benevoles"
+      // (demandeSuppression) et plus bas pour "affectations"
+      // (demandeDesinscription) : hasOnly() liste les seuls champs
+      // autorisés à changer dans cette écriture précise.
+      //
+      // Ajouté le 26/09/2026 (demande de Jluc) : un Gestionnaire peut aussi
+      // corriger EN ENTIER (tous les champs) la mission qu'il vient tout
+      // juste de créer lui-même, mais seulement pendant les 30 minutes qui
+      // suivent la création — passé ce délai, il retombe automatiquement
+      // sur la restriction "statut/commentaires" ci-dessous. Ça correspond
+      // côté appli à creeParUid (uid du créateur, écrit à la création de la
+      // mission), creeLe (horodatage serveur de création) et à la constante
+      // DELAI_MODIF_CREATEUR_MS / fonction missionRecemmentCreeeParMoi dans
+      // benevoles-rancy.html. La mission reste normalement visible et
+      // listée pour tout le monde durant ce délai (aucune restriction de
+      // lecture ajoutée) : seul le DROIT D'ÉCRITURE est élargi, et
+      // seulement pour son auteur. "request.time" est l'horloge du serveur
+      // Firestore au moment de la requête, comparée à creeLe + 30 minutes
+      // via duration.value(30, "m").
+      //
+      // Modifié le 30/09/2026 (demande de Jluc, retour du Directeur des
+      // Rancy : "il ne peut traiter que SA mission pas celles des autres") :
+      // la clause "statut/commentaires" ci-dessous exige maintenant aussi
+      // creeParUid == request.auth.uid pour un Gestionnaire — avant ce
+      // jour, elle s'appliquait à N'IMPORTE QUELLE mission, y compris celle
+      // d'un·e collègue. Le Directeur (première ligne, estDirecteur())
+      // n'est pas concerné par cette restriction : il garde ce droit sur
+      // toute mission, quel qu'en soit le créateur.
+      allow update: if estDirecteur()
+        || (estGestionnaire()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["statut","commentaires"])
+            && resource.data.creeParUid == request.auth.uid)
+        || (estGestionnaire()
+            && resource.data.creeParUid == request.auth.uid
+            && resource.data.creeLe is timestamp
+            && request.time < resource.data.creeLe + duration.value(30, "m"));
+      allow delete: if estDirecteur();
+    }
+    match /affectations/{affectationId} {
+      // La lecture reste ouverte à tout visiteur connecté (y compris la
+      // connexion anonyme automatique) : le badge public "places restantes"
+      // a besoin de connaître en direct toutes les inscriptions de toutes
+      // les missions pour calculer son compte, pas seulement celles du
+      // visiteur. Ça ne peut pas se restreindre comme "benevoles" sans
+      // casser ce badge — accepté en connaissance de cause le 21/09/2026.
+      allow read: if estConnecte();
+      // Modifié le 21/09/2026 : une création n'est plus acceptée que si la
+      // mission et le bénévole visés existent réellement (empêche d'écrire
+      // n'importe quoi avec des identifiants inventés). Ça ne change rien
+      // pour l'appli : elle envoie déjà toujours de vrais identifiants.
+      allow create: if estConnecte()
+        && exists(/databases/$(database)/documents/missions/$(request.resource.data.missionId))
+        && exists(/databases/$(database)/documents/benevoles/$(request.resource.data.benevoleId));
+      // Modifié le 21/09/2026 : un visiteur connecté (y compris en
+      // connexion anonyme) peut aussi modifier une inscription, mais
+      // seulement pour poser ce drapeau précis à true — jamais pour
+      // changer autre chose (statut, missionId, benevoleId...), ni pour
+      // le remettre à false lui-même (seul un Gestionnaire peut annuler
+      // le drapeau, via l'appli). C'est la demande de désinscription d'un
+      // bénévole ("Je ne suis plus disponible" dans la modale Missions) :
+      // ça ne retire pas l'inscription, ça se contente de la signaler aux
+      // Gestionnaires/Directeur, qui retirent ensuite eux-mêmes si besoin.
+      // Comme pour la création, il n'y a pas de vrai compte avec mot de
+      // passe : impossible de garantir qu'un visiteur ne pose ce drapeau
+      // QUE sur sa propre inscription. Au pire, quelqu'un le pose par
+      // erreur ou par malveillance sur l'inscription d'un autre — un
+      // Gestionnaire le verra affiché et pourra l'ignorer ou cliquer
+      // "Marquer traité" sans qu'aucune inscription n'ait réellement
+      // changé. Risque accepté en connaissance de cause avec Jluc,
+      // volontairement beaucoup plus limité qu'un droit de suppression
+      // (qui lui aurait un effet réel et irréversible).
+      allow update: if estGestionnaire()
+        || (estConnecte()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["demandeDesinscription"])
+            && request.resource.data.demandeDesinscription == true);
+      allow delete: if estGestionnaire();
+    }
+    match /candidatures/{candidatureId} {
+      allow read: if estGestionnaire();
+      allow create: if estConnecte();
+      allow delete: if estGestionnaire();
+    }
+    match /gestionnaires/{uid} {
+      allow get: if estConnecte() && (request.auth.uid == uid || estDirecteur());
+      allow list: if estGestionnaire();
+      allow create: if estDirecteur();
+      allow update: if estDirecteur();
+      allow delete: if false;
+    }
+    match /parametres/{docId} {
+      allow read: if estConnecte();
+      allow write: if estDirecteur();
+    }
+    match /historique/{entryId} {
+      allow read: if estGestionnaire();
+      // Modifié le 21/09/2026 : avant, "estConnecte()" suffisait pour créer
+      // une entrée d'historique avec N'IMPORTE QUEL type d'action (y
+      // compris en se faisant passer pour une action de Gestionnaire) —
+      // n'importe quel visiteur connecté anonymement le pouvait déjà.
+      // Maintenant : un vrai Gestionnaire/Directeur peut toujours tout
+      // enregistrer (aucun changement pour eux), et un simple visiteur
+      // public ne peut créer QUE l'un des deux types d'entrée que l'appli
+      // envoie réellement pour une action publique : une auto-inscription
+      // ("inscription_publique") ou, ajouté le même jour, une demande de
+      // désinscription ("demande_desinscription_publique") — c'est le filet
+      // de sécurité léger déjà prévu dans le code de l'appli (voir
+      // logHistoriquePublic).
+      // Modifié le 22/09/2026 (point A3) : ajout d'un troisième type
+      // d'entrée autorisé pour un simple visiteur public, sur le même
+      // principe que les deux précédents — la trace de sa demande de
+      // suppression de fiche (voir logHistoriquePublic, action
+      // "demande_suppression_publique").
+      allow create: if estGestionnaire()
+        || (estConnecte() && (
+              request.resource.data.action == "inscription_publique"
+              || request.resource.data.action == "demande_desinscription_publique"
+              || request.resource.data.action == "demande_suppression_publique"
+            ));
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
