@@ -370,7 +370,15 @@
   .heures-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
   .heures-table th,.heures-table td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);font-size:.9rem;}
   .heures-table th{background:var(--surface-2);color:var(--ink-soft);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;}
-  .heures-table td.num{font-variant-numeric:tabular-nums;text-align:right;}
+  /* Correctif du 30/09/2026 (demande de Jluc, capture d'écran à l'appui,
+     suite à A12) : les en-têtes "Heures"/"Points" (et tout autre en-tête
+     avec class="num", déjà utilisé ailleurs pour "Places", "Missions
+     réalisées"...) restaient alignés à gauche alors que les chiffres en
+     dessous sont alignés à droite — cette règle ne visait que les <td>, pas
+     les <th>. Ajout de "th.num" à côté de "td.num" pour aligner l'en-tête
+     juste au-dessus de ses chiffres, dans TOUS les tableaux de l'appli (pas
+     seulement celui de Statistiques où Jluc l'a remarqué). */
+  .heures-table th.num,.heures-table td.num{font-variant-numeric:tabular-nums;text-align:right;}
   .heures-table tr:last-child td{border-bottom:none;}
   /* Lignes alternées bleu clair / blanc pour tous les tableaux (demande de
      Jluc, 25/09/2026), sauf le tableau des missions (.missions-table) dont
@@ -475,7 +483,7 @@
 
 <div class="hero-wrap">
   <div class="hero-inner">
-    <div class="eyebrow">Maison Pour Tous des Rancy — BENEVOLES RANCY 1.1 DEMO</div>
+    <div class="eyebrow">Maison Pour Tous des Rancy — BENEVOLES RANCY 1.2</div>
     <h1 class="title">Bénévoles &amp; missions</h1>
     <p class="subtitle">Consultez les missions proposées, inscrivez-vous, et suivez les heures données par les bénévoles. Ce que vous ajoutez ici est visible en direct par tout le monde.</p>
 
@@ -495,7 +503,7 @@
        attente" (qui ouvre ce même panneau via switchTab("candidatures"),
        voir renderStats/ouvrir-stat — le panneau et son contenu existent
        toujours, seul ce bouton permanent disparaît). -->
-  <div class="tabs" role="tablist" aria-label="Sections">
+  <div class="tabs" id="tabs-bar" role="tablist" aria-label="Sections">
     <button class="tab" role="tab" data-tab="missions" aria-selected="true">Missions</button>
     <button class="tab" role="tab" data-tab="benevoles" aria-selected="false">Bénévoles</button>
     <button class="tab" role="tab" data-tab="groupes" aria-selected="false" hidden>Groupes</button>
@@ -584,6 +592,17 @@
   // l'appli), et marquer une mission comme réservée à un ou plusieurs
   // groupes (voir missionVisiblePourBenevole plus bas).
   var GROUPES = ["Administrateurs","Gestionnaires"];
+
+  // A14 (30/09/2026, demande du Directeur des Rancy) : lien de connexion à
+  // l'application, ajouté dans tous les mails préremplis (voir plus bas
+  // mailtoGroupesMission, ouvrirEmailConfirmationCandidature et
+  // ouvrirEmailAnomalieCandidature). Adresse fixe codée en dur : voir le
+  // commentaire juste avant ouvrirEmailConfirmationCandidature — un lien
+  // déduit de window.location avait été retiré le 23/09/2026 car il
+  // devenait faux en ouvrant le fichier en local (file:///...). Maintenant
+  // que l'appli est publiée sur GitHub Pages à une adresse définitive, ce
+  // lien fixe peut être réintroduit sans ce risque.
+  var LIEN_APPLICATION = "https://jlapplis.github.io/benevoles-rancy/";
 
   // Correction complète par le créateur (demande de Jluc, 26/09/2026) : un
   // Gestionnaire retrouve l'accès complet au formulaire d'UNE mission qu'il
@@ -685,10 +704,12 @@
   // nouvelle mission (jamais après une simple modification), pour proposer
   // de copier la liste exhaustive des emails de TOUS les bénévoles (pas
   // seulement les actifs, pas de filtre par groupe — décision explicite de
-  // Jluc : "TOUS les bénévoles inscrits doivent recevoir l'alerte"). Pas
-  // d'envoi automatique réel (l'appli n'a pas de serveur d'envoi, même
-  // constat que pour A3/A6) : la liste est copiée à la main par la
-  // Direction puis collée dans son propre outil d'envoi en nombre. Les
+  // Jluc : "TOUS les bénévoles inscrits doivent recevoir l'alerte"), sauf
+  // depuis le 30/09/2026 (A17) un bénévole ayant lui-même coupé les mails
+  // de l'application (voir pauseMails). Pas d'envoi automatique réel
+  // (l'appli n'a pas de serveur d'envoi, même constat que pour A3/A6) : la
+  // liste est copiée à la main par la Direction puis collée dans son
+  // propre outil d'envoi en nombre. Les
   // missions marquées "Groupes" (A6) restent traitées séparément, via le
   // bouton "Écrire au groupe" déjà existant dans Paramètres.
   var alerteMissionOuverte = null; // null, ou {numero, titre} de la mission qui vient d'être créée
@@ -697,9 +718,9 @@
   // Fenêtre "Écrire à tous les bénévoles inscrits" (29/09/2026, demande de
   // Jluc, bouton dans l'onglet Groupes) : même principe que la fenêtre
   // d'alerte mission ci-dessus (liste copiable, aucun envoi automatique),
-  // mais sans lien avec une mission — tous les bénévoles inscrits, sans
-  // filtre (voir emailsTousLesBenevoles). booléen simple, pas besoin d'un
-  // objet {numero, titre} ici.
+  // mais sans lien avec une mission — tous les bénévoles inscrits, sauf
+  // ceux en pauseMails depuis le 30/09/2026 (voir emailsTousLesBenevoles).
+  // booléen simple, pas besoin d'un objet {numero, titre} ici.
   var alerteTousBenevolesOuverte = false;
   var alerteTousBenevolesCopieOk = false;
 
@@ -821,8 +842,21 @@
   // volontairement, contrairement au mailto "Écrire au groupe" de A6.
   // Utilisée pour la fenêtre "Copier la liste de tous les emails" qui
   // s'ouvre après la création d'une nouvelle mission.
+  //
+  // Correction du 30/09/2026 (point A17, demande explicite de Jluc :
+  // "il faut stopper tous les mails [...] il faut que son adresse mail
+  // quitte le répertoire des autres adresses mails") : un bénévole en
+  // pauseMails est maintenant exclu ICI AUSSI, alors que le reste de cette
+  // liste (actif, groupes) reste volontairement sans filtre. Avant cette
+  // date, seuls les mailto directs de l'application (emailsActifsPourGroupes,
+  // "Écrire au groupe") excluaient pauseMails — cette liste-ci, copiée pour
+  // un envoi en nombre hors application, ne l'excluait pas encore. Jluc a
+  // tranché : peu importe que l'email parte directement depuis l'appli ou
+  // soit collé dans un outil externe, une adresse en pause ne doit figurer
+  // dans AUCUNE liste de contact générée par l'application.
   function emailsTousLesBenevoles(){
     return state.benevoles
+      .filter(function(b){ return !b.pauseMails; })
       .map(function(b){ return (b.email||"").trim(); })
       .filter(function(email, i, arr){ return email && arr.indexOf(email) === i; });
   }
@@ -934,7 +968,13 @@
   function emailsActifsPourGroupes(groupes){
     if(!groupes || !groupes.length) return [];
     return state.benevoles
-      .filter(function(b){ return b.actif && b.email && (b.groupes||[]).some(function(g){ return groupes.indexOf(g) !== -1; }); })
+      // A17 (30/09/2026, demande du Directeur des Rancy) : exclut aussi un
+      // bénévole ayant coupé les mails de l'application (voir pauseMails,
+      // activé depuis son identification publique) — même filtre que
+      // emailsTousLesBenevoles désormais (voir son commentaire : Jluc a
+      // tranché pour une exclusion totale, peu importe la façon dont le
+      // mail part).
+      .filter(function(b){ return b.actif && b.email && !b.pauseMails && (b.groupes||[]).some(function(g){ return groupes.indexOf(g) !== -1; }); })
       .map(function(b){ return b.email; })
       .filter(function(email, i, arr){ return arr.indexOf(email) === i; });
   }
@@ -980,10 +1020,10 @@
     var objet = reference;
     var corps;
     if(type === "commentaire"){
-      corps = "Bonjour,\n\nUn commentaire a été ajouté à cette mission, merci d'en prendre connaissance : "+reference+".\n\nCordialement"+(moiNom ? ",\n" + moiNom : "");
+      corps = "Bonjour,\n\nUn commentaire a été ajouté à cette mission, merci d'en prendre connaissance : "+reference+".\n\nVous pouvez vous connecter à l'application en cliquant sur : "+LIEN_APPLICATION+"\n\nCordialement"+(moiNom ? ",\n" + moiNom : "");
     } else {
       var qualificatif = type === "modifiee" ? "mission modifiée" : "nouvelle mission";
-      corps = "Bonjour,\n\nMerci de bien vouloir prendre connaissance de cette "+qualificatif+" : "+reference+".\n\nMerci de vous inscrire à cette mission, si ce n'est déjà fait.\n\nCordialement"+(moiNom ? ",\n" + moiNom : "");
+      corps = "Bonjour,\n\nMerci de bien vouloir prendre connaissance de cette "+qualificatif+" : "+reference+".\n\nMerci de vous inscrire à cette mission, si ce n'est déjà fait.\n\nVous pouvez vous connecter à l'application en cliquant sur : "+LIEN_APPLICATION+"\n\nCordialement"+(moiNom ? ",\n" + moiNom : "");
     }
     return 'mailto:' + encodeURIComponent(moiEmail) + '?bcc=' + encodeURIComponent(emails.join(",")) + '&subject=' + encodeURIComponent(objet) + '&body=' + encodeURIComponent(corps);
   }
@@ -1170,6 +1210,38 @@
       map[a.benevoleId] += dureeHeures(m) * (m.coefficient||1);
     });
     return map;
+  }
+
+  // A12 (30/09/2026, demande du Directeur des Rancy) : même calcul que
+  // pointsParBenevolePeriode() ci-dessus, mais sans multiplier par le
+  // coefficient de pénibilité — les heures brutes par bénévole sur la
+  // période, pour le classement de l'onglet Statistiques (voir
+  // renderStatistiques). Même principe que heuresParBenevole() (sans
+  // période) déjà utilisée dans l'onglet Bénévoles, où "Heures données"
+  // précède toujours "Points" — même ordre repris ici pour rester cohérent
+  // dans toute l'appli.
+  function heuresParBenevolePeriode(debut, fin){
+    var map = {};
+    state.benevoles.forEach(function(b){ map[b.id] = 0; });
+    state.affectations.forEach(function(a){
+      if(a.statut !== "realise") return;
+      var m = missionById(a.missionId);
+      if(!m || !m.date || map[a.benevoleId] == null) return;
+      if(debut && m.date < debut) return;
+      if(fin && m.date > fin) return;
+      map[a.benevoleId] += dureeHeures(m);
+    });
+    return map;
+  }
+
+  // A13 (30/09/2026, demande du Directeur des Rancy) : bénévoles rattachés à
+  // un Groupe donné (même case à cocher que l'onglet Groupes/fiche
+  // bénévole — voir renderGroupes). Utilisé pour le détail du groupe
+  // "Administrateurs" dans l'onglet Statistiques, mais volontairement
+  // générique (nom du groupe en paramètre) plutôt que codé en dur, au cas
+  // où Jluc voudrait un jour le même détail pour un autre groupe.
+  function benevolesDuGroupe(nomGroupe){
+    return state.benevoles.filter(function(b){ return (b.groupes||[]).indexOf(nomGroupe) !== -1; });
   }
 
   // Heures totales données sur la période (A11, 24/09/2026) : même filtre
@@ -1376,21 +1448,16 @@
     lien.click();
   }
 
-  // Lien vers l'appli retiré du mail (23/09/2026, signalé par Jluc) : il
-  // était déduit de la page en cours (window.location.origin + pathname),
-  // ce qui semblait une bonne idée pour rester juste même si l'URL change
-  // — mais en testant en ouvrant le fichier localement (file:///C:/...),
-  // c'est ce chemin local (propre à son PC) qui se retrouvait dans le
-  // mail, sans aucune utilité pour la personne qui le reçoit. Plutôt que
-  // de coder en dur une adresse qui n'existe pas encore de façon fiable
-  // (le fichier n'est pas encore publié sur une adresse définitive), le
-  // lien est simplement retiré ; à réintroduire si besoin une fois l'appli
-  // publiée sur son adresse finale (GitHub Pages).
+  // Lien vers l'appli (A14, 30/09/2026, demande du Directeur des Rancy) :
+  // voir LIEN_APPLICATION ci-dessus. Un lien déduit de la page en cours
+  // avait été retiré le 23/09/2026 (signalé par Jluc) car il devenait faux
+  // en local (file:///C:/...) ; l'adresse fixe GitHub Pages le remplace ici.
   function ouvrirEmailConfirmationCandidature(cand, emailDestinataire){
     var sujet = "Votre candidature est validée — Maison Pour Tous des Rancy";
     var corps = "Bonjour " + cand.prenom + ",\n\n"
       + "Votre candidature comme bénévole à la Maison Pour Tous des Rancy a été validée.\n\n"
       + "Vous pouvez dès maintenant consulter les missions proposées et vous y inscrire.\n\n"
+      + "Vous pouvez vous connecter à l'application en cliquant sur : "+LIEN_APPLICATION+"\n\n"
       + "À bientôt,\nL'équipe de la Maison Pour Tous des Rancy";
     ouvrirMailto(emailDestinataire, sujet, corps);
   }
@@ -1409,6 +1476,7 @@
       + "les informations transmises ne correspondent à aucune inscription connue de notre côté "
       + "(il peut s'agir d'une simple erreur de saisie dans le formulaire).\n\n"
       + "N'hésitez pas à nous recontacter ou à renvoyer votre candidature en vérifiant vos coordonnées.\n\n"
+      + "Vous pouvez vous connecter à l'application en cliquant sur : "+LIEN_APPLICATION+"\n\n"
       + "Cordialement,\nL'équipe de la Maison Pour Tous des Rancy";
     ouvrirMailto(emailDestinataire, sujet, corps);
   }
@@ -1627,7 +1695,12 @@
 
     return '<div class="card">'
       + '<div><div class="benevole-name">'+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)
-      + (b.demandeSuppression ? ' <span class="badge-inactif" title="Demande de suppression de fiche en attente'+(b.demandeSuppressionCommentaire ? (" — "+escapeHtml(b.demandeSuppressionCommentaire)) : "")+'">⚠ Suppression demandée</span>' : '') + '</div>'
+      + (b.demandeSuppression ? ' <span class="badge-inactif" title="Demande de suppression de fiche en attente'+(b.demandeSuppressionCommentaire ? (" — "+escapeHtml(b.demandeSuppressionCommentaire)) : "")+'">⚠ Suppression demandée</span>' : '')
+      // A17 (30/09/2026, demande du Directeur des Rancy) : repère visuel
+      // pour la Gestion, sur le même principe que les badges ci-dessus —
+      // voir pauseMails, activé par le/la bénévole lui/elle-même depuis son
+      // identification publique (identiteHtml).
+      + (b.pauseMails ? ' <span class="badge-inactif" title="Ce bénévole a demandé à ne plus recevoir de mails de l\'application">✉️ Mails en pause</span>' : '') + '</div>'
       + '<div class="benevole-contact">'+escapeHtml(b.email)+'<br>'+escapeHtml(b.tel)+'</div></div>'
       + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun secteur renseigné</span>')+'</div>'
       + (groupeTags ? '<div class="tags">'+groupeTags+'</div>' : '')
@@ -1728,7 +1801,8 @@
           // même principe que le ⚠ des demandes de désinscription — le détail
           // (motif, bouton "Marquer traité") est dans la fiche, ouverte au
           // clic sur la ligne.
-          + (b.demandeSuppression ? ' <span class="badge-inactif" title="Demande de suppression de fiche en attente'+(b.demandeSuppressionCommentaire ? (" — "+escapeHtml(b.demandeSuppressionCommentaire)) : "")+'">⚠ Suppression demandée</span>' : '') + '</td>'
+          + (b.demandeSuppression ? ' <span class="badge-inactif" title="Demande de suppression de fiche en attente'+(b.demandeSuppressionCommentaire ? (" — "+escapeHtml(b.demandeSuppressionCommentaire)) : "")+'">⚠ Suppression demandée</span>' : '')
+          + (b.pauseMails ? ' <span class="badge-inactif" title="Ce bénévole a demandé à ne plus recevoir de mails de l\'application">✉️ Mails en pause</span>' : '') + '</td>'
           + '<td>'+escapeHtml(b.prenom)+'</td>'
           + '<td>'+escapeHtml(b.email||"—")+'</td>'
           + '<td>'+(tags || '—')+'</td>'
@@ -1857,6 +1931,67 @@
     candidaturesRecherche = "";
   }
 
+  // A16 (30/09/2026, demande du Directeur des Rancy, revu le 01/10/2026 :
+  // "créer une liste déroulante du même type que 'Trier par auteur' qui
+  // permet d'affecter une candidature à plusieurs groupes") : même menu
+  // déroulant à cases à cocher que "Filtrer par auteur" dans l'Historique
+  // (voir menuAuteursHtml et .select-dropdown/.select-dropdown-panel), mais
+  // ici un menu PAR candidature (clé = id de la candidature), puisque
+  // chaque candidature a sa propre sélection de groupes — à la différence
+  // du menu Historique, qui filtre une seule liste partagée. La sélection
+  // n'est qu'une mise en attente : rien n'est écrit en base tant que
+  // "Valider" (le vrai bouton de validation de la candidature, pas celui
+  // du menu) n'a pas été cliqué — voir l'action "valider-candidature".
+  var candidaturesGroupesChoisis = {}; // { [candidatureId]: ["Groupe", ...] }
+  var candidaturesMenuGroupesOuvert = {}; // { [candidatureId]: true }
+
+  // A16 (30/09/2026, demande du Directeur des Rancy, revu le 01/10/2026) :
+  // affecter le futur bénévole à un ou plusieurs Groupes dès la validation
+  // de sa candidature, plutôt que de devoir rouvrir sa fiche ensuite
+  // (onglet Groupes ou fiche Bénévoles) pour l'y ajouter. Menu déroulant à
+  // cases à cocher, même principe que menuAuteursHtml (Historique) — voir
+  // candidaturesGroupesChoisis/candidaturesMenuGroupesOuvert ci-dessus.
+  // Rien à afficher si aucun groupe n'existe encore (Paramètres vide).
+  //
+  // "flottant" distingue deux habillages du même menu, nécessaire après un
+  // test visuel : en vue cartes, le panneau peut flotter par-dessus le
+  // reste (.select-dropdown-panel, position absolue, comme dans
+  // l'Historique). Mais collé tel quel dans une cellule de la vue tableau,
+  // ce panneau flottant se fait couper par le défilement horizontal du
+  // tableau (.table-scroll{overflow-x:auto}, qui rend aussi l'axe vertical
+  // "auto" — donc coupant). En vue tableau (flottant=false), le panneau
+  // reste donc dans le flux normal (pas de position absolue) : il agrandit
+  // simplement la cellule/ligne à l'ouverture, plutôt que de se faire
+  // rogner.
+  function menuGroupesCandidatureHtml(c, flottant){
+    if(!state.groupes.length) return "";
+    var choisis = candidaturesGroupesChoisis[c.id] || [];
+    var ouvert = !!candidaturesMenuGroupesOuvert[c.id];
+    var panneauStyle = flottant ? "" : ' style="position:static;box-shadow:none;margin-top:6px;padding:10px;"';
+    // Correctif (01/10/2026, demande de Jluc, captures d'écran à l'appui :
+    // "Valider sort du cadre" en vue cartes, le bouton passe "en dessous"
+    // en vue tableau) : "Affecter à un groupe" était trop large pour tenir
+    // sur la même ligne que Refuser/Valider — libellé raccourci en
+    // "Groupe" (le mot "groupe" seul suffit, le contexte — case à cocher
+    // par groupe — est clair une fois le menu ouvert).
+    return '<details class="select-dropdown"'+(ouvert?" open":"")+'>'
+      + '<summary data-action="toggle-menu-groupes-candidature" data-id="'+c.id+'">Groupe'+(choisis.length ? ' ('+choisis.length+')' : '')+' <span class="chevron">▾</span></summary>'
+      + '<div class="select-dropdown-panel"'+panneauStyle+'>'
+      + '<div class="checkbox-group">'
+      + state.groupes.map(function(g){
+          var coche = choisis.indexOf(g) >= 0;
+          return '<label class="checkbox-chip"><input type="checkbox" data-action="toggle-groupe-candidature" data-id="'+c.id+'" data-groupe="'+escapeHtml(g)+'" '+(coche?"checked":"")+'> '+escapeHtml(g)+'</label>';
+        }).join("")
+      + '</div>'
+      + '<div class="form-actions" style="margin-top:10px;">'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-action="tout-cocher-groupes-candidature" data-id="'+c.id+'">Tout cocher</button>'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-action="tout-decocher-groupes-candidature" data-id="'+c.id+'">Tout décocher</button>'
+      + '<button type="button" class="btn btn-primary btn-sm" data-action="valider-menu-groupes-candidature" data-id="'+c.id+'">Valider</button>'
+      + '</div>'
+      + '</div>'
+      + '</details>';
+  }
+
   function renderCandidatures(){
     var recherche = candidaturesRecherche.trim().toLowerCase();
     var liste = state.candidatures.filter(function(c){
@@ -1893,7 +2028,19 @@
         + (c.dateEnvoi ? '<div class="benevole-contact">Reçue le '+fmtDateTime(c.dateEnvoi)+'</div>' : '')
         + '</div>'
         + '<div class="tags">'+(tags || '<span class="benevole-contact">Aucun secteur renseigné</span>')+'</div>'
-        + '<div class="card-footrow"><span></span><span style="display:flex;gap:6px;">'
+        // Correctif (01/10/2026, demande de Jluc, captures d'écran à
+        // l'appui) : "Groupe" rejoint la même ligne que "Refuser"/
+        // "Valider" (span de gauche du card-footrow, resté vide jusqu'ici).
+        // flex-wrap:wrap + gap en style inline, seulement sur CETTE
+        // utilisation du card-footrow (la classe globale .card-footrow,
+        // utilisée par d'autres cartes dans l'appli, n'est pas touchée) :
+        // avant ce correctif, sans wrap, "Valider" débordait carrément hors
+        // du cadre de la carte sur un écran étroit faute de place pour les
+        // trois éléments — avec wrap, ça repasse proprement à la ligne EN
+        // RESTANT dans la carte au lieu de déborder.
+        + '<div class="card-footrow" style="flex-wrap:wrap;gap:8px;">'
+        + '<span>'+menuGroupesCandidatureHtml(c, true)+'</span>'
+        + '<span style="display:flex;gap:6px;flex-wrap:wrap;">'
         + '<button class="btn btn-danger btn-sm" data-action="refuser-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Refuser</button>'
         + '<button class="btn btn-primary btn-sm" data-action="valider-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Valider</button>'
         + '</span></div>'
@@ -1911,14 +2058,33 @@
 
       var lignesHtml = liste.map(function(c){
         var tags = (c.poles||[]).map(poleTag).join("");
-        return '<tr>'
+        // vertical-align:top sur toute la ligne (01/10/2026) : évite que
+        // les cellules se recentrent bizarrement sur la hauteur de la
+        // cellule Actions une fois son menu "Affecter à un groupe" ouvert
+        // (il agrandit la cellule plutôt que de flotter par-dessus, voir
+        // menuGroupesCandidatureHtml).
+        return '<tr style="vertical-align:top;">'
           + '<td>'+escapeHtml(c.nom)+'</td>'
           + '<td>'+escapeHtml(c.prenom)+'</td>'
           + '<td>'+(c.email ? escapeHtml(c.email) : '<em>Non renseigné</em>')+'</td>'
           + '<td>'+(c.tel ? escapeHtml(c.tel) : '—')+'</td>'
           + '<td>'+(tags || '—')+'</td>'
           + '<td>'+(c.dateEnvoi ? fmtDateTime(c.dateEnvoi) : '—')+'</td>'
-          + '<td style="display:flex;gap:6px;">'
+          // Correctif (01/10/2026, demande de Jluc, capture d'écran à
+          // l'appui) : le menu "Groupe" rejoint la même cellule que
+          // "Refuser"/"Valider", au lieu d'une colonne "Groupe" séparée —
+          // une seule colonne "Actions", tout sur la même ligne.
+          // flex-wrap:wrap retiré (deuxième correctif, même jour) : avec
+          // "wrap", le navigateur calcule la largeur "idéale" de la
+          // cellule sur son plus large ÉLÉMENT plutôt que sur la somme des
+          // trois, et repasse donc à la ligne même quand la page a de la
+          // place — exactement le bug remonté par Jluc ("le bouton est en
+          // dessous"). Sans wrap (défaut), la cellule/ligne s'élargit
+          // normalement pour tout faire tenir sur une seule ligne, quitte
+          // à activer le défilement horizontal du tableau (.table-scroll),
+          // déjà utilisé ailleurs dans l'appli pour ce cas.
+          + '<td style="display:flex;gap:6px;align-items:flex-start;white-space:nowrap;">'
+          + menuGroupesCandidatureHtml(c, false)
           + '<button class="btn btn-danger btn-sm" data-action="refuser-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Refuser</button>'
           + '<button class="btn btn-primary btn-sm" data-action="valider-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Valider</button>'
           + '</td>'
@@ -1965,8 +2131,11 @@
 
   function renderStatistiques(){
     var pointsMapPeriode = pointsParBenevolePeriode(statsPeriodeDebut, statsPeriodeFin);
+    // A12 (30/09/2026, demande du Directeur des Rancy) : Heures en plus des
+    // Points dans ce classement, voir heuresParBenevolePeriode ci-dessus.
+    var heuresMapPeriode = heuresParBenevolePeriode(statsPeriodeDebut, statsPeriodeFin);
     var classement = state.benevoles
-      .map(function(b){ return {b: b, pts: Math.round((pointsMapPeriode[b.id]||0)*10)/10}; })
+      .map(function(b){ return {b: b, heures: Math.round((heuresMapPeriode[b.id]||0)*10)/10, pts: Math.round((pointsMapPeriode[b.id]||0)*10)/10}; })
       .filter(function(x){ return x.pts > 0; })
       .sort(function(x,y){ return y.pts - x.pts; });
 
@@ -2004,18 +2173,48 @@
         + '</div>';
     }
 
+    // A12 (30/09/2026) : colonne Heures ajoutée avant Points, même ordre que
+    // partout ailleurs dans l'appli (onglet Bénévoles, fiches, impressions).
     var classementTableHtml = classement.length ? '<div class="table-scroll"><table class="heures-table"><thead><tr>'
-        + '<th>Nom</th><th>Prénom</th><th class="num">Points</th></tr></thead><tbody>'
+        + '<th>Nom</th><th>Prénom</th><th class="num">Heures</th><th class="num">Points</th></tr></thead><tbody>'
         + classement.slice(0,10).map(function(x){
-            return '<tr><td>'+escapeHtml(x.b.nom)+'</td><td>'+escapeHtml(x.b.prenom)+'</td><td class="num">'+x.pts+'</td></tr>';
+            return '<tr><td>'+escapeHtml(x.b.nom)+'</td><td>'+escapeHtml(x.b.prenom)+'</td><td class="num">'+x.heures+'</td><td class="num">'+x.pts+'</td></tr>';
           }).join("")
         + '</tbody></table></div>'
       : '';
 
+    // A13 (30/09/2026, demande du Directeur des Rancy) : nombre total de
+    // bénévoles enregistrés (tous, actifs ou non — pas seulement ceux
+    // mobilisés sur la période, déjà visible plus bas dans le classement).
     var tuilesHtml = '<div class="stats" style="margin:0 0 18px;">'
+      + '<div class="stat"><div class="stat-value">'+state.benevoles.length+'</div><div class="stat-label">Bénévoles enregistrés au total</div></div>'
       + '<div class="stat"><div class="stat-value">'+missionsInfo.effectuees+' / '+missionsInfo.total+'</div><div class="stat-label">Missions effectuées sur la période</div></div>'
       + '<div class="stat"><div class="stat-value">'+(pctNonEffectuees===null?"—":pctNonEffectuees+" %")+'</div><div class="stat-label">Missions non effectuées</div></div>'
       + '<div class="stat"><div class="stat-value">'+(benevolesInfo.pourcentage===null?"—":benevolesInfo.pourcentage+" %")+'</div><div class="stat-label">Bénévoles n\'effectuant pas leurs missions ('+benevolesInfo.enDefaut+' / '+benevolesInfo.concernes+')</div></div>'
+      + '</div>';
+
+    // A13 (30/09/2026, demande du Directeur des Rancy) : détail du groupe
+    // Administrateurs (heures de la période, par bénévole + cumul), en plus
+    // du classement général déjà affiché au-dessus. Voir benevolesDuGroupe()
+    // ci-dessus. heuresMapPeriode est déjà calculé plus haut dans cette
+    // fonction pour le classement général — réutilisé ici, pas recalculé.
+    var administrateurs = benevolesDuGroupe("Administrateurs");
+    var administrateursAvecHeures = administrateurs
+      .map(function(b){ return {b: b, heures: Math.round((heuresMapPeriode[b.id]||0)*10)/10}; })
+      .sort(function(x,y){ return y.heures - x.heures; });
+    var administrateursHeuresCumul = Math.round(administrateursAvecHeures.reduce(function(s,x){ return s+x.heures; }, 0)*10)/10;
+    var administrateursTableHtml = !administrateurs.length
+      ? '<div class="empty-state">Aucun bénévole dans le groupe Administrateurs.</div>'
+      : '<div class="table-scroll"><table class="heures-table"><thead><tr>'
+        + '<th>Nom</th><th>Prénom</th><th class="num">Heures</th></tr></thead><tbody>'
+        + administrateursAvecHeures.map(function(x){
+            return '<tr><td>'+escapeHtml(x.b.nom)+'</td><td>'+escapeHtml(x.b.prenom)+'</td><td class="num">'+x.heures+'</td></tr>';
+          }).join("")
+        + '</tbody></table></div>';
+    var administrateursCardHtml = '<div class="card" style="margin:18px 0;">'
+      + '<div class="stat-label" style="margin-bottom:8px;">Groupe Administrateurs — heures sur la période ('+administrateurs.length+' membre'+(administrateurs.length>1?"s":"")+')</div>'
+      + administrateursTableHtml
+      + '<div class="form-hint" style="margin-top:8px;">Total cumulé : <strong>'+administrateursHeuresCumul+' heure'+(administrateursHeuresCumul>1?"s":"")+'</strong></div>'
       + '</div>';
 
     document.getElementById("panel-statistiques").innerHTML =
@@ -2024,7 +2223,8 @@
       + periodeHtml
       + tuilesHtml
       + moisHtml
-      + classementTableHtml;
+      + classementTableHtml
+      + administrateursCardHtml;
   }
 
   // ---------- render: missions ----------
@@ -2378,7 +2578,13 @@
           + '<td class="col-select"><input type="checkbox" data-action="toggle-select-mission" data-id="'+m.id+'" '+(coche?"checked":"")+'></td>'
           + '<td><strong>'+fmtDateCourt(m.date)+'</strong>'
           + '<div class="mission-date-detail">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</div>'
-          + (m.creeLe ? '<div class="mission-creele">Mission créée le '+fmtDateTime(m.creeLe)+'</div>' : '')
+          // A10 (30/09/2026, demande du Directeur des Rancy) : Prénom/Nom du
+          // créateur ajouté à cette même ligne discrète, plutôt qu'une
+          // colonne de tableau à part — le tableau est déjà chargé en
+          // colonnes (voir thTriMission ci-dessous) et Jluc est sensible aux
+          // problèmes de largeur sur ce genre de tableau (cf. les correctifs
+          // précédents sur les libellés qui repassaient à la ligne).
+          + (m.creeLe ? '<div class="mission-creele">Mission créée le '+fmtDateTime(m.creeLe)+(m.creePar?' par '+escapeHtml(m.creePar):'')+'</div>' : '')
           + '</td>'
           + '<td>'+escapeHtml(libelleMission(m))
           + '<div class="mission-date-detail">'+escapeHtml(m.lieu)+'</div></td>'
@@ -2498,15 +2704,51 @@
           + (suppressionTraiteeConfirmation
               ? '<div class="msg-ok" style="margin-bottom:8px;">✅ La Direction des Rancy a traité votre demande de suppression : votre fiche a été conservée. <button type="button" class="link-btn" data-action="fermer-confirmation-suppression-traitee">OK, compris</button></div>'
               : '')
-          + '<div>Vous êtes identifié(e) comme <strong>'+escapeHtml(moiIdentite.prenom)+' '+escapeHtml(moiIdentite.nom)+'</strong>. '
-          + '<button class="link-btn" data-action="changer-identite">Ce n\'est pas vous ?</button>'
-          + ' <button class="link-btn" data-action="open-mon-historique">Voir mon historique</button>'
-          // Demande déjà envoyée : pas de nouveau lien, juste la confirmation
-          // (évite d'en envoyer plusieurs par erreur en cliquant deux fois).
+          // Correctif (30/09/2026, demande de Jluc, capture d'écran à
+          // l'appui : "Créer plutôt des btn bien visibles, plutôt que
+          // cette ligne bleu") : les actions de ce bandeau étaient des
+          // liens texte soulignés (.link-btn), peu visibles perdus dans la
+          // phrase. Remplacés par de vrais boutons bordés (.btn.btn-sm,
+          // même style que les boutons secondaires "Modifier"/"Annuler"
+          // ailleurs dans l'appli), sur leur propre ligne sous la phrase
+          // d'identité.
+          + '<div style="margin-bottom:10px;">Vous êtes identifié(e) comme <strong>'+escapeHtml(moiIdentite.prenom)+' '+escapeHtml(moiIdentite.nom)+'</strong>.</div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:8px;">'
+          + '<button type="button" class="btn btn-sm" data-action="changer-identite">Ce n\'est pas vous ?</button>'
+          + '<button type="button" class="btn btn-sm" data-action="open-mon-historique">Voir mon historique</button>'
+          // Demande déjà envoyée : pas de nouveau bouton, juste la
+          // confirmation (évite d'en envoyer plusieurs par erreur en
+          // cliquant deux fois).
           + (moiIdentite.demandeSuppression
-              ? ' <span class="form-hint">Demande de suppression envoyée, en attente de confirmation par la Direction.</span>'
-              : ' <button class="link-btn" data-action="open-demande-suppression">Supprimer ma fiche</button>')
-          + '</div></div>';
+              ? ''
+              : '<button type="button" class="btn btn-sm" data-action="open-demande-suppression">Supprimer ma fiche</button>')
+          // A17 (30/09/2026, demande du Directeur des Rancy, corrigé le
+          // même jour : "il faut stopper tous les mails [...] il faut que
+          // son adresse mail quitte le répertoire des autres adresses
+          // mails") : le/la bénévole identifié·e peut couper lui/elle-même
+          // TOUS les mails qui le/la concernent — voir pauseMails, lu par
+          // emailsActifsPourGroupes ET emailsTousLesBenevoles (donc aussi
+          // "Copier la liste de tous les emails" : son adresse n'apparaît
+          // plus dans aucune liste, qu'elle serve à un mailto direct ou à
+          // un envoi en nombre hors application). Un bouton simple qui
+          // bascule d'un état à l'autre ("jusqu'à déconnexion de ce
+          // bouton", demande de Jluc) : reclique pour réactiver, pas de
+          // délai ni de date de fin. N'affecte volontairement que les
+          // mails liés à sa fiche bénévole une fois identifié : le mail de
+          // confirmation/refus de sa candidature, envoyé avant même que
+          // cette fiche (et donc pauseMails) n'existe, reste inchangé —
+          // c'est la réponse directe à l'action qu'il vient de faire.
+          + (moiIdentite.pauseMails
+              ? '<button type="button" class="btn btn-sm btn-primary" data-action="desactiver-pause-mails">Recevoir à nouveau les mails</button>'
+              : '<button type="button" class="btn btn-sm" data-action="activer-pause-mails">Ne plus recevoir de mails de l\'application</button>')
+          + '</div>'
+          + (moiIdentite.demandeSuppression
+              ? '<div class="form-hint" style="margin-top:8px;">Demande de suppression envoyée, en attente de confirmation par la Direction.</div>'
+              : '')
+          + (moiIdentite.pauseMails
+              ? '<div class="form-hint" style="margin-top:8px;">✉️ Vous ne recevez plus les mails de l\'application.</div>'
+              : '')
+          + '</div>';
       } else if(identiteFormOpen){
         // Avant : une liste déroulante de tous les bénévoles actifs — donc
         // n'importe qui pouvait s'inscrire sous le nom de n'importe qui.
@@ -2642,14 +2884,34 @@
     // passée, tout se verrouille (lectureSeule ci-dessus) — y compris les
     // champs Statut et Commentaires, ce qui empêchait Directeur ET
     // Gestionnaires de classer la mission en "Terminée"/"Non effectuée" ou
-    // d'y noter quoi que ce soit au moment précis où ils la vérifient
-    // (statut "À vérifier"). On garde ces deux champs ouverts dans ce cas
-    // précis uniquement (mission passée + statut encore "À vérifier", donc
-    // pas encore validée) pour Directeur et Gestionnaires — le reste du
-    // formulaire (titre, date, secteur...) reste verrouillé comme avant.
+    // d'y noter quoi que ce soit au moment précis où ils la vérifient. On
+    // garde ces deux champs ouverts pour Directeur et Gestionnaires sur
+    // toute mission passée — le reste du formulaire (titre, date,
+    // secteur...) reste verrouillé comme avant.
+    // Élargi le 30/09/2026 (demande de Jluc, remontée par le Directeur des
+    // Rancy : "un gestionnaire doit pouvoir changer le statut de sa mission
+    // et la classer Terminée") : avant ce jour, la condition exigeait EN
+    // PLUS que le statut déjà en base soit encore "À vérifier" — or une
+    // nouvelle mission démarre par défaut sur "En cours" (voir
+    // STATUTS_MISSIONS) et rien ne la fait automatiquement passer à "À
+    // vérifier" une fois terminée. Résultat : une mission passée restait
+    // bloquée sur "En cours", non modifiable par un Gestionnaire (seul le
+    // Directeur pouvait alors la reclasser). La condition ne dépend donc
+    // plus du statut actuel, seulement du fait que la mission soit passée.
+    // Restreint dans la foulée, même jour (retour de Jluc : "il ne peut
+    // traiter que SA mission pas celles des autres") : pour un Gestionnaire,
+    // cette exception ne s'applique désormais qu'à une mission qu'IL a
+    // créée (creeParUid) — sur celle d'un·e collègue, il reste en
+    // consultation seule même une fois passée. Le Directeur, lui, garde ce
+    // droit sur toute mission (rôle de supervision globale). Nécessite la
+    // règle Firestore missions.update correspondante (même condition
+    // creeParUid ajoutée côté serveur, voir firestore-rules-benevoles-
+    // rancy.txt), sinon Firestore refuserait quand même l'écriture d'un
+    // Gestionnaire sur la mission d'un·e collègue.
     // Calculé ici (avant le bandeau ci-dessous) plutôt que plus bas avec
     // statutActuel, pour pouvoir l'utiliser dans plusieurs endroits.
-    var commentaireSeulAutorise = missionPassee && !!missionEdit && statutMission(missionEdit) === "À vérifier" && role !== "public";
+    var commentaireSeulAutorise = missionPassee && !!missionEdit && role !== "public"
+      && (role === "directeur" || missionEdit.creeParUid === moiUid);
     // (nom de variable conservé "commentaireSeulAutorise" pour rester
     // cohérent avec le garde-fou équivalent du gestionnaire de soumission
     // du formulaire, plus bas dans le fichier — même booléen, même usage.)
@@ -2694,8 +2956,15 @@
       enteteHtml = '<div class="mission-head" style="margin-bottom:10px;">'
         + '<div class="tags">'+poleTag(missionEdit.pole)+statutTag(statutMission(missionEdit))+'</div>'
         + '<span class="'+badgeCls+'">'+badgeTxt+'</span></div>'
+        // A10 (30/09/2026, demande du Directeur des Rancy) : Prénom/Nom du
+        // créateur, déjà connus en base (creePar, écrit à la création — voir
+        // plus bas dans ce fichier) mais jamais affichés dans cette fiche
+        // jusqu'ici (seulement sur la carte publique, "Proposée par...", et
+        // nulle part dans le tableau). Même classe "mission-meta" que la
+        // carte, pour rester cohérent visuellement.
+        + (missionEdit.creePar ? '<div class="mission-meta" style="margin-bottom:8px;">Créée par '+escapeHtml(missionEdit.creePar)+(missionEdit.creeLe?' le '+fmtDateTime(missionEdit.creeLe):'')+'</div>' : '')
         + (moiCreateurRecent ? '<div class="mission-a-pointer">✏️ Cette mission restera modifiable durant encore <strong id="mission-minuteur-valeur">'+minutesRestantesCreation+'</strong> min, car vous venez de la créer — passé ce délai, elle reviendra aux règles habituelles.</div>'
-          : (missionPassee ? '<div class="mission-a-pointer">⏱ Mission terminée : les informations ne sont plus modifiables'+(commentaireSeulAutorise?' (sauf le Statut et les Commentaires, tant que la mission est encore "À vérifier")':'')+'. Vous pouvez toujours imprimer la fiche et gérer les inscrits déjà présents (présence, retrait) ci-dessous.</div>'
+          : (missionPassee ? '<div class="mission-a-pointer">⏱ Mission terminée : les informations ne sont plus modifiables'+(commentaireSeulAutorise?' (sauf le Statut — pour la classer par exemple en \'Terminée\' — et les Commentaires)':'')+'. Vous pouvez toujours imprimer la fiche et gérer les inscrits déjà présents (présence, retrait) ci-dessous.</div>'
               : (lectureSeule ? '<div class="mission-a-pointer">🔒 Lecture seule : la modification d\'une mission est réservée au Directeur. Vous pouvez consulter le détail, imprimer la fiche et gérer les inscrits déjà présents (présence, retrait) ci-dessous.</div>' : '')));
     } else if(missionDupliquerDonnees){
       enteteHtml = '<div class="mission-a-pointer">📋 Mission pré-remplie à partir de M'+missionDupliquerDonnees.numeroSource+' (« '+escapeHtml(missionDupliquerDonnees.titre)+' ») — pensez à vérifier la Date et le Statut avant d\'enregistrer.</div>'
@@ -2716,9 +2985,10 @@
     var couleurStatut = couleurNommee(STATUT_COULEUR[statutActuel] || "accent");
     // Voir le commentaire au-dessus de lectureSeule (commentaireSeulAutorise) :
     // exception pour les champs Statut et Commentaires sur une mission
-    // passée tant qu'elle est encore "À vérifier" (demande de Jluc du
-    // 25/09/2026 : pouvoir classer la mission en "Terminée"/"Non effectuée"
-    // et laisser un commentaire, sans déverrouiller le reste du formulaire).
+    // passée que l'on a soi-même créée (demande de Jluc du 25/09/2026,
+    // élargie puis restreinte au créateur le 30/09/2026) : pouvoir classer
+    // la mission en "Terminée"/"Non effectuée" et laisser un commentaire,
+    // sans déverrouiller le reste du formulaire.
     var champsAVerifierLectureSeule = lectureSeule && !commentaireSeulAutorise;
 
     var labelTitre = "Titre de la mission" + (missionEdit && missionEdit.numero ? ' <span class="mission-id-badge">M'+missionEdit.numero+'</span>' : '');
@@ -2945,7 +3215,8 @@
   // ouvre comme pour les missions à la liste totale des mails à copier
   // pour un mailto en masse"). Calquée sur alerteNouvelleMissionModaleHtml
   // ci-dessus, sans référence à une mission précise — la liste couvre TOUS
-  // les bénévoles inscrits, sans filtre (voir emailsTousLesBenevoles).
+  // les bénévoles inscrits, sans filtre sur "actif" ni "groupes", mais SANS
+  // un bénévole en pauseMails depuis le 30/09/2026 (voir emailsTousLesBenevoles).
   function alerteTousBenevolesModaleHtml(){
     if(!alerteTousBenevolesOuverte) return "";
     var emailsTous = emailsTousLesBenevoles();
@@ -3219,6 +3490,13 @@
       + '<div class="form-actions" style="margin-top:10px;">'
       + '<button type="button" class="btn btn-ghost btn-sm" data-action="tout-cocher-auteurs-historique">Tout cocher</button>'
       + '<button type="button" class="btn btn-ghost btn-sm" data-action="tout-decocher-auteurs-historique">Tout décocher</button>'
+      // A11 (30/09/2026, demande du Directeur des Rancy) : bouton "Valider"
+      // en fin de liste, qui referme simplement le menu (les cases cochées
+      // s'appliquent déjà en direct à chaque clic, voir toggle-auteur-
+      // historique — ce bouton ne change aucune donnée, il sert juste à
+      // fermer proprement une fois la sélection faite, au lieu de devoir
+      // cliquer en dehors du menu).
+      + '<button type="button" class="btn btn-primary btn-sm" data-action="valider-menu-auteurs-historique">Valider</button>'
       + '</div>'
       + '</div>'
       + '</details>') : '';
@@ -3303,7 +3581,10 @@
           return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
             || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
         });
-      var emailsGroupe = membres.filter(function(b){ return b.actif && b.email; }).map(function(b){ return b.email; });
+      // A17 (30/09/2026, demande du Directeur des Rancy) : exclut aussi un
+      // bénévole ayant coupé les mails de l'application, même principe que
+      // emailsActifsPourGroupes ci-dessus.
+      var emailsGroupe = membres.filter(function(b){ return b.actif && b.email && !b.pauseMails; }).map(function(b){ return b.email; });
       var nb = emailsGroupe.length;
       // Correctif du 29/09/2026 (signalé par Jluc, capture d'écran à l'appui) :
       // ce lien restait un simple <a href="mailto:...">, resté en dehors du
@@ -3315,10 +3596,18 @@
       // être lue depuis un bouton (voir plus bas) plutôt que posée en href.
       var mailtoHref = nb ? ('mailto:?bcc=' + encodeURIComponent(emailsGroupe.join(","))) : "";
 
+      // A8 (30/09/2026, demande du Directeur des Rancy) : croix ✕ pour
+      // retirer un membre du groupe directement depuis le pavé, sans passer
+      // par sa fiche (onglet Bénévoles) — pendant du "+ Ajouter" plus bas.
+      // Réservée au Directeur, comme le reste de la gestion des groupes.
       var membresHtml = membres.length
         ? '<div class="inscrits-list">' + membres.map(function(b){
+            var retirerMembreHtml = role === "directeur"
+              ? '<button type="button" class="btn-danger-ghost" data-action="retirer-benevole-groupe" data-groupe="'+escapeHtml(g)+'" data-id="'+b.id+'" title="Retirer '+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+' de ce groupe">✕</button>'
+              : '';
             return '<div class="inscrit-row"><div class="inscrit-name inscrit-name-clic" data-action="open-benevole-modale" data-id="'+b.id+'" title="Voir la fiche de '+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'"><span class="avatar">'+initiales(b)+'</span>'
-              + escapeHtml(b.prenom)+' '+escapeHtml(b.nom) + (b.actif ? '' : ' <span class="benevole-contact">(inactif)</span>') + '</div></div>';
+              + escapeHtml(b.prenom)+' '+escapeHtml(b.nom) + (b.actif ? '' : ' <span class="benevole-contact">(inactif)</span>') + '</div>'
+              + retirerMembreHtml + '</div>';
           }).join("") + '</div>'
         : '<div class="benevole-contact">Aucun bénévole dans ce groupe pour l\'instant.</div>';
 
@@ -3496,10 +3785,32 @@
     {
       titre: "Gestionnaire",
       intro: "",
+      // Sous-liste "Sur une mission" détaillée le 30/09/2026 (A9, demande du
+      // Directeur des Rancy : "clarifier toutes les actions possibles des
+      // gestionnaires sur une mission") — relit et corrigée en croisant
+      // exactement le code (missionFormModalHtml, le gestionnaire de
+      // soumission de form-mission, et missionRecemmentCreeeParMoi) plutôt
+      // que reformulée à partir de l'ancienne phrase, trop simplifiée : un
+      // Gestionnaire peut en réalité modifier une mission dans deux cas
+      // précis (créateur récent, ou mission passée), pas "jamais" comme le
+      // disait la version précédente.
+      // Corrigé à nouveau le même jour (retour du Directeur des Rancy après
+      // lecture : "un gestionnaire doit pouvoir changer le statut de sa
+      // mission et la classer Terminée") : l'exception "mission passée"
+      // exigeait encore que le statut déjà en base soit "À vérifier",
+      // condition retirée (voir commentaireSeulAutorise).
+      // Corrigé une troisième fois le même jour (Jluc : "il ne peut traiter
+      // que SA mission pas celles des autres") : cette exception "mission
+      // passée" ne vaut, pour un Gestionnaire, que sur une mission qu'IL a
+      // créée — pas sur celle d'un·e collègue, même passée.
       droits: [
         "Créer, modifier ou supprimer la fiche d'un bénévole",
         "Voir la liste complète des bénévoles (coordonnées incluses)",
-        "Créer une mission — mais pas la modifier ni la supprimer une fois créée : la fenêtre s'ouvre alors en lecture seule",
+        "Créer une mission, et la modifier librement (tous les champs) pendant les 30 minutes qui suivent sa création",
+        "Sur une mission qu'il a créée lui-même, une fois passée (au-delà des 30 minutes) : classer son Statut — par exemple la passer en « Terminée » ou « Non effectuée » — et y laisser un Commentaire (rien d'autre)",
+        "Sur une mission créée par quelqu'un d'autre, consultation seule (bouton « Voir »)",
+        "Ne peut jamais supprimer une mission, même la sienne : réservé au Directeur",
+        "Dupliquer n'importe quelle mission existante (pré-remplit une nouvelle mission à créer)",
         "Gérer les inscrits d'une mission : marquer présent, retirer, traiter une demande de désinscription",
         "Voir et traiter les candidatures de bénévolat",
         "Voir l'historique des actions",
@@ -3632,6 +3943,15 @@
     // — donc pas besoin d'être plus restrictif que Groupes/Bénévoles.
     droitsTab.hidden = !visible;
     donneesTab.hidden = !directeurSeul;
+    // A15 (30/09/2026, demande du Directeur des Rancy) : pour le public,
+    // "Missions" reste le SEUL onglet jamais caché ci-dessus (tous les
+    // autres le sont) — la barre d'onglets entière se réduit donc à un
+    // unique gros bouton bleu "Missions", déjà sélectionné, sur lequel
+    // cliquer ne change rien (rien d'autre à afficher) : inutile, et
+    // redondant avec le titre "Missions" du panneau juste en dessous. La
+    // barre entière est donc masquée pour le public ; elle réapparaît dès
+    // la connexion d'un Gestionnaire/Directeur, avec ses onglets utiles.
+    document.getElementById("tabs-bar").hidden = !visible;
     if(!visible && (currentTab === "benevoles" || currentTab === "historique" || currentTab === "candidatures" || currentTab === "statistiques" || currentTab === "groupes" || currentTab === "droits")){
       switchTab("missions");
     }
@@ -3753,6 +4073,16 @@
       ? ('Du '+(statsPeriodeDebut ? fmtDateCourt(statsPeriodeDebut) : "—")+' au '+(statsPeriodeFin ? fmtDateCourt(statsPeriodeFin) : "—"))
       : "Toutes dates confondues";
 
+    // A13 (30/09/2026, demande du Directeur des Rancy) : groupe
+    // Administrateurs — uniquement le nombre de membres et le cumul
+    // d'heures, jamais le détail nominatif (le détail par nom existe déjà à
+    // l'écran, onglet Statistiques, voir renderStatistiques — ce document
+    // imprimé reste volontairement sans aucun nom, comme les 6 autres
+    // indicateurs ci-dessous).
+    var heuresMapPeriode = heuresParBenevolePeriode(statsPeriodeDebut, statsPeriodeFin);
+    var administrateurs = benevolesDuGroupe("Administrateurs");
+    var administrateursHeuresCumul = Math.round(administrateurs.reduce(function(s, b){ return s + (heuresMapPeriode[b.id]||0); }, 0) * 10) / 10;
+
     return {
       periodeTexte: periodeTexte,
       missionsInfo: missionsInfo,
@@ -3762,7 +4092,9 @@
       nbBenevolesActifsPeriode: nbBenevolesActifsPeriode,
       nbBenevolesTotal: state.benevoles.length,
       heuresInfo: heuresInfo,
-      totalPoints: totalPoints
+      totalPoints: totalPoints,
+      nbAdministrateurs: administrateurs.length,
+      administrateursHeuresCumul: administrateursHeuresCumul
     };
   }
 
@@ -3804,7 +4136,18 @@
       + '<p>Chiffre de départ : '+hi.nbAffectations+' inscription(s) réalisée(s) sur la période, chacune avec le coefficient de sa mission.</p>'
       + '<p class="impression-chiffre-cle">→ '+d.totalPoints+' points cumulés au total.</p>';
 
-    return s1+s2+s3+s4+s5+s6;
+    // A13 (30/09/2026, demande du Directeur des Rancy) : 7e indicateur,
+    // groupe Administrateurs. Comme les 6 précédents, uniquement un chiffre
+    // global (nombre de membres + heures cumulées) — jamais de nom, pour
+    // rester cohérent avec l'intro de ce document (voir
+    // imprimerCompteRenduStatistiques). Le détail par nom est disponible à
+    // l'écran, onglet Statistiques, pour qui a besoin du détail.
+    var s7 = '<h3 class="impression-sous-titre">7. Groupe Administrateurs — heures cumulées</h3>'
+      + '<p>Somme des heures données sur la période par les membres du groupe Administrateurs (inscriptions marquées « réalisée »), tous ensemble. Le détail nominatif de ce cumul est disponible à l\'écran, dans l\'onglet Statistiques, mais volontairement absent de ce document imprimé.</p>'
+      + '<p>Chiffre de départ : '+d.nbAdministrateurs+' bénévole(s) dans le groupe Administrateurs.</p>'
+      + '<p class="impression-chiffre-cle">→ '+d.administrateursHeuresCumul+' heures cumulées pour le groupe Administrateurs.</p>';
+
+    return s1+s2+s3+s4+s5+s6+s7;
   }
 
   // Impression à proprement parler, déclenchée directement par le bouton
@@ -4192,14 +4535,26 @@
       // et le rapport de bug Mozilla qui documente ce traitement pour les
       // liens mailto: en particulier
       // (https://bugzilla.mozilla.org/show_bug.cgi?id=299116).
+      // A16 (30/09/2026, demande du Directeur des Rancy, revu le 01/10/2026
+      // pour permettre plusieurs groupes) : groupes cochés dans le menu
+      // déroulant de cette candidature (voir menuGroupesCandidatureHtml et
+      // candidaturesGroupesChoisis ci-dessus), lus ici au moment du clic —
+      // tableau vide si rien n'est coché, ou si state.groupes est vide (le
+      // menu n'existe alors même pas).
+      var groupesChoisis = candidaturesGroupesChoisis[cId] || [];
       ouvrirEmailConfirmationCandidature(cand, emailValide);
       setDoc(doc(db,"benevoles", emailValide.toLowerCase()), {
         prenom: cand.prenom, nom: cand.nom, email: emailValide, tel: telValide.trim(), poles: cand.poles || [], actif: true,
+        groupes: groupesChoisis,
         dateCreation: serverTimestamp()
       }).then(function(){
         return deleteDoc(doc(db,"candidatures", cId));
       }).then(function(){
-        logHistorique("validation_candidature", cand.prenom + " " + cand.nom);
+        logHistorique("validation_candidature", cand.prenom + " " + cand.nom + (groupesChoisis.length ? (" — affecté au(x) groupe(s) " + groupesChoisis.join(", ")) : ""));
+        // Nettoyage : état de sélection propre à cette candidature, devenue
+        // obsolète une fois le document supprimé.
+        delete candidaturesGroupesChoisis[cId];
+        delete candidaturesMenuGroupesOuvert[cId];
       }).catch(reportError);
     }
     else if(action==="refuser-candidature"){
@@ -4222,6 +4577,11 @@
       if(cand2 && cand2.email){ ouvrirEmailAnomalieCandidature(cand2, cand2.email); }
       deleteDoc(doc(db,"candidatures", cId2)).then(function(){
         logHistorique("refus_candidature", cand2 ? (cand2.prenom + " " + cand2.nom) : "");
+        // Même nettoyage que pour "valider-candidature" (A16) : la
+        // sélection de groupes en attente n'a plus de sens une fois la
+        // candidature refusée/supprimée.
+        delete candidaturesGroupesChoisis[cId2];
+        delete candidaturesMenuGroupesOuvert[cId2];
       }).catch(reportError);
     }
     else if(action==="inscrire"){
@@ -4291,6 +4651,21 @@
     else if(action==="fermer-confirmation-suppression-traitee"){
       suppressionTraiteeConfirmation = false;
       renderMissions();
+    }
+    else if(action==="activer-pause-mails" || action==="desactiver-pause-mails"){
+      // A17 (30/09/2026, demande du Directeur des Rancy) : le/la bénévole
+      // identifié·e coupe ou réactive lui/elle-même les mails de
+      // l'application le concernant — voir pauseMails, lu par
+      // emailsActifsPourGroupes et par l'affichage des pavés Groupes.
+      // Écriture directe (sans passer par logHistoriquePublic) : pas
+      // d'action historique dédiée pour cette préférence personnelle, à la
+      // différence d'une demande de désinscription/suppression qui doit,
+      // elle, être traitée par la Direction. Nécessite la règle Firestore
+      // ajoutée le 30/09/2026 sur pauseMails (voir
+      // firestore-rules-benevoles-rancy.txt) — sans elle, ce bouton
+      // échouera silencieusement (voir reportError).
+      if(!moiBenevoleId) return;
+      updateDoc(doc(db,"benevoles", moiBenevoleId), {pauseMails: action==="activer-pause-mails"}).catch(reportError);
     }
     else if(action==="traiter-demande-suppression"){
       // Côté Gestionnaire/Directeur (dans la fiche bénévole) : lève
@@ -4500,7 +4875,15 @@
       var blob = new Blob([jsonStr], {type: "application/json"});
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
-      var dateStr = new Date().toISOString().slice(0,10);
+      // Modifié le 01/10/2026 (remarque de Jluc) : le nom de fichier ne
+      // contenait que la date, pas l'heure, alors que le bouton dit
+      // "Exporter horodaté" — deux exports le même jour se remplaçaient donc
+      // l'un l'autre (même nom). Heure locale (celle de l'appareil de
+      // l'utilisateur, pas UTC) ajoutée au nom pour que le bouton tienne sa
+      // promesse et qu'aucun export ne soit écrasé par le suivant.
+      var dEx = new Date();
+      var dateStr = dEx.getFullYear() + "-" + String(dEx.getMonth()+1).padStart(2,"0") + "-" + String(dEx.getDate()).padStart(2,"0")
+        + "-" + String(dEx.getHours()).padStart(2,"0") + "h" + String(dEx.getMinutes()).padStart(2,"0");
       a.href = url;
       a.download = "benevoles-rancy-export-" + dateStr + ".json";
       document.body.appendChild(a);
@@ -4546,6 +4929,21 @@
             }).catch(reportError);
           }
         }
+      }
+    }
+    else if(action==="retirer-benevole-groupe"){
+      // A8 (30/09/2026, demande du Directeur des Rancy) : retire le
+      // bénévole du groupe (croix ✕ sur sa ligne, dans le pavé), sans
+      // toucher au reste de sa fiche — pendant du "ajouter-benevole-groupe"
+      // ci-dessus, dans l'autre sens.
+      var groupeARetirer = el.getAttribute("data-groupe");
+      var benevoleARetirer = benevoleById(el.getAttribute("data-id"));
+      if(groupeARetirer && benevoleARetirer){
+        if(!confirm("Retirer "+benevoleARetirer.prenom+" "+benevoleARetirer.nom+" du groupe « "+groupeARetirer+" » ?")) return;
+        var groupesApresRetrait = (benevoleARetirer.groupes || []).filter(function(gr){ return gr !== groupeARetirer; });
+        updateDoc(doc(db,"benevoles", benevoleARetirer.id), {groupes: groupesApresRetrait}).then(function(){
+          logHistorique("retrait_benevole_groupe", benevoleARetirer.prenom+" "+benevoleARetirer.nom+" — "+groupeARetirer);
+        }).catch(reportError);
       }
     }
     else if(action==="delete-groupe"){
@@ -4663,6 +5061,50 @@
     else if(action==="tout-decocher-auteurs-historique"){
       historiqueFiltreAuteurs = [];
       renderHistorique();
+    }
+    else if(action==="valider-menu-auteurs-historique"){
+      // A11 (30/09/2026) : referme juste le menu déroulant, voir le
+      // commentaire sur le bouton lui-même (menuAuteursHtml).
+      historiqueMenuAuteursOuvert = false;
+      renderHistorique();
+    }
+    else if(action==="toggle-menu-groupes-candidature"){
+      // A16 (revu le 01/10/2026) : même principe que
+      // toggle-menu-auteurs-historique, mais indexé par candidature (voir
+      // candidaturesMenuGroupesOuvert).
+      var cIdMenu = el.getAttribute("data-id");
+      candidaturesMenuGroupesOuvert[cIdMenu] = !candidaturesMenuGroupesOuvert[cIdMenu];
+      renderCandidatures();
+    }
+    else if(action==="toggle-groupe-candidature"){
+      var cIdGrp = el.getAttribute("data-id");
+      var nomGroupeClic = el.getAttribute("data-groupe");
+      var choisisActuels = candidaturesGroupesChoisis[cIdGrp] || [];
+      var posGrp = choisisActuels.indexOf(nomGroupeClic);
+      if(posGrp >= 0){ choisisActuels = choisisActuels.slice(0,posGrp).concat(choisisActuels.slice(posGrp+1)); }
+      else { choisisActuels = choisisActuels.concat([nomGroupeClic]); }
+      candidaturesGroupesChoisis[cIdGrp] = choisisActuels;
+      renderCandidatures();
+    }
+    else if(action==="tout-cocher-groupes-candidature"){
+      var cIdTout = el.getAttribute("data-id");
+      candidaturesGroupesChoisis[cIdTout] = state.groupes.slice();
+      renderCandidatures();
+    }
+    else if(action==="tout-decocher-groupes-candidature"){
+      var cIdAucun = el.getAttribute("data-id");
+      candidaturesGroupesChoisis[cIdAucun] = [];
+      renderCandidatures();
+    }
+    else if(action==="valider-menu-groupes-candidature"){
+      // Referme juste le menu déroulant (la sélection est déjà appliquée en
+      // direct à chaque coche, voir toggle-groupe-candidature) — même
+      // principe que valider-menu-auteurs-historique. Ne pas confondre avec
+      // le bouton "Valider" de la candidature elle-même (action
+      // "valider-candidature"), qui lui écrit réellement en base.
+      var cIdFermer = el.getAttribute("data-id");
+      candidaturesMenuGroupesOuvert[cIdFermer] = false;
+      renderCandidatures();
     }
     else if(action==="stats-mois-courant"){
       statsPeriodeDebut = premierJourMoisCourantIso();
@@ -5161,26 +5603,37 @@
       e.preventDefault();
       // Correctif du 25/09/2026 (demande de Jluc) : seule exception aux deux
       // garde-fous ci-dessous, sur le même principe que missionFormModalHtml
-      // (champsAVerifierLectureSeule) — une mission passée mais encore "À
-      // vérifier" reste soumise (Directeur ET Gestionnaires), mais
-      // UNIQUEMENT pour les champs Statut et Commentaires (pouvoir classer
-      // la mission en "Terminée"/"Non effectuée" et laisser un commentaire) :
-      // comme tous les autres champs du formulaire sont "disabled" dans ce
-      // cas (voir missionFormModalHtml), leur valeur envoyée reste
-      // strictement identique à celle déjà en base — seuls "statut" et/ou
-      // "commentaires" changent réellement. Nécessite la règle Firestore
-      // missions.update correspondante (mise à jour limitée à ces deux
-      // champs pour un Gestionnaire), sinon Firestore refusera quand même
-      // l'écriture pour un Gestionnaire.
+      // (champsAVerifierLectureSeule) — une mission passée reste soumise
+      // (Directeur ET Gestionnaires), mais UNIQUEMENT pour les champs Statut
+      // et Commentaires (pouvoir classer la mission en "Terminée"/"Non
+      // effectuée" et laisser un commentaire) : comme tous les autres champs
+      // du formulaire sont "disabled" dans ce cas (voir missionFormModalHtml),
+      // leur valeur envoyée reste strictement identique à celle déjà en
+      // base — seuls "statut" et/ou "commentaires" changent réellement. La
+      // règle Firestore missions.update correspondante (mise à jour limitée
+      // à ces deux champs pour un Gestionnaire) n'a jamais imposé de
+      // condition sur le statut déjà en base, contrairement à ce que
+      // vérifiait ce garde-fou avant le 30/09/2026 (voir ci-dessous).
       var missionActuelleGuard = missionEnEdition ? missionById(missionEnEdition) : null;
       // Correction complète par le créateur (26/09/2026) : même fonction
       // que missionFormModalHtml (moiCreateurRecent), passe AVANT les deux
       // garde-fous ci-dessous — voir missionRecemmentCreeeParMoi.
       var moiCreateurRecentGuard = missionRecemmentCreeeParMoi(missionActuelleGuard);
+      // Élargi le 30/09/2026 (demande de Jluc, voir le commentaire équivalent
+      // sur commentaireSeulAutorise dans missionFormModalHtml) : ne dépend
+      // plus du statut déjà en base ("À vérifier"), seulement du fait que la
+      // mission soit passée — une mission neuve démarre sur "En cours" (voir
+      // STATUTS_MISSIONS) et rien ne la fait passer automatiquement à "À
+      // vérifier", donc l'ancienne condition bloquait presque toujours un
+      // Gestionnaire voulant classer une mission passée en "Terminée".
+      // Restreint dans la foulée, même jour (retour de Jluc : "il ne peut
+      // traiter que SA mission pas celles des autres") : pour un
+      // Gestionnaire, uniquement s'il est bien le créateur de la mission
+      // (creeParUid) — le Directeur garde ce droit sur toute mission.
       var champsAVerifierAutorises = !!missionActuelleGuard
         && missionEstPassee(missionActuelleGuard)
-        && statutMission(missionActuelleGuard) === "À vérifier"
-        && role !== "public";
+        && role !== "public"
+        && (role === "directeur" || missionActuelleGuard.creeParUid === moiUid);
       // Garde-fou (point A1, 22/09/2026) : les champs sont déjà "disabled"
       // et le bouton "Enregistrer" caché pour une mission terminée (voir
       // missionFormModalHtml), donc ce cas ne devrait jamais se produire en
