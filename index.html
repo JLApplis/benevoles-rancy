@@ -3214,7 +3214,7 @@
     if(!alerteMissionOuverte) return "";
     var emails = emailsTousLesBenevoles();
     var liste = emails.join(", ");
-    var contenuHtml = '<div class="form-hint" style="margin-bottom:12px;">Mission « M'+escapeHtml(String(alerteMissionOuverte.numero))+' — '+escapeHtml(alerteMissionOuverte.titre)+' ». Pour prévenir tous les bénévoles ('+emails.length+'), copiez la liste ci-dessous et collez-la dans votre outil d\'envoi en nombre. Aucun email n\'est envoyé automatiquement par l\'application.</div>'
+    var contenuHtml = '<div class="form-hint" style="margin-bottom:12px;">Mission « M'+escapeHtml(String(alerteMissionOuverte.numero))+' — '+escapeHtml(alerteMissionOuverte.titre)+' ». Pour prévenir tous les bénévoles ('+emails.length+'), copiez la liste ci-dessous et collez-la dans votre outil d\'envoi en nombre, dans le champ <strong>CCI</strong> (copie conforme invisible) de votre message, jamais dans « À » ni dans « CC ». Aucun email n\'est envoyé automatiquement par l\'application.</div>'
       + '<textarea readonly rows="6" style="width:100%;resize:vertical;" onclick="this.select()" id="alerte-mission-textarea">'+escapeHtml(liste)+'</textarea>'
       + '<div class="form-actions" style="margin-top:14px;align-items:center;gap:10px;">'
       + '<button type="button" class="btn btn-primary" data-action="copier-liste-emails-mission">📋 Copier la liste</button>'
@@ -3239,7 +3239,7 @@
     if(!alerteTousBenevolesOuverte) return "";
     var emailsTous = emailsTousLesBenevoles();
     var listeTous = emailsTous.join(", ");
-    var contenuTousHtml = '<div class="form-hint" style="margin-bottom:12px;">Pour écrire à tous les bénévoles inscrits ('+emailsTous.length+'), copiez la liste ci-dessous et collez-la dans votre outil d\'envoi en nombre. Aucun email n\'est envoyé automatiquement par l\'application.</div>'
+    var contenuTousHtml = '<div class="form-hint" style="margin-bottom:12px;">Pour écrire à tous les bénévoles inscrits ('+emailsTous.length+'), copiez la liste ci-dessous et collez-la dans votre outil d\'envoi en nombre, dans le champ <strong>CCI</strong> (copie conforme invisible) de votre message, jamais dans « À » ni dans « CC ». Aucun email n\'est envoyé automatiquement par l\'application.</div>'
       + '<textarea readonly rows="6" style="width:100%;resize:vertical;" onclick="this.select()" id="alerte-tous-benevoles-textarea">'+escapeHtml(listeTous)+'</textarea>'
       + '<div class="form-actions" style="margin-top:14px;align-items:center;gap:10px;">'
       + '<button type="button" class="btn btn-primary" data-action="copier-liste-emails-tous-benevoles">📋 Copier la liste</button>'
