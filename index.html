@@ -226,6 +226,7 @@
      rubriques "Réunion liée / NC liée / Document lié" de PICS (icône +
      titre en majuscules coloré, séparé par un filet). */
   .modal-section-inscrits{border-top:1px solid var(--line);margin-top:16px;padding-top:14px;}
+  .missions-bloc-titre{font-size:.78rem;font-weight:700;letter-spacing:.03em;color:var(--accent-deep);text-transform:uppercase;margin:18px 0 8px;}
   .modal-section-titre{font-size:.78rem;font-weight:700;letter-spacing:.03em;color:var(--accent-deep);text-transform:uppercase;margin-bottom:8px;}
 
   .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
@@ -710,6 +711,36 @@
     }catch(e){ /* stockage indisponible (navigation privée…) : tant pis */ }
   }
   var moiBenevoleId = chargerMoiBenevoleId();
+
+  // A5 (07/10/2026, demande de Jluc via le Directeur) : un bénévole identifié
+  // peut masquer les missions qui ne l'intéressent pas. Mémorisé dans son
+  // navigateur seulement (localStorage, une clé par bénévole : plusieurs
+  // personnes sur le même ordinateur ne partagent pas leurs masquages) —
+  // aucune donnée ni règle Firestore. Sur un autre appareil, il repart de
+  // zéro. Même principe que la mémorisation de l'identité ci-dessus.
+  // A6 : filtre "ne voir que mes missions" (bénévole identifié). Volontairement
+  // NON mémorisé : il repart désactivé à chaque ouverture de l'appli (choix de
+  // Jluc, 07/10/2026), pour qu'un bénévole n'oublie pas qu'il filtre et ne
+  // croie pas qu'il n'y a plus de missions.
+  var missionsFiltreMesInscriptions = false;
+  function clefMissionsMasquees(){ return "benevoles-rancy-masquees-" + (moiBenevoleId || ""); }
+  function chargerMissionsMasquees(){
+    if(!moiBenevoleId) return {};
+    try{
+      var liste = JSON.parse(localStorage.getItem(clefMissionsMasquees()) || "[]");
+      var obj = {};
+      if(Array.isArray(liste)){ liste.forEach(function(id){ obj[id] = true; }); }
+      return obj;
+    }catch(e){ return {}; }
+  }
+  function sauvegarderMissionsMasquees(obj){
+    if(!moiBenevoleId) return;
+    try{
+      var ids = Object.keys(obj);
+      if(ids.length){ localStorage.setItem(clefMissionsMasquees(), JSON.stringify(ids)); }
+      else { localStorage.removeItem(clefMissionsMasquees()); }
+    }catch(e){ /* stockage indisponible (navigation privée…) : tant pis */ }
+  }
   var identiteError = "";
   // Formulaire d'identification replié par défaut (demande de Jluc, pour
   // gagner de la place sur téléphone) : même principe que candidatureFormOpen
@@ -2540,6 +2571,11 @@
       + (role !== "public" && m.commentaires ? '<div class="mission-commentaires"><strong>Commentaires : </strong>'+escapeHtml(m.commentaires)+'</div>' : '')
       + (m.creePar ? '<div class="mission-meta">Proposée par '+escapeHtml(m.creePar)+'</div>' : '')
       + missionInscritsSectionHtml(m)
+      // A5 : bouton "Masquer" pour un bénévole identifié, sauf sur une mission
+      // où il est déjà inscrit (voir renderMissions).
+      + (role === "public" && moiBenevoleId && !moiEstInscrit
+          ? '<div style="display:flex;gap:6px;flex-wrap:wrap;"><button type="button" class="btn btn-ghost btn-sm" data-action="masquer-mission" data-id="'+m.id+'" title="Ne plus afficher cette mission">Masquer</button></div>'
+          : '')
       + (role !== "public" ? '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
           // Correctif (23/09/2026) : le bouton disait "Modifier" pour
           // Gestionnaire ET Directeur, mais les règles Firestore
@@ -2586,7 +2622,51 @@
         })
       : state.missions;
 
+    // A5 : missions masquées par le bénévole identifié (jamais une mission où
+    // il est déjà inscrit : elle reste toujours affichée, et n'a pas de
+    // bouton Masquer). Le compteur sert au lien "Les réafficher".
+    var nbMissionsMasquees = 0;
+    if(role === "public" && moiBenevoleId){
+      var masquees = chargerMissionsMasquees();
+      missionsAffichees = missionsAffichees.filter(function(m){
+        if(!masquees[m.id]) return true;
+        if(inscritsDe(m.id).some(function(a){ return a.benevoleId === moiBenevoleId; })) return true;
+        nbMissionsMasquees++;
+        return false;
+      });
+    }
+
+    // A6 : "Voir seulement mes missions" — ne garde que celles où le bénévole
+    // identifié est inscrit (le public ne voit déjà que les missions à venir).
+    var filtreMesInscriptionsActif = role === "public" && !!moiBenevoleId && missionsFiltreMesInscriptions;
+    if(filtreMesInscriptionsActif){
+      missionsAffichees = missionsAffichees.filter(function(m){
+        return inscritsDe(m.id).some(function(a){ return a.benevoleId === moiBenevoleId; });
+      });
+    }
+
     var cards = missionsAffichees.map(missionCardHtml).join("");
+
+    // A4 (07/10/2026, demande de Jluc via le Directeur) : à la page d'accueil,
+    // un bénévole IDENTIFIÉ voit en premier les missions dont le secteur est
+    // l'un des "Secteurs / domaines" cochés sur sa fiche, puis les autres —
+    // deux blocs avec titre, chacun resté trié par date (missionsAffichees
+    // est déjà trié par date, voir sortMissions). Sans secteur sur sa fiche,
+    // visiteur non identifié, ou si tous les blocs ne sont pas remplis
+    // (toutes les missions dans ses secteurs, ou aucune) : liste unique par
+    // date, comme avant. Ne concerne pas Gestionnaire/Directeur.
+    var cardsHtmlMissions = missionsAffichees.length ? '<div class="card-grid">'+cards+'</div>' : "";
+    var mesSecteursMissions = (role === "public" && moiPourGroupesMissions && Array.isArray(moiPourGroupesMissions.poles)) ? moiPourGroupesMissions.poles : [];
+    if(mesSecteursMissions.length && !filtreMesInscriptionsActif){
+      var missionsMesSecteurs = missionsAffichees.filter(function(m){ return mesSecteursMissions.indexOf(m.pole) !== -1; });
+      var missionsAutresSecteurs = missionsAffichees.filter(function(m){ return mesSecteursMissions.indexOf(m.pole) === -1; });
+      if(missionsMesSecteurs.length && missionsAutresSecteurs.length){
+        cardsHtmlMissions = '<div class="missions-bloc-titre">Vos secteurs ('+missionsMesSecteurs.length+')</div>'
+          + '<div class="card-grid">'+missionsMesSecteurs.map(missionCardHtml).join("")+'</div>'
+          + '<div class="missions-bloc-titre">Autres missions ('+missionsAutresSecteurs.length+')</div>'
+          + '<div class="card-grid">'+missionsAutresSecteurs.map(missionCardHtml).join("")+'</div>';
+      }
+    }
 
     // Vue tableau (gestionnaires/Directeur) : recherche + tri, une ligne par
     // mission, pour rester lisible même avec beaucoup de missions.
@@ -2911,9 +2991,17 @@
       + '</div></div>'
       + candidatureHtml
       + identiteHtml
+      // A6 + A5 : barre de filtres du bénévole identifié, au-dessus des cartes.
+      + (role === "public" && moiBenevoleId
+          ? '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;">'
+            + '<button type="button" class="btn btn-ghost btn-sm" data-action="basculer-mes-inscriptions" aria-pressed="'+(filtreMesInscriptionsActif?"true":"false")+'">'+(filtreMesInscriptionsActif ? "Voir toutes les missions" : "Voir seulement mes missions")+'</button>'
+            + '<button type="button" class="btn btn-ghost btn-sm" data-action="supprimer-filtres-missions-benevole" '+((filtreMesInscriptionsActif || nbMissionsMasquees) ? '' : 'disabled')+'>Supprimer tous les filtres</button>'
+            + (nbMissionsMasquees && !filtreMesInscriptionsActif ? '<span class="form-hint">'+nbMissionsMasquees+' mission'+(nbMissionsMasquees>1?'s':'')+' masquée'+(nbMissionsMasquees>1?'s':'')+' — <button type="button" class="link-btn" data-action="reafficher-missions-masquees">Les réafficher</button></span>' : '')
+            + '</div>'
+          : '')
       + (role !== "public" && missionsVue === "tableau"
           ? tableauHtml
-          : (missionsAffichees.length ? '<div class="card-grid">'+cards+'</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant.</div>'));
+          : (missionsAffichees.length ? cardsHtmlMissions : (filtreMesInscriptionsActif ? '<div class="empty-state">Vous n\'êtes inscrit·e à aucune mission pour le moment.</div>' : '<div class="empty-state">Aucune mission proposée pour l\'instant.</div>')));
   }
 
   // Champs de formulaire réutilisés par la modale de création/modification
@@ -4767,8 +4855,33 @@
         }).catch(reportError);
       }
     }
+    else if(action==="masquer-mission"){
+      if(!moiBenevoleId) return;
+      var idMasquer = el.getAttribute("data-id");
+      var masqueesAjout = chargerMissionsMasquees();
+      masqueesAjout[idMasquer] = true;
+      sauvegarderMissionsMasquees(masqueesAjout);
+      renderMissions();
+    }
+    else if(action==="basculer-mes-inscriptions"){
+      if(!moiBenevoleId) return;
+      missionsFiltreMesInscriptions = !missionsFiltreMesInscriptions;
+      renderMissions();
+    }
+    else if(action==="supprimer-filtres-missions-benevole"){
+      // A7 : remet à zéro le filtre A6 ET les missions masquées A5.
+      if(!moiBenevoleId) return;
+      missionsFiltreMesInscriptions = false;
+      sauvegarderMissionsMasquees({});
+      renderMissions();
+    }
+    else if(action==="reafficher-missions-masquees"){
+      sauvegarderMissionsMasquees({});
+      renderMissions();
+    }
     else if(action==="changer-identite"){
       moiBenevoleId = null;
+      missionsFiltreMesInscriptions = false;
       sauvegarderMoiBenevoleId(null);
       state.benevoles = [];
       identiteFormOpen = false;
