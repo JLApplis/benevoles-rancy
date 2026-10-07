@@ -501,7 +501,7 @@
 
 <div class="hero-wrap">
   <div class="hero-inner">
-    <div class="eyebrow">Maison Pour Tous des Rancy — BENEVOLES RANCY 1.2</div>
+    <div class="eyebrow">Maison Pour Tous des Rancy — BENEVOLES RANCY 1.3</div>
     <h1 class="title">Bénévoles &amp; missions</h1>
     <p class="subtitle">Consultez les missions proposées, inscrivez-vous, et suivez les heures données par les bénévoles. Ce que vous ajoutez ici est visible en direct par tout le monde.</p>
 
@@ -610,7 +610,21 @@
   // d'envoi automatique réel — même principe que partout ailleurs dans
   // l'appli), et marquer une mission comme réservée à un ou plusieurs
   // groupes (voir missionVisiblePourBenevole plus bas).
-  var GROUPES = ["Administrateurs","Gestionnaires"];
+  // Version 1.3 (07/10/2026, demande de Jluc) : trois groupes intouchables,
+  // toujours présents et toujours dans cet ordre (ils interviennent dans les
+  // statistiques et les envois de mail) : Direction, Gestionnaires,
+  // Administrateurs. Pas de croix "Retirer ce groupe" sur ces trois-là.
+  var GROUPES_PROTEGES = ["Direction","Gestionnaires","Administrateurs"];
+  var GROUPES = GROUPES_PROTEGES.slice();
+  // Groupes alimentés par les comptes de l'Équipe (pas par des fiches
+  // bénévoles) : ni case à cocher sur une fiche bénévole, ni filtre de la
+  // liste des bénévoles. Ils restent proposés pour réserver une mission,
+  // avec envoi du mail d'alerte aux comptes de l'Équipe (voir
+  // emailsActifsPourGroupes).
+  var GROUPES_EQUIPE = ["Direction","Gestionnaires"];
+  function groupesPourFichesBenevoles(){
+    return state.groupes.filter(function(g){ return GROUPES_EQUIPE.indexOf(g) === -1; });
+  }
 
   // A14 (30/09/2026, demande du Directeur des Rancy) : lien de connexion à
   // l'application, ajouté dans tous les mails préremplis (voir plus bas
@@ -1002,9 +1016,23 @@
   // donne un mailto pour ce groupe ; marquée de plusieurs groupes, un seul
   // mailto combiné vers l'union de tous leurs membres (jamais deux mailto
   // séparés à ouvrir l'un après l'autre).
-  function emailsActifsPourGroupes(groupes){
+  // Version 1.3 : avec inclureEquipe=true (mails d'alerte d'une mission), un
+  // groupe "Direction" ou "Gestionnaires" coché sur la mission ajoute les
+  // adresses des comptes Directeur / Gestionnaire ACTIFS de l'Équipe. Sans
+  // ce paramètre (ex. nombre de places par défaut), seules les fiches
+  // bénévoles comptent.
+  function emailsEquipePourGroupes(groupes){
+    var emails = [];
+    state.gestionnaires.forEach(function(x){
+      if(!x.actif || !x.email) return;
+      var groupeDuCompte = x.role === "directeur" ? "Direction" : "Gestionnaires";
+      if(groupes.indexOf(groupeDuCompte) !== -1) emails.push(x.email);
+    });
+    return emails;
+  }
+  function emailsActifsPourGroupes(groupes, inclureEquipe){
     if(!groupes || !groupes.length) return [];
-    return state.benevoles
+    var emailsFiches = state.benevoles
       // A17 (30/09/2026, demande du Directeur des Rancy) : exclut aussi un
       // bénévole ayant coupé les mails de l'application (voir pauseMails,
       // activé depuis son identification publique) — même filtre que
@@ -1012,8 +1040,9 @@
       // tranché pour une exclusion totale, peu importe la façon dont le
       // mail part).
       .filter(function(b){ return b.actif && b.email && !b.pauseMails && (b.groupes||[]).some(function(g){ return groupes.indexOf(g) !== -1; }); })
-      .map(function(b){ return b.email; })
-      .filter(function(email, i, arr){ return arr.indexOf(email) === i; });
+      .map(function(b){ return b.email; });
+    if(inclureEquipe){ emailsFiches = emailsFiches.concat(emailsEquipePourGroupes(groupes)); }
+    return emailsFiches.filter(function(email, i, arr){ return arr.indexOf(email) === i; });
   }
 
   // Badges "Groupes" d'une MISSION (fiche + tableau Missions) : contrairement
@@ -1051,7 +1080,7 @@
   // dans ce cas, la mission est déjà passée. Texte exact demandé par Jluc.
   function mailtoGroupesMission(m, type){
     if(!m.groupes || !m.groupes.length) return null;
-    var emails = emailsActifsPourGroupes(m.groupes);
+    var emails = emailsActifsPourGroupes(m.groupes, true);
     if(!emails.length) return null;
     var reference = referenceMissionMail(m);
     var objet = reference;
@@ -1148,7 +1177,7 @@
   function selectFiltreGroupeHtml(id, valeurActuelle){
     return '<div class="field" style="max-width:220px;margin-bottom:14px;"><label for="'+id+'">Filtrer par groupe</label>'
       + '<select id="'+id+'"><option value="">Tous les groupes</option>'
-      + state.groupes.map(function(g){ return '<option value="'+escapeHtml(g)+'"'+(g===valeurActuelle?' selected':'')+'>'+escapeHtml(g)+'</option>'; }).join("")
+      + groupesPourFichesBenevoles().map(function(g){ return '<option value="'+escapeHtml(g)+'"'+(g===valeurActuelle?' selected':'')+'>'+escapeHtml(g)+'</option>'; }).join("")
       + '</select></div>';
   }
 
@@ -1885,7 +1914,7 @@
         + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'"> '+escapeHtml(p)+'</label>'; }).join("")
         + '</div></div>'
         + '<div class="field"><label>Groupes <span class="form-hint">(facultatif — listes de diffusion et missions réservées, voir onglet Groupes)</span></label><div class="checkbox-group">'
-        + state.groupes.map(function(g){ return '<label class="checkbox-chip"><input type="checkbox" name="groupe" value="'+escapeHtml(g)+'"> '+escapeHtml(g)+'</label>'; }).join("")
+        + groupesPourFichesBenevoles().map(function(g){ return '<label class="checkbox-chip"><input type="checkbox" name="groupe" value="'+escapeHtml(g)+'"> '+escapeHtml(g)+'</label>'; }).join("")
         + '</div></div>'
         + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>Ajouter le bénévole</button>'
         + '<button type="button" class="btn btn-ghost" data-action="cancel-benevole">Annuler</button>'
@@ -2001,7 +2030,7 @@
   // simplement la cellule/ligne à l'ouverture, plutôt que de se faire
   // rogner.
   function menuGroupesCandidatureHtml(c, flottant){
-    if(!state.groupes.length) return "";
+    if(!groupesPourFichesBenevoles().length) return "";
     var choisis = candidaturesGroupesChoisis[c.id] || [];
     var ouvert = !!candidaturesMenuGroupesOuvert[c.id];
     var panneauStyle = flottant ? "" : ' style="position:static;box-shadow:none;margin-top:6px;padding:10px;"';
@@ -2015,7 +2044,7 @@
       + '<summary data-action="toggle-menu-groupes-candidature" data-id="'+c.id+'">Groupe'+(choisis.length ? ' ('+choisis.length+')' : '')+' <span class="chevron">▾</span></summary>'
       + '<div class="select-dropdown-panel"'+panneauStyle+'>'
       + '<div class="checkbox-group">'
-      + state.groupes.map(function(g){
+      + groupesPourFichesBenevoles().map(function(g){
           var coche = choisis.indexOf(g) >= 0;
           return '<label class="checkbox-chip"><input type="checkbox" data-action="toggle-groupe-candidature" data-id="'+c.id+'" data-groupe="'+escapeHtml(g)+'" '+(coche?"checked":"")+'> '+escapeHtml(g)+'</label>';
         }).join("")
@@ -3156,7 +3185,7 @@
       + state.poles.map(function(p){ return '<label class="checkbox-chip"><input type="checkbox" name="pole" value="'+escapeHtml(p)+'" '+((b.poles||[]).indexOf(p)>=0?"checked":"")+'> '+escapeHtml(p)+'</label>'; }).join("")
       + '</div></div>'
       + '<div class="field"><label>Groupes <span class="form-hint">(facultatif — listes de diffusion et missions réservées, voir onglet Groupes)</span></label><div class="checkbox-group">'
-      + state.groupes.map(function(g){ return '<label class="checkbox-chip"><input type="checkbox" name="groupe" value="'+escapeHtml(g)+'" '+((b.groupes||[]).indexOf(g)>=0?"checked":"")+'> '+escapeHtml(g)+'</label>'; }).join("")
+      + groupesPourFichesBenevoles().map(function(g){ return '<label class="checkbox-chip"><input type="checkbox" name="groupe" value="'+escapeHtml(g)+'" '+((b.groupes||[]).indexOf(g)>=0?"checked":"")+'> '+escapeHtml(g)+'</label>'; }).join("")
       + '</div></div>'
       + (benevoleModaleError ? '<div class="error-text" style="margin-bottom:8px;">'+escapeHtml(benevoleModaleError)+'</div>' : '')
       + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>💾 Enregistrer les modifications</button>'
@@ -3678,32 +3707,34 @@
       // Équipe (ajout/désactivation de comptes). Si une ancienne fiche
       // bénévole est encore cochée dans ce groupe, elle est ignorée ici
       // (évite les doublons) et reste visible dans l'onglet Bénévoles.
-      var nomGroupeEquipe = "Gestionnaires";
+      // Version 1.3 : même principe pour le groupe "Direction", alimenté par
+      // les comptes Directeur ACTIFS de la section Équipe.
+      var roleGroupeEquipe = g === "Gestionnaires" ? "gestionnaire" : (g === "Direction" ? "directeur" : null);
       var libelleMembres = "bénévole";
-      if(g === nomGroupeEquipe){
-        var equipeGestionnaires = state.gestionnaires
-          .filter(function(x){ return x.role !== "directeur" && x.actif; })
+      if(roleGroupeEquipe){
+        var equipeGroupe = state.gestionnaires
+          .filter(function(x){ return (x.role === "directeur" ? "directeur" : "gestionnaire") === roleGroupeEquipe && x.actif; })
           .sort(function(a,b){
             return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
               || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
           });
-        emailsGroupe = equipeGestionnaires.filter(function(x){ return x.email; }).map(function(x){ return x.email; });
+        emailsGroupe = equipeGroupe.filter(function(x){ return x.email; }).map(function(x){ return x.email; });
         nb = emailsGroupe.length;
         mailtoHref = nb ? ('mailto:?bcc=' + encodeURIComponent(emailsGroupe.join(","))) : "";
-        libelleMembres = "gestionnaire";
-        membresHtml = equipeGestionnaires.length
-          ? '<div class="inscrits-list">' + equipeGestionnaires.map(function(x){
+        libelleMembres = roleGroupeEquipe;
+        membresHtml = equipeGroupe.length
+          ? '<div class="inscrits-list">' + equipeGroupe.map(function(x){
               var ini = (((x.prenom||"")[0]||"") + ((x.nom||"")[0]||"")).toUpperCase();
               return '<div class="inscrit-row"><div class="inscrit-name"><span class="avatar">'+escapeHtml(ini)+'</span>'
                 + escapeHtml(((x.prenom||"")+' '+(x.nom||"")).trim()) + '</div></div>';
             }).join("") + '</div>'
-          : '<div class="benevole-contact">Aucun gestionnaire actif pour l\'instant.</div>';
+          : '<div class="benevole-contact">Aucun '+roleGroupeEquipe+' actif pour l\'instant.</div>';
         ajoutHtml = "";
       }
 
       return '<div class="card">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span class="benevole-name">'+escapeHtml(g)+'</span>'
-        + (role === "directeur" ? '<button class="btn-danger-ghost" data-action="delete-groupe" data-groupe="'+escapeHtml(g)+'" title="Retirer ce groupe">✕</button>' : '')
+        + (role === "directeur" && GROUPES_PROTEGES.indexOf(g) === -1 ? '<button class="btn-danger-ghost" data-action="delete-groupe" data-groupe="'+escapeHtml(g)+'" title="Retirer ce groupe">✕</button>' : '')
         + '</div>'
         + '<div class="benevole-contact">'+nb+' '+libelleMembres+(nb>1?'s':'')+' actif'+(nb>1?'s':'')+' avec email'+(nb ? ' — <button type="button" class="link-btn" data-action="ecrire-groupe" data-mailto="'+mailtoHref+'">✉ Écrire au groupe</button>' : '')+'</div>'
         + membresHtml
@@ -5018,6 +5049,7 @@
     }
     else if(action==="delete-groupe"){
       var groupeNom = el.getAttribute("data-groupe");
+      if(GROUPES_PROTEGES.indexOf(groupeNom) !== -1) return;
       if(!confirm("Retirer le groupe « "+groupeNom+" » de la liste proposée ? Les bénévoles/missions qui l'ont déjà ne seront pas modifiés.")) return;
       var nouvelleListeGroupes = state.groupes.filter(function(g){ return g !== groupeNom; });
       setDoc(doc(db,"parametres","poles"), {groupes: nouvelleListeGroupes}, {merge:true}).catch(reportError);
@@ -5158,7 +5190,7 @@
     }
     else if(action==="tout-cocher-groupes-candidature"){
       var cIdTout = el.getAttribute("data-id");
-      candidaturesGroupesChoisis[cIdTout] = state.groupes.slice();
+      candidaturesGroupesChoisis[cIdTout] = groupesPourFichesBenevoles();
       renderCandidatures();
     }
     else if(action==="tout-decocher-groupes-candidature"){
@@ -6286,7 +6318,9 @@
         : STATUTS_MISSIONS.slice();
       // Groupes (A6, 23/09/2026) : même principe que poles/statutsMissions
       // ci-dessus, dans le même document de configuration.
-      state.groupes = (snap.exists() && Array.isArray(snap.data().groupes) && snap.data().groupes.length) ? snap.data().groupes : GROUPES.slice();
+      var groupesEnregistres = (snap.exists() && Array.isArray(snap.data().groupes) && snap.data().groupes.length) ? snap.data().groupes : GROUPES.slice();
+      // Les trois groupes protégés d'abord (ordre fixe), puis les autres.
+      state.groupes = GROUPES_PROTEGES.concat(groupesEnregistres.filter(function(g){ return GROUPES_PROTEGES.indexOf(g) === -1; }));
       renderAll();
     }, function(){ /* pas encore de liste personnalisée : on garde les valeurs par défaut */ });
   }
