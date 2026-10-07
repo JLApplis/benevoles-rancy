@@ -949,6 +949,41 @@
     return state.benevoles.find(function(b){ return b.id === id; });
   }
 
+  // A3 (07/10/2026, demande de Jluc via le Directeur) : un bénévole identifié
+  // voit sur la carte d'une mission qui est inscrit, sous la forme « Jean D. »
+  // (prénom avec majuscule initiale, première lettre du nom en majuscule suivie
+  // d'un point) — assez pour que des bénévoles qui se connaissent se
+  // reconnaissent, sans nom complet. Ce texte est enregistré dans le champ
+  // "affichage" de chaque inscription (collection affectations) : un
+  // visiteur ne peut pas lire les fiches des autres bénévoles (règles
+  // Firestore), donc il ne pourrait pas le calculer lui-même. Les
+  // Gestionnaires/Directeur continuent de voir le nom complet.
+  function libelleInscrit(b){
+    var prenom = String(b.prenom||"").trim().toLowerCase()
+      .replace(/(^|[\s'-])([^\s'-])/g, function(m, sep, c){ return sep + c.toUpperCase(); });
+    var nom = String(b.nom||"").trim();
+    var initiale = nom ? nom.charAt(0).toUpperCase() + "." : "";
+    return (prenom + (initiale ? " " + initiale : "")).trim();
+  }
+  // Remplit (ou corrige, si une fiche a été renommée) le champ "affichage" des
+  // inscriptions existantes. Réservé au Directeur connecté ; écriture directe
+  // (updateDocFirestore) pour ne pas déclencher le rappel d'export (A1) :
+  // c'est une mise à jour automatique, pas une modification faite par lui.
+  var affichagesEnCours = {};
+  function completerAffichagesInscrits(){
+    if(role !== "directeur") return;
+    state.affectations.forEach(function(a){
+      if(affichagesEnCours[a.id]) return;
+      var b = benevoleById(a.benevoleId);
+      if(!b) return;
+      var lib = libelleInscrit(b);
+      if(!lib || a.affichage === lib) return;
+      affichagesEnCours[a.id] = true;
+      updateDocFirestore(doc(db,"affectations", a.id), {affichage: lib})
+        .then(function(){ delete affichagesEnCours[a.id]; }, function(){ delete affichagesEnCours[a.id]; });
+    });
+  }
+
   function missionById(id){
     return state.missions.find(function(m){ return m.id === id; });
   }
@@ -2384,6 +2419,16 @@
           + '<div class="inscrit-actions">'+actionsHtml+'</div></div>';
       }).join("");
       inscritsListeHtml = '<div class="inscrits-list">'+(inscritsHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>';
+    } else if(moiBenevoleId){
+      // A3 : bénévole identifié — liste des inscrits sous la forme "Jean D."
+      // (champ "affichage" de l'inscription). Une inscription sans ce champ
+      // (pas encore complétée par le Directeur) apparaît comme "un·e bénévole".
+      var inscritsPublicHtml = inscrits.map(function(a){
+        var texte = a.affichage || "un·e bénévole";
+        var ini = a.affichage ? (a.affichage.charAt(0) + ((a.affichage.match(/ (\S)\.$/)||[])[1]||"")).toUpperCase() : "?";
+        return '<div class="inscrit-row"><div class="inscrit-name"><span class="avatar">'+escapeHtml(ini)+'</span>'+escapeHtml(texte)+'</div></div>';
+      }).join("");
+      inscritsListeHtml = '<div class="inscrits-list">'+(inscritsPublicHtml || '<div class="benevole-contact">Personne d\'inscrit pour le moment.</div>')+'</div>';
     }
 
     var selectHtml;
@@ -4692,7 +4737,8 @@
       if(missionEstPassee(missionById(missionId))) return;
       var sel = document.getElementById("sel-"+missionId);
       if(sel && sel.value){
-        addDoc(collection(db,"affectations"), {missionId:missionId, benevoleId:sel.value, statut:"inscrit"}).catch(reportError);
+        var benevoleInscrit = benevoleById(sel.value);
+        addDoc(collection(db,"affectations"), {missionId:missionId, benevoleId:sel.value, statut:"inscrit", affichage: benevoleInscrit ? libelleInscrit(benevoleInscrit) : ""}).catch(reportError);
       }
     }
     else if(action==="inscrire-moi"){
@@ -4712,7 +4758,7 @@
         // affiché dans un onglet ouvert avant que la fiche ne passe inactive).
         if(!moiPourLog || !moiPourLog.actif) return;
         var missionPourLog = missionById(missionIdMoi);
-        addDoc(collection(db,"affectations"), {missionId:missionIdMoi, benevoleId:moiBenevoleId, statut:"inscrit"}).then(function(){
+        addDoc(collection(db,"affectations"), {missionId:missionIdMoi, benevoleId:moiBenevoleId, statut:"inscrit", affichage: libelleInscrit(moiPourLog)}).then(function(){
           logHistoriquePublic(
             "inscription_publique",
             missionPourLog ? libelleMission(missionPourLog) : missionIdMoi,
@@ -6042,6 +6088,7 @@
       state.benevoles = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
       sortBenevoles();
       renderAll();
+      completerAffichagesInscrits();
     }, function(){ /* accès révoqué : silencieux */ });
     unsubGestionnaires = onSnapshot(collection(db,"gestionnaires"), function(snap){
       state.gestionnaires = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); })
@@ -6309,6 +6356,7 @@
     unsubAffectations = onSnapshot(collection(db,"affectations"), function(snap){
       state.affectations = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
       renderAll();
+      completerAffichagesInscrits();
     }, reportError);
 
     unsubParametres = onSnapshot(doc(db,"parametres","poles"), function(snap){
