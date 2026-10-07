@@ -561,7 +561,8 @@
     sendPasswordResetEmail, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
   import {
-    getFirestore, collection, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, doc, getDoc, serverTimestamp
+    getFirestore, collection, onSnapshot, addDoc as addDocFirestore, setDoc as setDocFirestore,
+    updateDoc as updateDocFirestore, deleteDoc as deleteDocFirestore, doc, getDoc, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -656,6 +657,24 @@
 
   // role: "public" | "gestionnaire" | "directeur"
   var role = "public";
+
+  /* A1 — Rappel d'export à la fermeture : on mémorise si le Directeur a modifié la base depuis le dernier export. */
+  var baseModifieeDepuisExport = false;
+  function suiviModification(promesse){
+    if(promesse && promesse.then){
+      promesse.then(function(){ if(role === "directeur"){ baseModifieeDepuisExport = true; } }, function(){});
+    }
+    return promesse;
+  }
+  function addDoc(){ return suiviModification(addDocFirestore.apply(null, arguments)); }
+  function setDoc(){ return suiviModification(setDocFirestore.apply(null, arguments)); }
+  function updateDoc(){ return suiviModification(updateDocFirestore.apply(null, arguments)); }
+  function deleteDoc(){ return suiviModification(deleteDocFirestore.apply(null, arguments)); }
+  window.addEventListener("beforeunload", function(e){
+    if(!baseModifieeDepuisExport) return;
+    e.preventDefault();
+    e.returnValue = "";
+  });
   var moiNom = "";
   var moiUid = null;
   // Email du Gestionnaire/Directeur connecté (ajouté le 23/09/2026, demande
@@ -3650,11 +3669,43 @@
           : '<div class="benevole-contact">Tous les bénévoles sont déjà dans ce groupe.</div>';
       }
 
+      // A2 (07/10/2026, demande de Jluc) : le groupe "Gestionnaires" n'est
+      // plus alimenté par des fiches bénévoles (un Gestionnaire n'est pas un
+      // bénévole) mais directement par les comptes Gestionnaire ACTIFS de la
+      // section Équipe (collection gestionnaires) : mêmes adresses mail pour
+      // "Écrire au groupe" (en CCI). Les comptes Directeur n'y figurent pas
+      // (salariés). Aucune croix ni "+ Ajouter" : la liste suit la section
+      // Équipe (ajout/désactivation de comptes). Si une ancienne fiche
+      // bénévole est encore cochée dans ce groupe, elle est ignorée ici
+      // (évite les doublons) et reste visible dans l'onglet Bénévoles.
+      var nomGroupeEquipe = "Gestionnaires";
+      var libelleMembres = "bénévole";
+      if(g === nomGroupeEquipe){
+        var equipeGestionnaires = state.gestionnaires
+          .filter(function(x){ return x.role !== "directeur" && x.actif; })
+          .sort(function(a,b){
+            return (a.nom||"").localeCompare(b.nom||"", "fr", {sensitivity:"base"})
+              || (a.prenom||"").localeCompare(b.prenom||"", "fr", {sensitivity:"base"});
+          });
+        emailsGroupe = equipeGestionnaires.filter(function(x){ return x.email; }).map(function(x){ return x.email; });
+        nb = emailsGroupe.length;
+        mailtoHref = nb ? ('mailto:?bcc=' + encodeURIComponent(emailsGroupe.join(","))) : "";
+        libelleMembres = "gestionnaire";
+        membresHtml = equipeGestionnaires.length
+          ? '<div class="inscrits-list">' + equipeGestionnaires.map(function(x){
+              var ini = (((x.prenom||"")[0]||"") + ((x.nom||"")[0]||"")).toUpperCase();
+              return '<div class="inscrit-row"><div class="inscrit-name"><span class="avatar">'+escapeHtml(ini)+'</span>'
+                + escapeHtml(((x.prenom||"")+' '+(x.nom||"")).trim()) + '</div></div>';
+            }).join("") + '</div>'
+          : '<div class="benevole-contact">Aucun gestionnaire actif pour l\'instant.</div>';
+        ajoutHtml = "";
+      }
+
       return '<div class="card">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span class="benevole-name">'+escapeHtml(g)+'</span>'
         + (role === "directeur" ? '<button class="btn-danger-ghost" data-action="delete-groupe" data-groupe="'+escapeHtml(g)+'" title="Retirer ce groupe">✕</button>' : '')
         + '</div>'
-        + '<div class="benevole-contact">'+nb+' bénévole'+(nb>1?'s':'')+' actif'+(nb>1?'s':'')+' avec email'+(nb ? ' — <button type="button" class="link-btn" data-action="ecrire-groupe" data-mailto="'+mailtoHref+'">✉ Écrire au groupe</button>' : '')+'</div>'
+        + '<div class="benevole-contact">'+nb+' '+libelleMembres+(nb>1?'s':'')+' actif'+(nb>1?'s':'')+' avec email'+(nb ? ' — <button type="button" class="link-btn" data-action="ecrire-groupe" data-mailto="'+mailtoHref+'">✉ Écrire au groupe</button>' : '')+'</div>'
         + membresHtml
         + ajoutHtml
         + '</div>';
@@ -4908,6 +4959,7 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      baseModifieeDepuisExport = false;
     }
     else if(action==="toggle-gestionnaire"){
       var g = state.gestionnaires.find(function(x){ return x.id === el.getAttribute("data-id"); });
@@ -5410,53 +5462,19 @@
       // Secteurs (29/09/2026, demande de Jluc) : voir le commentaire détaillé
       // sur le champ correspondant du formulaire, plus haut dans ce fichier.
       var polesChoisis = Array.prototype.slice.call(fg.querySelectorAll('input[name="pole"]:checked')).map(function(cb){ return cb.value; });
-      // Correctif (25/09/2026, demande de Jluc) : un Gestionnaire/Directeur
-      // n'apparaissait jamais dans l'onglet Groupes (ni dans le mailto
-      // "Écrire au groupe"), qui ne regarde que la collection benevoles —
-      // du coup impossible de lui envoyer un mail de convocation par ce
-      // biais. On crée maintenant AUSSI, automatiquement, une fiche
-      // bénévole pour la personne, avec la case du groupe "Administrateurs"
-      // (Directeur) ou "Gestionnaires" (Gestionnaire) déjà cochée — les deux
-      // groupes par défaut de l'appli, prévus pour ça. Si ces groupes sont
-      // renommés ou supprimés dans Paramètres/Groupes, ce rattachement
-      // automatique ne retrouve plus son groupe (comme n'importe quelle
-      // fiche dont le groupe a été renommé) : à garder en tête si Jluc les
-      // renomme un jour.
-      //
-      // Modifié le 26/09/2026 (demande de Jluc) : le formulaire distingue
-      // maintenant Prénom et Nom (au lieu d'un seul champ "Nom complet"),
-      // stockés séparément sur la fiche gestionnaires ET sur la fiche
-      // bénévole créée automatiquement — pour rester homogène avec le
-      // reste de l'appli (fiches bénévoles, tris, affichages "Prénom Nom").
-      // Un compte gestionnaire créé AVANT ce changement ne possède qu'un
-      // champ "nom" (le nom complet saisi à l'époque) et aucun "prenom" :
-      // il continue de s'afficher correctement (voir affichages ci-dessous,
-      // qui gèrent un "prenom" manquant), mais sans être scindé
-      // rétroactivement — aucune fiche existante n'a été modifiée par ce
-      // changement.
-      var emailIdBenevole = email.toLowerCase();
-      var groupeAuto = roleChoisi === "directeur" ? "Administrateurs" : "Gestionnaires";
+      // A2 (06/10/2026, demande du Directeur des Rancy via Jluc) : un
+      // Gestionnaire/Directeur n'est PAS un bénévole. On ne crée donc plus
+      // aucune fiche bénévole à la création d'un compte (avant : une fiche
+      // était créée automatiquement dans le groupe "Administrateurs" ou
+      // "Gestionnaires", correctif du 25/09/2026). Conséquence connue : ces
+      // comptes n'apparaissent plus dans l'onglet Groupes (qui ne regarde que
+      // la collection benevoles) ni dans le mailto "Écrire au groupe". Les
+      // fiches déjà créées avant ce changement ne sont pas touchées : Jluc
+      // les supprime lui-même (bouton "Supprimer" de la liste des bénévoles).
       createUserWithEmailAndPassword(secondaryAuth, email, code).then(function(cred){
         var newUid = cred.user.uid;
         return setDoc(doc(db,"gestionnaires", newUid), {
           prenom: prenom, nom: nom, email: email, actif: true, role: roleChoisi, poles: polesChoisis, creeLe: serverTimestamp()
-        }).then(function(){
-          // Ne jamais écraser une fiche bénévole déjà existante sous cet
-          // email (ex. quelqu'un qui était déjà bénévole avant d'être promu
-          // Gestionnaire) : on ne crée que si elle n'existe pas encore.
-          return getDoc(doc(db,"benevoles", emailIdBenevole)).then(function(snapBenevole){
-            if(snapBenevole.exists()) return;
-            return setDoc(doc(db,"benevoles", emailIdBenevole), {
-              prenom: prenom,
-              nom: nom,
-              email: email,
-              tel: "",
-              poles: [],
-              groupes: [groupeAuto],
-              actif: true,
-              dateCreation: serverTimestamp()
-            });
-          });
         }).then(function(){
           return signOut(secondaryAuth);
         }).then(function(){
@@ -6172,7 +6190,7 @@
       return (m1.date||"").localeCompare(m2.date||"") || (m1.debut||"").localeCompare(m2.debut||"");
     });
     var ecritures = sansNumero.map(function(m, idx){
-      return updateDoc(doc(db,"missions", m.id), { numero: base + idx + 1 }).catch(function(){});
+      return updateDocFirestore(doc(db,"missions", m.id), { numero: base + idx + 1 }).catch(function(){});
     });
     Promise.all(ecritures).then(function(){ numerotationEnCours = false; });
   }
@@ -6205,7 +6223,7 @@
     if(!aBasculer.length) return;
     verificationStatutEnCours = true;
     var ecritures = aBasculer.map(function(m){
-      return updateDoc(doc(db,"missions", m.id), { statut: "À vérifier" }).catch(function(){});
+      return updateDocFirestore(doc(db,"missions", m.id), { statut: "À vérifier" }).catch(function(){});
     });
     Promise.all(ecritures).then(function(){ verificationStatutEnCours = false; });
   }
