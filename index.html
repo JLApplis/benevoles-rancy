@@ -2,7 +2,31 @@
 <!--
   BENEVOLES RANCY — application de gestion des bénévoles et des missions
   de la Maison Pour Tous des Rancy (Lyon).
-  Copyright (C) 2026  JLApplis
+  Version 1.3 — 07/10/2026
+  Copyright (C) 2026  JLApplis (contact@jlapplis.fr)
+
+  Fichier unique (HTML + JavaScript) utilisant Firebase (Authentication
+  anonyme et Firestore). Sur GitHub, ce fichier doit s'appeler index.html.
+
+  Version 1.3 (07/10/2026), suite à la réunion avec le Directeur du 06/10/2026 :
+   A1  Rappel d'export à la fermeture (boîte « Quitter le site ? » du navigateur)
+       si le Directeur a modifié la base depuis le dernier export.
+   A2  Les gestionnaires ne sont pas des bénévoles : plus de fiche bénévole
+       créée avec un compte gestionnaire, plus d'inscription aux missions.
+   A3  Carte de mission : liste des inscrits au format « Jean D. »
+       (réservée aux bénévoles identifiés ; champ « affichage » de l'inscription).
+   A4  Bénévole identifié : missions de ses secteurs en premier
+       (blocs « Vos secteurs » puis « Autres missions »).
+   A5  Bénévole identifié : bouton « Masquer » sur chaque mission
+       (mémorisé dans son navigateur) et lien « Les réafficher ».
+   A6  Bénévole identifié : bouton « Voir seulement mes missions ».
+   A7  Bénévole identifié : bouton « Supprimer tous les filtres » (A5 et A6).
+   Groupes : « Direction », « Gestionnaires » et « Administrateurs » sont
+   protégés (non supprimables, toujours en tête). « Direction » et
+   « Gestionnaires » sont alimentés automatiquement par les comptes de
+   l'onglet Équipe ; ils ne sont pas proposés sur les fiches bénévoles mais
+   restent choisissables pour une mission (mail d'alerte aux comptes concernés).
+   Aucune règle Firestore modifiée dans cette version.
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -3547,7 +3571,7 @@
   // connecté (parRole "public") s'affichait à tort comme "Gestionnaire".
   function libelleRoleHistorique(parRole){
     if(parRole === "directeur") return "Directeur";
-    if(parRole === "public") return "Visiteur";
+    if(parRole === "public") return "Bénévole";
     return "Gestionnaire";
   }
 
