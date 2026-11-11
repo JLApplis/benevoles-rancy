@@ -2,7 +2,7 @@
 <!--
   BENEVOLES RANCY — application de gestion des bénévoles et des missions
   de la Maison Pour Tous des Rancy (Lyon).
-  Version 1.4 — 01/11/2026
+  Version 1.4 — 01/11/2026 (correctifs C1 à C12), complétée les 10 et 11/11/2026 (D1 à D7, C13)
   Copyright (C) 2026  JLApplis (contact@jlapplis.fr)
 
   Fichier unique (HTML + JavaScript) utilisant Firebase (Authentication
@@ -90,6 +90,17 @@
        l'Historique (« Inscrit ajouté sur une mission passée »).
    D7  Plus de changement de couleur des lignes de tableau au survol de la
        souris (Missions, Bénévoles…) ; elles restent cliquables.
+
+  Correctif du 11/11/2026 :
+   C13 Mission passée avec plus d'inscrits que de places (possible depuis
+       D6) : l'enregistrement était refusé (« on ne peut pas descendre sous
+       le nombre d'inscrits »), donc impossible de la classer « Terminée » ou
+       d'y laisser un commentaire. Le contrôle ne s'applique plus qu'aux
+       missions non passées (sur une mission passée, le champ Places est
+       verrouillé). Nettoyage : deux traitements de clic devenus inutiles
+       depuis D3 retirés, commentaires périmés mis à jour, message de fin
+       d'import complété (statuts et groupes), « M? » au lieu de
+       « Mundefined » dans l'Historique de D6 si la mission n'a pas de numéro.
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -1299,11 +1310,10 @@
   //   ouvre ensuite le mailto combiné voulu (voir mailtoGroupesMission).
   // - Mission SANS groupe → PAS de mailto (liste potentiellement trop
   //   longue, tronquée par certains logiciels de messagerie, voir A5) :
-  //   ouvre la même fenêtre "Alerter les bénévoles" (liste copiable de TOUS
-  //   les bénévoles) que celle proposée automatiquement juste après la
-  //   création (A5), mais ici accessible n'importe quand via l'action
-  //   data-action="alerter-benevoles-mission" (voir le gestionnaire de clic
-  //   général) plutôt qu'un lien mailto.
+  //   ouvre la fenêtre "Alerter les bénévoles" (liste copiable de TOUS
+  //   les bénévoles). Depuis D3 (10/11/2026), elle ne s'ouvre plus
+  //   automatiquement à la création : on y accède par "Envoyer un mail" →
+  //   "Tous les bénévoles" (choixMailGroupeModaleHtml).
   // Basé sur missionEstPassee() (date/heure de fin dépassée), pas sur le
   // champ Statut (texte personnalisable dans Paramètres, pas assez fiable) :
   // précisé par Jluc le 23/09/2026 ("toute mission pas encore passée"),
@@ -1742,9 +1752,8 @@
     // est dépassée n'est plus proposée (demande de Jluc, voir aussi
     // missionsAffichees dans renderMissions()) — ces deux compteurs restent
     // donc cohérents avec la liste affichée juste en dessous, sur la même
-    // page de garde. Gestionnaire/Directeur gardent aVenir/places tels
-    // quels (calculés plus haut), sans ce filtre : voir toutes les missions
-    // incomplètes, même passées, les aide à repérer celles jamais closes.
+    // page de garde. Gestionnaire/Directeur : aVenir/places calculés plus
+    // haut, sur les missions non passées seulement depuis D4 (10/11/2026).
     // Groupes (A6, 23/09/2026) : une mission réservée à un groupe ne doit
     // pas non plus être comptée dans ces tuiles publiques — sinon le nombre
     // affiché ne correspondrait plus à ce que la liste montre juste en
@@ -3150,7 +3159,7 @@
   // fiche bénévole — dans tous les cas elle s'ouvre directement modifiable,
   // sans détour par une modale "juste voir" (demande de Jluc). Elle
   // s'affiche par-dessus l'écran actuel sans jamais changer d'onglet ; la
-  // fermer (✕, Annuler, clic sur le fond ou Échap) fait réapparaître
+  // fermer (✕ ou Annuler seulement depuis D2) fait réapparaître
   // l'onglet en dessous (Bénévoles, Missions, peu importe : on n'a jamais
   // bougé). Présentation inspirée des modales de gestion de PICS (demande
   // de Jluc) : bandeau de titre coloré, et champs identifiants (Titre,
@@ -3360,8 +3369,8 @@
       // ici aussi, directement dans la modale de modification — Jluc l'a
       // cherché à cet endroit en testant (déjà présent dans la vue cartes et
       // le tableau Missions, voir missionCardHtml/renderMissions), donc
-      // ajouté là où il regarde en premier. boutonEnvoyerMailMissionHtml
-      // renvoie "" toute seule si la mission n'a pas de Groupe ou est passée.
+      // ajouté là où il regarde en premier. Depuis D3, boutonEnvoyerMailMissionHtml
+      // renvoie le bouton pour toute mission (passée comprise), sauf en public.
       + (missionEdit ? boutonEnvoyerMailMissionHtml(missionEdit) : '')
       + (missionEdit && role === "directeur" ? '<button type="button" class="btn btn-badge mission-supprimer btn-sm" data-action="delete-mission" data-id="'+missionEdit.id+'">Supprimer la mission</button>' : '')
       + (missionEdit ? '<button type="button" class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-fiche-mission" data-id="'+missionEdit.id+'">Imprimer la fiche</button>' : '')
@@ -5031,7 +5040,7 @@
       if(sel && sel.value){
         var benevoleInscrit = benevoleById(sel.value);
         addDoc(collection(db,"affectations"), {missionId:missionId, benevoleId:sel.value, statut:"inscrit", affichage: benevoleInscrit ? libelleInscrit(benevoleInscrit) : ""}).then(function(){
-          if(ajoutTardif && benevoleInscrit) logHistorique("inscription_mission_passee", (benevoleInscrit.prenom||"")+" "+(benevoleInscrit.nom||"")+" — M"+missionPourInscrire.numero+" — "+missionPourInscrire.titre);
+          if(ajoutTardif && benevoleInscrit) logHistorique("inscription_mission_passee", (benevoleInscrit.prenom||"")+" "+(benevoleInscrit.nom||"")+" — M"+(missionPourInscrire.numero||"?")+" — "+(missionPourInscrire.titre||""));
         }).catch(reportError);
       }
     }
@@ -5151,19 +5160,6 @@
       monHistoriqueOpen = false;
       renderModal();
     }
-    else if(action==="alerter-benevoles-mission"){
-      // Bouton "Envoyer un mail" sur une mission SANS Groupe (complément du
-      // 23/09/2026, voir boutonEnvoyerMailMissionHtml) : réutilise la même
-      // fenêtre "Alerter les bénévoles" (liste copiable) que celle ouverte
-      // automatiquement à la création (A5), mais déclenchable n'importe
-      // quand, sur n'importe quelle mission non passée.
-      var missionPourAlerte = missionById(el.getAttribute("data-id"));
-      if(missionPourAlerte){
-        alerteMissionOuverte = {numero: missionPourAlerte.numero, titre: missionPourAlerte.titre};
-        alerteMissionCopieOk = false;
-        renderModal();
-      }
-    }
     else if(action==="fermer-alerte-mission"){
       alerteMissionOuverte = null; alerteMissionCopieOk = false; renderModal();
     }
@@ -5202,22 +5198,6 @@
       if(missionPourChoixMail){
         choixMailGroupeMission = {id: missionPourChoixMail.id, numero: missionPourChoixMail.numero, titre: missionPourChoixMail.titre};
         renderModal();
-      }
-    }
-    else if(action==="envoyer-mail-commentaire-mission"){
-      // Ajouté le 25/09/2026 (demande de Jluc) : bouton "Envoyer un mail"
-      // sur une mission "À vérifier" à Groupes (voir
-      // boutonEnvoyerMailMissionHtml) — pas de fenêtre de choix ici
-      // (Nouvelle/Modifiée ne conviennent pas à une mission déjà passée),
-      // ouverture directe du mailto "commentaire" (voir
-      // mailtoGroupesMission). Synchrone avec le clic, comme tous les
-      // autres mailto de l'appli (voir le commentaire dans ouvrirMailto :
-      // un mailto déclenché après un .then() asynchrone est bloqué comme
-      // pop-up par certains navigateurs).
-      var missionPourMailCommentaire = missionById(el.getAttribute("data-id"));
-      if(missionPourMailCommentaire){
-        var mailtoCommentaire = mailtoGroupesMission(missionPourMailCommentaire, "commentaire");
-        if(mailtoCommentaire){ ouvrirLienMailto(mailtoCommentaire); }
       }
     }
     else if(action==="envoyer-mail-groupe-mission"){
@@ -6007,9 +5987,9 @@
           commentaireSaisi ? ("Motif : " + commentaireSaisi) : "(aucun motif indiqué)",
           moiPourLogS ? (moiPourLogS.prenom+" "+moiPourLogS.nom) : ""
         );
-        // Pas d'écoute en direct (onSnapshot) sur la fiche du visiteur
-        // public (voir rafraichirMoiBenevole, un simple getDoc ponctuel) :
-        // on met donc à jour la copie locale nous-mêmes, sinon l'écran
+        // Depuis C3, la fiche du visiteur identifié est suivie en direct ;
+        // on garde malgré tout cette mise à jour immédiate de la copie
+        // locale (sans attendre le retour de la base), sinon l'écran
         // continuerait d'afficher "Supprimer ma fiche" jusqu'au prochain
         // rechargement.
         if(moiPourLogS){ moiPourLogS.demandeSuppression = true; moiPourLogS.demandeSuppressionCommentaire = commentaireSaisi; }
@@ -6184,8 +6164,12 @@
         // M2...), sa date de création et son créateur d'origine — seuls les
         // champs du formulaire changent. On refuse de passer sous le nombre
         // de bénévoles déjà inscrits, pour ne pas créer de surbooking.
+        // C13 (11/11/2026) : contrôle limité aux missions NON passées. Sur une
+        // mission passée, le champ Places est verrouillé, et D6 permet au
+        // Directeur d'y ajouter un inscrit au-delà des places : le contrôle
+        // empêchait alors de la classer ou de la commenter.
         var nbInscritsActuels = inscritsDe(missionEnEdition).length;
-        if(placesSaisies < nbInscritsActuels){
+        if(!missionEstPassee(missionById(missionEnEdition)) && placesSaisies < nbInscritsActuels){
           missionFormError = "Impossible : " + nbInscritsActuels + " bénévole(s) déjà inscrit(s), on ne peut pas descendre en dessous.";
           renderModal();
           return;
@@ -6220,8 +6204,8 @@
           // mission reste ouverte pour permettre d'enchaîner sur "Envoyer un
           // mail" (déjà présent plus bas dans cette même modale) sans avoir
           // à la rouvrir. missionEnEdition reste inchangé ; missionModifOk
-          // affiche une confirmation. Seul un clic explicite sur Annuler/✕/
-          // Échap referme la modale (voir ces actions ci-dessus).
+          // affiche une confirmation. Seul un clic explicite sur Annuler/✕
+          // referme la modale (D2 : plus de fermeture par Échap ni clic à côté).
           missionFormError = ""; missionModifOk = true; renderModal();
         }).catch(reportError);
       } else {
@@ -6284,9 +6268,7 @@
   function importerDonnees(data){
     var nbPolesAjoutes = 0;
     var premierLot = [];
-    // Restaure les secteurs du fichier exporté : ajoutés à la liste actuelle
-    // sans rien retirer (même logique que pour bénévoles/missions/inscriptions
-    // ci-dessous — un import ne supprime jamais ce qui existe déjà en ligne).
+    // Un import ne supprime jamais ce qui existe déjà en ligne.
     // Secteurs, statuts et groupes du fichier : ajoutés à la liste actuelle,
     // sans rien retirer (C9 : statuts et groupes ajoutés le 01/11/2026).
     function fusionnerListes(actuelle, fichier){
@@ -6295,11 +6277,14 @@
     var majParametres = {};
     var polesFusionnes = fusionnerListes(state.poles, data.poles);
     nbPolesAjoutes = polesFusionnes.length - state.poles.length;
+    var nbStatutsAjoutes = 0, nbGroupesAjoutes = 0; // C13 : pour le message de fin
     if(nbPolesAjoutes > 0) majParametres.liste = polesFusionnes;
     var statutsFusionnes = fusionnerListes(state.statutsMissions, data.statutsMissions);
-    if(statutsFusionnes.length > state.statutsMissions.length) majParametres.statutsMissions = statutsFusionnes;
+    nbStatutsAjoutes = statutsFusionnes.length - state.statutsMissions.length;
+    if(nbStatutsAjoutes > 0) majParametres.statutsMissions = statutsFusionnes;
     var groupesFusionnes = fusionnerListes(state.groupes, data.groupes);
-    if(groupesFusionnes.length > state.groupes.length) majParametres.groupes = groupesFusionnes;
+    nbGroupesAjoutes = groupesFusionnes.length - state.groupes.length;
+    if(nbGroupesAjoutes > 0) majParametres.groupes = groupesFusionnes;
     if(Object.keys(majParametres).length){
       premierLot.push(setDoc(doc(db,"parametres","poles"), majParametres, {merge:true}));
     }
@@ -6331,7 +6316,9 @@
       return Promise.all(lotAffectations);
     }).then(function(){
       importStatus = "Import terminé : " + (data.benevoles||[]).length + " bénévole(s), " + (data.missions||[]).length + " mission(s), " + (data.affectations||[]).length + " inscription(s)"
-        + (nbPolesAjoutes > 0 ? ", " + nbPolesAjoutes + " secteur(s) ajouté(s)" : "") + " traité(s).";
+        + (nbPolesAjoutes > 0 ? ", " + nbPolesAjoutes + " secteur(s) ajouté(s)" : "")
+        + (nbStatutsAjoutes > 0 ? ", " + nbStatutsAjoutes + " statut(s) ajouté(s)" : "")
+        + (nbGroupesAjoutes > 0 ? ", " + nbGroupesAjoutes + " groupe(s) ajouté(s)" : "") + " traité(s).";
       importError = false;
       logHistorique("import_donnees", importStatus);
       renderDonnees();
