@@ -2,7 +2,8 @@
 <!--
   BENEVOLES RANCY — application de gestion des bénévoles et des missions
   de la Maison Pour Tous des Rancy (Lyon).
-  Version 1.4 — 01/11/2026 (correctifs C1 à C12), complétée les 10 et 11/11/2026 (D1 à D7, C13)
+  Version 1.5 — 14/11/2026 : version 1.4 (C1 à C12 du 01/11/2026, D1 à D7 et C13 des 10 et 11/11/2026)
+  + correctifs de l'audit du 14/11/2026 (C14 à C21).
   Copyright (C) 2026  JLApplis (contact@jlapplis.fr)
 
   Fichier unique (HTML + JavaScript) utilisant Firebase (Authentication
@@ -101,6 +102,31 @@
        depuis D3 retirés, commentaires périmés mis à jour, message de fin
        d'import complété (statuts et groupes), « M? » au lieu de
        « Mundefined » dans l'Historique de D6 si la mission n'a pas de numéro.
+
+  Version 1.5 — correctifs du 14/11/2026 (audit) :
+   C14 Identifiants (fiches, missions, inscriptions, candidatures…) échappés
+       avant d'être insérés dans la page : un identifiant contenant du code
+       HTML (créé exprès par un visiteur) ne peut plus s'exécuter chez le
+       Directeur.
+   C15 « Inscrire » / « Ajouter l'inscrit » lit la liste placée à côté du
+       bouton : en vue cartes, la fenêtre de la mission prenait la liste de
+       la carte, et pouvait inscrire la mauvaise personne.
+   C16 Un secteur, statut ou groupe retiré des Paramètres n'est plus remplacé
+       en silence à l'enregistrement (mission, fiche bénévole, compte) : la
+       valeur actuelle est conservée (affichée « retiré des Paramètres »).
+   C17 Export : candidatures ajoutées. Import : dates de création restaurées
+       (« Mission créée le », « Fiche créée le »), candidatures absentes
+       recréées.
+   C18 Mission à cheval sur minuit (ex. 22:00–02:00) : elle n'est plus jugée
+       passée avant d'avoir commencé ; la fin compte pour le lendemain.
+   C19 Tuile « Missions à vérifier » : repasse en vue tableau (le filtre ne
+       s'appliquait pas en vue cartes).
+   C20 Ajout manuel d'un bénévole dont l'email a déjà une fiche : refusé avec
+       un message, au lieu d'écraser la fiche existante.
+   C21 Divers : « M? » au lieu de « Mundefined » dans les fenêtres mail ;
+       texte des places d'une mission à groupe corrigé ; une mission sans
+       heure ou sans secteur ne bloque plus l'affichage ; page Droits
+       complétée (D6) ; commentaires périmés mis à jour.
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -599,7 +625,7 @@
 <div class="hero-wrap">
   <div class="hero-inner">
     <img class="hero-logo" src="data:image/png;base64,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" alt="Maison Pour Tous des Rancy">
-    <div class="eyebrow">Maison Pour Tous des Rancy — BENEVOLES RANCY 1.4</div>
+    <div class="eyebrow">Maison Pour Tous des Rancy — BENEVOLES RANCY 1.5</div>
     <h1 class="title">Bénévoles &amp; missions</h1>
     <p class="subtitle">Consultez les missions proposées, inscrivez-vous, et suivez les heures données par les bénévoles. Ce que vous ajoutez ici est visible en direct par tout le monde.</p>
 
@@ -879,9 +905,9 @@
   var monHistoriqueOpen = false;
 
   // Fenêtre "Alerte nouvelle mission" (point A5, demande de Jluc,
-  // 23/09/2026) : s'ouvre automatiquement juste après la CRÉATION d'une
-  // nouvelle mission (jamais après une simple modification), pour proposer
-  // de copier la liste exhaustive des emails de TOUS les bénévoles (pas
+  // 23/09/2026). Depuis D3 (10/11/2026), elle ne s'ouvre plus toute seule à
+  // la création : on y accède par "Envoyer un mail" → "Tous les bénévoles"
+  // (mission sans groupe). Elle propose de copier la liste exhaustive des emails de TOUS les bénévoles (pas
   // seulement les actifs, pas de filtre par groupe — décision explicite de
   // Jluc : "TOUS les bénévoles inscrits doivent recevoir l'alerte"), sauf
   // depuis le 30/09/2026 (A17) un bénévole ayant lui-même coupé les mails
@@ -930,6 +956,12 @@
   var gestionnaireEditId = null;
   var gestionnaireEditError = "";
 
+  // C16 (14/11/2026) : valeurs déjà enregistrées mais absentes des cases à
+  // cocher (retirées des Paramètres, ou groupes de l'Équipe non proposés
+  // sur une fiche) : conservées à l'enregistrement au lieu d'être effacées.
+  function conserverValeursNonProposees(cochees, actuelles, proposees){
+    return cochees.concat((actuelles||[]).filter(function(v){ return proposees.indexOf(v) < 0 && cochees.indexOf(v) < 0; }));
+  }
   function escapeHtml(s){
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
       return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
@@ -962,6 +994,7 @@
   }
 
   function dureeHeures(mission){
+    if(!mission || !mission.debut || !mission.fin) return 0; // C21 : donnée incomplète
     var a = mission.debut.split(":").map(Number);
     var b = mission.fin.split(":").map(Number);
     var d = (b[0]+b[1]/60) - (a[0]+a[1]/60);
@@ -996,6 +1029,9 @@
     if(!mission || !mission.date || !mission.fin) return false;
     var finMs = new Date(mission.date + "T" + mission.fin + ":00").getTime();
     if(isNaN(finMs)) return false;
+    // C18 (14/11/2026) : mission à cheval sur minuit (fin avant le début,
+    // ex. 22:00–02:00) — la fin est le lendemain, comme pour dureeHeures.
+    if(mission.debut && mission.fin < mission.debut) finMs += 24*3600*1000;
     return finMs < Date.now();
   }
 
@@ -1138,6 +1174,7 @@
   }
 
   function hueForPole(pole){
+    pole = String(pole || ""); // C21 : mission sans secteur
     if(POLE_HUES[pole] != null) return POLE_HUES[pole];
     var hash = 0;
     for(var i=0; i<pole.length; i++){ hash = (hash * 31 + pole.charCodeAt(i)) % 360; }
@@ -1289,7 +1326,7 @@
     if(!mailtoGroupesMission(m, "nouvelle")) return m.groupes.map(groupeTag).join("");
     var titreLien = "Écrire à " + m.groupes.join(" + ");
     return m.groupes.map(function(g){
-      return '<button type="button" class="tag" data-action="choisir-mail-mission" data-id="'+m.id+'" title="'+escapeHtml(titreLien)+'" style="background:var(--surface-2);border:none;cursor:pointer;"><span class="dot" style="background:#555;"></span>🔒 '+escapeHtml(g)+'</button>';
+      return '<button type="button" class="tag" data-action="choisir-mail-mission" data-id="'+escapeHtml(m.id)+'" title="'+escapeHtml(titreLien)+'" style="background:var(--surface-2);border:none;cursor:pointer;"><span class="dot" style="background:#555;"></span>🔒 '+escapeHtml(g)+'</button>';
     }).join("");
   }
 
@@ -1334,7 +1371,7 @@
     // D3 (10/11/2026, demande du Directeur) : un seul bouton, sur toute
     // mission (passée comprise), qui ouvre la fenêtre de choix des
     // destinataires — voir choixMailGroupeModaleHtml.
-    return '<button type="button" class="btn btn-badge mission-mail btn-sm" data-action="choisir-mail-mission" data-id="'+m.id+'">✉️ Envoyer un mail</button>';
+    return '<button type="button" class="btn btn-badge mission-mail btn-sm" data-action="choisir-mail-mission" data-id="'+escapeHtml(m.id)+'">✉️ Envoyer un mail</button>';
   }
 
   function selectFiltreGroupeHtml(id, valeurActuelle){
@@ -1922,9 +1959,9 @@
     var pts = Math.round((pointsMap&&pointsMap[b.id]||0)*10)/10;
     var actions = "";
     if(role !== "public"){
-      actions += '<button class="btn btn-ghost btn-sm" data-action="open-benevole-modale" data-id="'+b.id+'">Modifier</button>';
-      actions += '<button class="btn btn-ghost btn-sm" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>';
-      actions += '<button class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'" title="Supprimer">✕</button>';
+      actions += '<button class="btn btn-ghost btn-sm" data-action="open-benevole-modale" data-id="'+escapeHtml(b.id)+'">Modifier</button>';
+      actions += '<button class="btn btn-ghost btn-sm" data-action="toggle-actif" data-id="'+escapeHtml(b.id)+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>';
+      actions += '<button class="btn-danger-ghost" data-action="delete-benevole" data-id="'+escapeHtml(b.id)+'" title="Supprimer">✕</button>';
     }
 
     return '<div class="card">'
@@ -2027,8 +2064,8 @@
         var tags = (b.poles||[]).map(poleTag).join("");
         var groupeTags = (b.groupes||[]).map(groupeTag).join("");
         var coche = !!benevolesSelection[b.id];
-        return '<tr class="mission-row" data-action="open-benevole-modale" data-id="'+b.id+'">'
-          + '<td class="col-select"><input type="checkbox" data-action="toggle-select-benevole" data-id="'+b.id+'" '+(coche?"checked":"")+'></td>'
+        return '<tr class="mission-row" data-action="open-benevole-modale" data-id="'+escapeHtml(b.id)+'">'
+          + '<td class="col-select"><input type="checkbox" data-action="toggle-select-benevole" data-id="'+escapeHtml(b.id)+'" '+(coche?"checked":"")+'></td>'
           + '<td>'+escapeHtml(b.nom)
           + (b.actif ? '' : ' <span class="badge-inactif">Inactif</span>')
           // A3 (22/09/2026) : repère visuel direct dans le tableau, sur le
@@ -2211,18 +2248,18 @@
     // "Groupe" (le mot "groupe" seul suffit, le contexte — case à cocher
     // par groupe — est clair une fois le menu ouvert).
     return '<details class="select-dropdown"'+(ouvert?" open":"")+'>'
-      + '<summary data-action="toggle-menu-groupes-candidature" data-id="'+c.id+'">Groupe'+(choisis.length ? ' ('+choisis.length+')' : '')+' <span class="chevron">▾</span></summary>'
+      + '<summary data-action="toggle-menu-groupes-candidature" data-id="'+escapeHtml(c.id)+'">Groupe'+(choisis.length ? ' ('+choisis.length+')' : '')+' <span class="chevron">▾</span></summary>'
       + '<div class="select-dropdown-panel"'+panneauStyle+'>'
       + '<div class="checkbox-group">'
       + groupesPourFichesBenevoles().map(function(g){
           var coche = choisis.indexOf(g) >= 0;
-          return '<label class="checkbox-chip"><input type="checkbox" data-action="toggle-groupe-candidature" data-id="'+c.id+'" data-groupe="'+escapeHtml(g)+'" '+(coche?"checked":"")+'> '+escapeHtml(g)+'</label>';
+          return '<label class="checkbox-chip"><input type="checkbox" data-action="toggle-groupe-candidature" data-id="'+escapeHtml(c.id)+'" data-groupe="'+escapeHtml(g)+'" '+(coche?"checked":"")+'> '+escapeHtml(g)+'</label>';
         }).join("")
       + '</div>'
       + '<div class="form-actions" style="margin-top:10px;">'
-      + '<button type="button" class="btn btn-ghost btn-sm" data-action="tout-cocher-groupes-candidature" data-id="'+c.id+'">Tout cocher</button>'
-      + '<button type="button" class="btn btn-ghost btn-sm" data-action="tout-decocher-groupes-candidature" data-id="'+c.id+'">Tout décocher</button>'
-      + '<button type="button" class="btn btn-primary btn-sm" data-action="valider-menu-groupes-candidature" data-id="'+c.id+'">Valider</button>'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-action="tout-cocher-groupes-candidature" data-id="'+escapeHtml(c.id)+'">Tout cocher</button>'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-action="tout-decocher-groupes-candidature" data-id="'+escapeHtml(c.id)+'">Tout décocher</button>'
+      + '<button type="button" class="btn btn-primary btn-sm" data-action="valider-menu-groupes-candidature" data-id="'+escapeHtml(c.id)+'">Valider</button>'
       + '</div>'
       + '</div>'
       + '</details>';
@@ -2277,8 +2314,8 @@
         + '<div class="card-footrow" style="flex-wrap:wrap;gap:8px;">'
         + '<span>'+menuGroupesCandidatureHtml(c, true)+'</span>'
         + '<span style="display:flex;gap:6px;flex-wrap:wrap;">'
-        + '<button class="btn btn-danger btn-sm" data-action="refuser-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Refuser</button>'
-        + '<button class="btn btn-primary btn-sm" data-action="valider-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Valider</button>'
+        + '<button class="btn btn-danger btn-sm" data-action="refuser-candidature" data-id="'+escapeHtml(c.id)+'" '+(authReady?"":"disabled")+'>Refuser</button>'
+        + '<button class="btn btn-primary btn-sm" data-action="valider-candidature" data-id="'+escapeHtml(c.id)+'" '+(authReady?"":"disabled")+'>Valider</button>'
         + '</span></div>'
         + '</div>';
     }).join("");
@@ -2321,8 +2358,8 @@
           // déjà utilisé ailleurs dans l'appli pour ce cas.
           + '<td style="white-space:nowrap;"><div style="display:flex;gap:6px;align-items:flex-start;">'
           + menuGroupesCandidatureHtml(c, false)
-          + '<button class="btn btn-danger btn-sm" data-action="refuser-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Refuser</button>'
-          + '<button class="btn btn-primary btn-sm" data-action="valider-candidature" data-id="'+c.id+'" '+(authReady?"":"disabled")+'>Valider</button>'
+          + '<button class="btn btn-danger btn-sm" data-action="refuser-candidature" data-id="'+escapeHtml(c.id)+'" '+(authReady?"":"disabled")+'>Refuser</button>'
+          + '<button class="btn btn-primary btn-sm" data-action="valider-candidature" data-id="'+escapeHtml(c.id)+'" '+(authReady?"":"disabled")+'>Valider</button>'
           + '</div></td>'
           + '</tr>';
       }).join("");
@@ -2544,13 +2581,13 @@
         // "Réalisée" (pas "réalisé", correctif du 26/09/2026 demandé par
         // Jluc) : le mot qualifie la mission (celle-ci a bien eu lieu pour
         // ce bénévole), pas le bénévole lui-même.
-        var actionsHtml = '<label class="realise-toggle"><input type="checkbox" data-action="toggle-realise" data-id="'+a.id+'" '+(a.statut==="realise"?"checked":"")+'> Réalisée</label>'
-          + (a.demandeDesinscription ? '<button type="button" class="link-btn" data-action="traiter-desinscription" data-id="'+a.id+'" title="Ne pas retirer, juste effacer le drapeau">Marquer traité</button>' : '')
+        var actionsHtml = '<label class="realise-toggle"><input type="checkbox" data-action="toggle-realise" data-id="'+escapeHtml(a.id)+'" '+(a.statut==="realise"?"checked":"")+'> Réalisée</label>'
+          + (a.demandeDesinscription ? '<button type="button" class="link-btn" data-action="traiter-desinscription" data-id="'+escapeHtml(a.id)+'" title="Ne pas retirer, juste effacer le drapeau">Marquer traité</button>' : '')
           // Bouton "Supprimer" en toutes lettres (demande de Jluc, 26/09/2026
           // : "crée un btn pour supprimer"), à la place de la simple croix
           // "✕" — même style que les autres boutons de cette modale.
-          + '<button type="button" class="btn btn-badge mission-supprimer btn-sm" data-action="retirer" data-id="'+a.id+'" title="Retirer l\'inscription">Supprimer</button>';
-        return '<div class="inscrit-row"><div class="inscrit-name inscrit-name-clic" data-action="open-benevole-modale" data-id="'+b.id+'" title="Voir la fiche de '+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'"><span class="avatar">'+initiales(b)+'</span>'
+          + '<button type="button" class="btn btn-badge mission-supprimer btn-sm" data-action="retirer" data-id="'+escapeHtml(a.id)+'" title="Retirer l\'inscription">Supprimer</button>';
+        return '<div class="inscrit-row"><div class="inscrit-name inscrit-name-clic" data-action="open-benevole-modale" data-id="'+escapeHtml(b.id)+'" title="Voir la fiche de '+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'"><span class="avatar">'+initiales(b)+'</span>'
           + escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+badgeIndispoHtml+'</div>'
           + '<div class="inscrit-actions">'+actionsHtml+'</div></div>';
       }).join("");
@@ -2592,9 +2629,9 @@
         });
         selectHtml = disponibles.length
           ? (missionPassee ? '<div class="form-hint" style="margin:8px 0 4px;">Mission passée : vous pouvez encore ajouter une personne qui y a participé, puis cocher « Réalisée ».</div>' : '')
-            + '<div class="inscrire-row"><select id="sel-'+m.id+'">'
-            + disponibles.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.nom)+' '+escapeHtml(b.prenom)+'</option>'; }).join("")
-            + '</select><button type="button" class="btn btn-sm" data-action="inscrire" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>'+(missionPassee ? "Ajouter l'inscrit" : "Inscrire")+'</button></div>'
+            + '<div class="inscrire-row"><select id="sel-'+escapeHtml(m.id)+'">'
+            + disponibles.map(function(b){ return '<option value="'+escapeHtml(b.id)+'">'+escapeHtml(b.nom)+' '+escapeHtml(b.prenom)+'</option>'; }).join("")
+            + '</select><button type="button" class="btn btn-sm" data-action="inscrire" data-mission="'+escapeHtml(m.id)+'" '+(authReady?"":"disabled")+'>'+(missionPassee ? "Ajouter l'inscrit" : "Inscrire")+'</button></div>'
           : '<div class="benevole-contact">Tous les bénévoles actifs sont déjà inscrits.</div>';
       }
     } else {
@@ -2612,7 +2649,7 @@
         // pour un bénévole devenu inactif entre-temps.
         selectHtml = moiAffectation.demandeDesinscription
           ? '<div class="benevole-contact">Votre demande de désinscription a bien été transmise, un·e responsable va la traiter.</div>'
-          : '<div class="inscrire-row"><button type="button" class="btn btn-ghost btn-sm" data-action="demander-desinscription" data-id="'+moiAffectation.id+'" '+(authReady?"":"disabled")+'>Je ne suis plus disponible</button></div>';
+          : '<div class="inscrire-row"><button type="button" class="btn btn-ghost btn-sm" data-action="demander-desinscription" data-id="'+escapeHtml(moiAffectation.id)+'" '+(authReady?"":"disabled")+'>Je ne suis plus disponible</button></div>';
       } else if(!moi.actif){
         // Correctif (23/09/2026, signalé par Jluc) : côté Gestionnaire, la
         // liste déroulante "Inscrire" exclut déjà les bénévoles inactifs
@@ -2628,7 +2665,7 @@
         // (voir missionsNonPasseesPublic) — point A1, 22/09/2026.
         selectHtml = '';
       } else {
-        selectHtml = '<div class="inscrire-row"><button type="button" class="btn btn-sm btn-primary" data-action="inscrire-moi" data-mission="'+m.id+'" '+(authReady?"":"disabled")+'>M\'inscrire ('+escapeHtml(moi.prenom)+')</button></div>';
+        selectHtml = '<div class="inscrire-row"><button type="button" class="btn btn-sm btn-primary" data-action="inscrire-moi" data-mission="'+escapeHtml(m.id)+'" '+(authReady?"":"disabled")+'>M\'inscrire ('+escapeHtml(moi.prenom)+')</button></div>';
       }
     }
 
@@ -2684,7 +2721,7 @@
       // A5 : bouton "Masquer" pour un bénévole identifié, sauf sur une mission
       // où il est déjà inscrit (voir renderMissions).
       + (role === "public" && moiBenevoleId && !moiEstInscrit
-          ? '<div style="display:flex;gap:6px;flex-wrap:wrap;"><button type="button" class="btn btn-ghost btn-sm" data-action="masquer-mission" data-id="'+m.id+'" title="Ne plus afficher cette mission">Masquer</button></div>'
+          ? '<div style="display:flex;gap:6px;flex-wrap:wrap;"><button type="button" class="btn btn-ghost btn-sm" data-action="masquer-mission" data-id="'+escapeHtml(m.id)+'" title="Ne plus afficher cette mission">Masquer</button></div>'
           : '')
       + (role !== "public" ? '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
           // Correctif (23/09/2026) : le bouton disait "Modifier" pour
@@ -2698,9 +2735,9 @@
           // lecture seule pour un Gestionnaire — voir missionFormModalHtml
           // (lectureSeule). Le libellé du bouton reflète ce qui va se
           // passer au clic.
-          + '<button class="btn btn-ghost btn-sm" data-action="edit-mission" data-id="'+m.id+'">'+(role === "directeur" ? "Modifier" : "Voir")+'</button>'
+          + '<button class="btn btn-ghost btn-sm" data-action="edit-mission" data-id="'+escapeHtml(m.id)+'">'+(role === "directeur" ? "Modifier" : "Voir")+'</button>'
           + boutonEnvoyerMailMissionHtml(m)
-          + (role === "directeur" ? '<button class="btn-danger-ghost" data-action="delete-mission" data-id="'+m.id+'">Supprimer la mission</button>' : '')
+          + (role === "directeur" ? '<button class="btn-danger-ghost" data-action="delete-mission" data-id="'+escapeHtml(m.id)+'">Supprimer la mission</button>' : '')
           + '</div>' : '')
       + '</div>';
   }
@@ -2876,8 +2913,8 @@
         // sa propre action et n'ouvre pas la modale (elle est retrouvée en
         // priorité par la délégation de clic, voir data-action plus haut).
         var coloreStatut = STATUT_COULEUR[statutMission(m)] || "accent";
-        return '<tr class="mission-row statut-'+coloreStatut+'" data-action="edit-mission" data-id="'+m.id+'">'
-          + '<td class="col-select"><input type="checkbox" data-action="toggle-select-mission" data-id="'+m.id+'" '+(coche?"checked":"")+'></td>'
+        return '<tr class="mission-row statut-'+coloreStatut+'" data-action="edit-mission" data-id="'+escapeHtml(m.id)+'">'
+          + '<td class="col-select"><input type="checkbox" data-action="toggle-select-mission" data-id="'+escapeHtml(m.id)+'" '+(coche?"checked":"")+'></td>'
           + '<td><strong>'+fmtDateCourt(m.date)+'</strong>'
           + '<div class="mission-date-detail">'+fmtDate(m.date)+' · '+m.debut+'–'+m.fin+'</div>'
           // A10 (30/09/2026, demande du Directeur des Rancy) : Prénom/Nom du
@@ -3135,10 +3172,14 @@
       + (value!=null && value!=="" ? ' value="'+escapeHtml(String(value))+'"' : '') + '></div>';
   }
   function missionSelectChampHtml(label,name,options,selected,couleur,desactive){
+    // C16 (14/11/2026) : valeur actuelle retirée des Paramètres → gardée en
+    // tête de liste (sinon le premier choix s'affichait et s'enregistrait).
+    var valeurRetiree = selected && options.indexOf(selected) < 0 ? selected : null;
+    if(valeurRetiree) options = [valeurRetiree].concat(options);
     var classeCol = couleur ? ' champ-colore' : '';
     var styleCol = couleur ? ' style="--fc:'+couleur.fc+';--fc-soft:'+couleur.fcSoft+';"' : '';
     return '<div class="field'+classeCol+'"'+styleCol+'><label for="f-'+name+'">'+label+'</label><select id="f-'+name+'" name="'+name+'"'+(desactive?" disabled":"")+'>'
-      + options.map(function(o){ return '<option value="'+escapeHtml(o)+'"'+(selected===o?' selected':'')+'>'+escapeHtml(o)+'</option>'; }).join("")
+      + options.map(function(o){ return '<option value="'+escapeHtml(o)+'"'+(selected===o?' selected':'')+'>'+escapeHtml(o)+(o===valeurRetiree?' (retiré des Paramètres)':'')+'</option>'; }).join("")
       + '</select></div>';
   }
   // Couleur fixe (accent/warm/success/danger, mêmes teintes que le reste du
@@ -3349,7 +3390,7 @@
       + '<div class="field"><label for="f-duree-affichage">Durée</label><input id="f-duree-affichage" type="text" readonly value="'+calculDureeAffichage(source?source.debut:"", source?source.fin:"")+'"></div>'
       + '</div>'
       + '<div class="field-row">'
-      + missionChampHtml("Places proposées"+(groupesInitiaux.length ? ' <span class="form-hint">(facultatif — mission réservée à un Groupe ; laissé vide, 1 place sera enregistrée)</span>' : ""),"placesTotal",groupesInitiaux.length===0,"number",source?source.placesTotal:"",null,lectureSeule)
+      + missionChampHtml("Places proposées"+(groupesInitiaux.length ? ' <span class="form-hint">(facultatif — mission réservée à un Groupe ; laissé vide, le nombre de membres actifs du ou des groupes sera enregistré)</span>' : ""),"placesTotal",groupesInitiaux.length===0,"number",source?source.placesTotal:"",null,lectureSeule)
       + '</div>'
       + '<div class="field"><label for="f-description">Description</label><textarea id="f-description" name="description" rows="2" '+(lectureSeule?"disabled":"")+'>'+escapeHtml(source?source.description:"")+'</textarea></div>'
       // Commentaires : champ demandé par Jluc pour le suivi interne (jamais
@@ -3364,7 +3405,7 @@
       + '<div class="form-actions">'
       + (champsAVerifierLectureSeule ? '' : '<button type="submit" class="btn btn-badge mission-primary" '+(authReady?"":"disabled")+'>💾 '+(missionEdit?"Enregistrer les modifications":"Créer la mission")+'</button>')
       + '<button type="button" class="btn btn-badge mission-neutre btn-sm" data-action="cancel-mission">'+(lectureSeule||missionModifOk?"Fermer":"Annuler")+'</button>'
-      + (missionEdit ? '<button type="button" class="btn btn-badge mission-dupliquer btn-sm" data-action="dupliquer-mission" data-id="'+missionEdit.id+'">📋 Dupliquer</button>' : '')
+      + (missionEdit ? '<button type="button" class="btn btn-badge mission-dupliquer btn-sm" data-action="dupliquer-mission" data-id="'+escapeHtml(missionEdit.id)+'">📋 Dupliquer</button>' : '')
       // Bouton "Envoyer un mail" (second complément A6, 23/09/2026) : repris
       // ici aussi, directement dans la modale de modification — Jluc l'a
       // cherché à cet endroit en testant (déjà présent dans la vue cartes et
@@ -3372,8 +3413,8 @@
       // ajouté là où il regarde en premier. Depuis D3, boutonEnvoyerMailMissionHtml
       // renvoie le bouton pour toute mission (passée comprise), sauf en public.
       + (missionEdit ? boutonEnvoyerMailMissionHtml(missionEdit) : '')
-      + (missionEdit && role === "directeur" ? '<button type="button" class="btn btn-badge mission-supprimer btn-sm" data-action="delete-mission" data-id="'+missionEdit.id+'">Supprimer la mission</button>' : '')
-      + (missionEdit ? '<button type="button" class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-fiche-mission" data-id="'+missionEdit.id+'">Imprimer la fiche</button>' : '')
+      + (missionEdit && role === "directeur" ? '<button type="button" class="btn btn-badge mission-supprimer btn-sm" data-action="delete-mission" data-id="'+escapeHtml(missionEdit.id)+'">Supprimer la mission</button>' : '')
+      + (missionEdit ? '<button type="button" class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-fiche-mission" data-id="'+escapeHtml(missionEdit.id)+'">Imprimer la fiche</button>' : '')
       + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
       + '</div>'
       // Qui est déjà inscrit, et inscrire quelqu'un d'autre : seulement pour
@@ -3418,7 +3459,7 @@
       // "Marquer traité" pour lever l'alerte sans rien supprimer.
       + (b.demandeSuppression ? '<div class="mission-a-pointer">⚠ Ce bénévole a demandé la suppression de sa fiche.'
           + (b.demandeSuppressionCommentaire ? ' Motif indiqué : « '+escapeHtml(b.demandeSuppressionCommentaire)+' ».' : ' Aucun motif indiqué.')
-          + ' <button type="button" class="link-btn" data-action="traiter-demande-suppression" data-id="'+b.id+'">Marquer traité (ne pas supprimer)</button></div>' : '');
+          + ' <button type="button" class="link-btn" data-action="traiter-demande-suppression" data-id="'+escapeHtml(b.id)+'">Marquer traité (ne pas supprimer)</button></div>' : '');
   }
 
   function benevoleModaleHtml(){
@@ -3445,15 +3486,15 @@
       + (benevoleModaleError ? '<div class="error-text" style="margin-bottom:8px;">'+escapeHtml(benevoleModaleError)+'</div>' : '')
       + '<div class="form-actions"><button type="submit" class="btn btn-primary" '+(authReady?"":"disabled")+'>💾 Enregistrer les modifications</button>'
       + '<button type="button" class="btn btn-ghost" data-action="cancel-benevole-modale">Annuler</button>'
-      + '<button type="button" class="btn btn-ghost" id="modal-benevole-toggle-actif" data-action="toggle-actif" data-id="'+b.id+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>'
-      + '<button type="button" class="btn-danger-ghost" data-action="delete-benevole" data-id="'+b.id+'">Supprimer la fiche</button>'
-      + '<button type="button" class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-fiche-benevole" data-id="'+b.id+'">Imprimer la fiche</button>'
+      + '<button type="button" class="btn btn-ghost" id="modal-benevole-toggle-actif" data-action="toggle-actif" data-id="'+escapeHtml(b.id)+'">'+(b.actif ? "Marquer inactif" : "Marquer actif")+'</button>'
+      + '<button type="button" class="btn-danger-ghost" data-action="delete-benevole" data-id="'+escapeHtml(b.id)+'">Supprimer la fiche</button>'
+      + '<button type="button" class="btn btn-badge badge-imprimer btn-sm" data-action="imprimer-fiche-benevole" data-id="'+escapeHtml(b.id)+'">Imprimer la fiche</button>'
       // Lien direct vers l'onglet Historique, recherche déjà remplie avec le
       // nom de ce bénévole (demande de Jluc, 21/09/2026) : c'est là
       // qu'apparaissent, entre autres, ses éventuelles demandes de
       // désinscription passées — utile pour juger de sa fiabilité dans la
       // durée, même après qu'une inscription a été retirée.
-      + '<button type="button" class="btn btn-ghost btn-sm" data-action="voir-historique-benevole" data-id="'+b.id+'">Voir dans l\'historique</button>'
+      + '<button type="button" class="btn btn-ghost btn-sm" data-action="voir-historique-benevole" data-id="'+escapeHtml(b.id)+'">Voir dans l\'historique</button>'
       + (authReady ? '' : '<span class="form-hint">Connexion en cours…</span>')
       + '</div>'
       + (b.dateCreation ? '<div class="benevole-contact">Fiche créée le '+fmtDateTime(b.dateCreation)+'</div>' : '')
@@ -3504,9 +3545,9 @@
       + contenuHtml + '</div></div>';
   }
 
-  // Fenêtre "Alerte nouvelle mission" (A5, 23/09/2026, rendue accessible
-  // n'importe quand le 23/09/2026 via le bouton "Envoyer un mail" — voir
-  // boutonEnvoyerMailMissionHtml et l'action "alerter-benevoles-mission") :
+  // Fenêtre "Alerte nouvelle mission" (A5, 23/09/2026 ; depuis D3, ouverte
+  // par "Envoyer un mail" → "Tous les bénévoles", voir
+  // choixMailGroupeModaleHtml et l'action "envoyer-mail-groupe-mission") :
   // voir la variable alerteMissionOuverte pour le contexte. Le texte ne dit
   // plus "créée" (vrai seulement juste après la création) puisque cette
   // fenêtre s'ouvre maintenant aussi bien plus tard, sur une mission
@@ -3517,7 +3558,7 @@
     if(!alerteMissionOuverte) return "";
     var emails = emailsTousLesBenevoles();
     var liste = emails.join(", ");
-    var contenuHtml = '<div class="form-hint" style="margin-bottom:12px;">Mission « M'+escapeHtml(String(alerteMissionOuverte.numero))+' — '+escapeHtml(alerteMissionOuverte.titre)+' ». Pour prévenir tous les bénévoles ('+emails.length+'), copiez la liste ci-dessous et collez-la dans votre outil d\'envoi en nombre, dans le champ <strong>CCI</strong> (copie conforme invisible) de votre message, jamais dans « À » ni dans « CC ». Aucun email n\'est envoyé automatiquement par l\'application.</div>'
+    var contenuHtml = '<div class="form-hint" style="margin-bottom:12px;">Mission « M'+escapeHtml(String(alerteMissionOuverte.numero||"?"))+' — '+escapeHtml(alerteMissionOuverte.titre)+' ». Pour prévenir tous les bénévoles ('+emails.length+'), copiez la liste ci-dessous et collez-la dans votre outil d\'envoi en nombre, dans le champ <strong>CCI</strong> (copie conforme invisible) de votre message, jamais dans « À » ni dans « CC ». Aucun email n\'est envoyé automatiquement par l\'application.</div>'
       + '<textarea readonly rows="6" style="width:100%;resize:vertical;" onclick="this.select()" id="alerte-mission-textarea">'+escapeHtml(liste)+'</textarea>'
       + '<div class="form-actions" style="margin-top:14px;align-items:center;gap:10px;">'
       + '<button type="button" class="btn btn-primary" data-action="copier-liste-emails-mission">📋 Copier la liste</button>'
@@ -3566,13 +3607,13 @@
     if(!choixMailGroupeMission) return "";
     var m = missionById(choixMailGroupeMission.id);
     if(!m) return "";
-    var reference = 'M'+(m.numero||'')+' — '+escapeHtml(m.titre||'');
+    var reference = 'M'+(m.numero||'?')+' — '+escapeHtml(m.titre||'');
     var passee = missionEstPassee(m);
     var aGroupes = !!(m.groupes && m.groupes.length);
     var nbTous = aGroupes ? emailsActifsPourGroupes(m.groupes, true).length : emailsTousLesBenevoles().length;
     var nbInscrits = emailsInscritsMission(m).length;
     function bouton(cible, type, libelle, principal, nb){
-      return '<button type="button" class="btn'+(principal?' btn-primary':'')+'" data-action="envoyer-mail-groupe-mission" data-id="'+m.id+'" data-cible="'+cible+'" data-type="'+type+'"'+(nb?'':' disabled')+'>'+libelle+'</button>';
+      return '<button type="button" class="btn'+(principal?' btn-primary':'')+'" data-action="envoyer-mail-groupe-mission" data-id="'+escapeHtml(m.id)+'" data-cible="'+cible+'" data-type="'+type+'"'+(nb?'':' disabled')+'>'+libelle+'</button>';
     }
     function bloc(titre, nb, boutons){
       return '<div style="border:1px solid var(--line,#ddd);border-radius:10px;padding:10px 12px;margin-bottom:10px;">'
@@ -3842,7 +3883,7 @@
 
     var trs = rows.map(function(h){
       var coche = !!historiqueSelection[h.id];
-      return '<tr><td class="col-select"><input type="checkbox" data-action="toggle-select-historique" data-id="'+h.id+'" '+(coche?"checked":"")+'></td>'
+      return '<tr><td class="col-select"><input type="checkbox" data-action="toggle-select-historique" data-id="'+escapeHtml(h.id)+'" '+(coche?"checked":"")+'></td>'
         + '<td>'+fmtDateTime(h.date)+'</td><td>'+escapeHtml(ACTION_LABELS[h.action]||h.action)+'</td>'
         + '<td>'+escapeHtml(h.cible||"")+'</td><td>'+escapeHtml(h.parNom||"")+' ('+libelleRoleHistorique(h.parRole)+')</td></tr>';
     }).join("");
@@ -4003,9 +4044,9 @@
       var membresHtml = membres.length
         ? '<div class="inscrits-list">' + membres.map(function(b){
             var retirerMembreHtml = role === "directeur"
-              ? '<button type="button" class="btn-danger-ghost" data-action="retirer-benevole-groupe" data-groupe="'+escapeHtml(g)+'" data-id="'+b.id+'" title="Retirer '+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+' de ce groupe">✕</button>'
+              ? '<button type="button" class="btn-danger-ghost" data-action="retirer-benevole-groupe" data-groupe="'+escapeHtml(g)+'" data-id="'+escapeHtml(b.id)+'" title="Retirer '+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+' de ce groupe">✕</button>'
               : '';
-            return '<div class="inscrit-row"><div class="inscrit-name inscrit-name-clic" data-action="open-benevole-modale" data-id="'+b.id+'" title="Voir la fiche de '+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'"><span class="avatar">'+initiales(b)+'</span>'
+            return '<div class="inscrit-row"><div class="inscrit-name inscrit-name-clic" data-action="open-benevole-modale" data-id="'+escapeHtml(b.id)+'" title="Voir la fiche de '+escapeHtml(b.prenom)+' '+escapeHtml(b.nom)+'"><span class="avatar">'+initiales(b)+'</span>'
               + escapeHtml(b.prenom)+' '+escapeHtml(b.nom) + (b.actif ? '' : ' <span class="benevole-contact">(inactif)</span>') + '</div>'
               + retirerMembreHtml + '</div>';
           }).join("") + '</div>'
@@ -4027,7 +4068,7 @@
           });
         ajoutHtml = disponibles.length
           ? '<div class="inscrire-row"><select id="'+idSelectAjout+'">'
-            + disponibles.map(function(b){ return '<option value="'+b.id+'">'+escapeHtml(b.nom)+' '+escapeHtml(b.prenom)+(b.actif?'':' (inactif)')+'</option>'; }).join("")
+            + disponibles.map(function(b){ return '<option value="'+escapeHtml(b.id)+'">'+escapeHtml(b.nom)+' '+escapeHtml(b.prenom)+(b.actif?'':' (inactif)')+'</option>'; }).join("")
             + '</select><button type="button" class="btn btn-sm" data-action="ajouter-benevole-groupe" data-groupe="'+escapeHtml(g)+'" data-select="'+idSelectAjout+'">+ Ajouter</button></div>'
           : '<div class="benevole-contact">Tous les bénévoles sont déjà dans ce groupe.</div>';
       }
@@ -4111,9 +4152,9 @@
       var pillCls = "role-pill" + (g.role==="directeur" ? " directeur" : "");
       var actionsHtml = "";
       if(role === "directeur"){
-        actionsHtml += '<button class="btn btn-ghost btn-sm" data-action="open-edit-gestionnaire" data-id="'+g.id+'">Modifier</button>';
+        actionsHtml += '<button class="btn btn-ghost btn-sm" data-action="open-edit-gestionnaire" data-id="'+escapeHtml(g.id)+'">Modifier</button>';
         if(g.role !== "directeur"){
-          actionsHtml += '<button class="btn btn-ghost btn-sm" data-action="toggle-gestionnaire" data-id="'+g.id+'">'+(g.actif ? "Désactiver" : "Réactiver")+'</button>';
+          actionsHtml += '<button class="btn btn-ghost btn-sm" data-action="toggle-gestionnaire" data-id="'+escapeHtml(g.id)+'">'+(g.actif ? "Désactiver" : "Réactiver")+'</button>';
         }
       }
       // Secteurs affichés à titre d'information (voir commentaire du
@@ -4210,6 +4251,7 @@
       intro: "Tout ce que peut faire un Gestionnaire (ci-dessous), plus :",
       droits: [
         "Modifier ou supprimer une mission existante",
+        "Ajouter un inscrit sur une mission passée, même complète (la case « Réalisée » reste à cocher à la main)",
         "Ajouter un compte Gestionnaire ou Directeur, le désactiver ou le réactiver",
         "Créer ou retirer un Groupe, y ajouter ou retirer un bénévole",
         "Modifier les Secteurs et Statuts de mission (onglet Paramètres)",
@@ -5036,7 +5078,10 @@
       var missionPourInscrire = missionById(missionId);
       var ajoutTardif = missionEstPassee(missionPourInscrire);
       if(ajoutTardif && role !== "directeur") return;
-      var sel = document.getElementById("sel-"+missionId);
+      // C15 (14/11/2026) : la liste placée à côté du bouton cliqué (la carte
+      // et la fenêtre de la mission ont chacune une liste "sel-<id>").
+      var rangeeInscrire = el.closest(".inscrire-row");
+      var sel = (rangeeInscrire && rangeeInscrire.querySelector("select")) || document.getElementById("sel-"+missionId);
       if(sel && sel.value){
         var benevoleInscrit = benevoleById(sel.value);
         addDoc(collection(db,"affectations"), {missionId:missionId, benevoleId:sel.value, statut:"inscrit", affichage: benevoleInscrit ? libelleInscrit(benevoleInscrit) : ""}).then(function(){
@@ -5166,8 +5211,8 @@
     else if(action==="alerter-tous-benevoles"){
       // Bouton "Écrire à tous les bénévoles inscrits" (onglet Groupes,
       // 29/09/2026, demande de Jluc) : ouvre la fenêtre liste copiable,
-      // même principe que "alerter-benevoles-mission" ci-dessus mais sans
-      // mission associée.
+      // même fenêtre liste copiable que pour une mission, mais sans mission
+      // associée.
       alerteTousBenevolesOuverte = true;
       alerteTousBenevolesCopieOk = false;
       renderModal();
@@ -5314,6 +5359,7 @@
         benevoles: state.benevoles,
         missions: state.missions,
         affectations: state.affectations,
+        candidatures: state.candidatures, // C17 (14/11/2026)
         gestionnaires: state.gestionnaires.map(function(g){ return {prenom:g.prenom||"", nom:g.nom, role:g.role, actif:g.actif, poles:g.poles||[]}; }),
         historique: state.historique
       };
@@ -5585,6 +5631,7 @@
       } else if(statKey === "averifier"){
         resetFiltresMissions();
         missionsFiltreStatut = "À vérifier";
+        missionsVue = "tableau"; // C19 : le filtre ne s'applique qu'au tableau
         switchTab("missions");
       } else if(statKey === "candidatures"){
         resetFiltresCandidatures();
@@ -5872,6 +5919,8 @@
       // Secteurs (29/09/2026) : mêmes cases à cocher "pole" que sur le
       // formulaire de création, lues de la même façon que pour un bénévole.
       var polesEdit = Array.prototype.slice.call(fge.querySelectorAll('input[name="pole"]:checked')).map(function(cb){ return cb.value; });
+      var compteAvant = state.gestionnaires.find(function(g){ return g.id === idEdit; }) || {};
+      polesEdit = conserverValeursNonProposees(polesEdit, compteAvant.poles, state.poles);
       updateDoc(doc(db,"gestionnaires", idEdit), {prenom: prenomEdit, nom: nomEdit, poles: polesEdit}).then(function(){
         if(idEdit === moiUid){ moiNom = (prenomEdit+' '+nomEdit).trim(); }
         logHistorique("modification_gestionnaire", (prenomEdit+' '+nomEdit).trim());
@@ -6031,6 +6080,15 @@
       var groupesSaisis = Array.prototype.slice.call(f.querySelectorAll('input[name="groupe"]:checked')).map(function(i){ return i.value; });
       var benPrenom = f.prenom.value.trim();
       var benNom = f.nom.value.trim();
+      // C20 (14/11/2026) : l'écriture sans fusion écrasait une fiche
+      // existante (les règles autorisent la modification à un Gestionnaire,
+      // donc le message « déjà enregistrée » ne s'affichait jamais).
+      var ficheExistanteAjout = benevoleById(emailId);
+      if(ficheExistanteAjout){
+        benevoleError = "Une fiche existe déjà avec cet email : " + ((ficheExistanteAjout.prenom||"") + " " + (ficheExistanteAjout.nom||"")).trim() + ". Modifiez-la depuis la liste des bénévoles.";
+        renderBenevoles();
+        return;
+      }
       setDoc(doc(db,"benevoles", emailId), {
         prenom: benPrenom,
         nom: benNom,
@@ -6055,6 +6113,9 @@
       var fbm = e.target;
       var polesModale = Array.prototype.slice.call(fbm.querySelectorAll('input[name="pole"]:checked')).map(function(i){ return i.value; });
       var groupesModale = Array.prototype.slice.call(fbm.querySelectorAll('input[name="groupe"]:checked')).map(function(i){ return i.value; });
+      var ficheAvant = benevoleById(benevoleModaleId) || {};
+      polesModale = conserverValeursNonProposees(polesModale, ficheAvant.poles, state.poles);
+      groupesModale = conserverValeursNonProposees(groupesModale, ficheAvant.groupes, groupesPourFichesBenevoles());
       var champsBenevole = {
         prenom: fbm.prenom.value.trim(),
         nom: fbm.nom.value.trim(),
@@ -6130,6 +6191,10 @@
       // Groupes (A6) : liste vide = mission visible par tous, comme avant.
       // Calculé AVANT placesSaisies ci-dessous, car sert à son défaut.
       var groupesMission = Array.prototype.slice.call(f2.querySelectorAll('input[name="groupe"]:checked')).map(function(i){ return i.value; });
+      if(missionEnEdition){
+        var missionAvantGroupes = missionById(missionEnEdition) || {};
+        groupesMission = conserverValeursNonProposees(groupesMission, missionAvantGroupes.groupes, state.groupes);
+      }
       // Places proposées : facultatif pour une mission à Groupes (second
       // complément A6, 23/09/2026). Si le champ est laissé vide ET qu'un ou
       // plusieurs Groupes sont cochés, on retient le nombre de bénévoles
@@ -6265,6 +6330,19 @@
     }
   });
 
+  // C17 (14/11/2026) : une date Firestore exportée revient du fichier JSON
+  // sous la forme {seconds, nanoseconds} ; on la retransforme en vraie date
+  // avant de l'écrire (sinon « Mission créée le » restait vide).
+  function restaurerDates(obj){
+    var copie = Object.assign({}, obj);
+    Object.keys(copie).forEach(function(k){
+      var v = copie[k];
+      if(v && typeof v === "object" && typeof v.seconds === "number" && typeof v.nanoseconds === "number"){
+        copie[k] = new Date(v.seconds * 1000 + Math.floor(v.nanoseconds / 1e6));
+      }
+    });
+    return copie;
+  }
   function importerDonnees(data){
     var nbPolesAjoutes = 0;
     var premierLot = [];
@@ -6290,13 +6368,13 @@
     }
     (data.benevoles||[]).forEach(function(b){
       if(!b || !b.id) return;
-      var copie = Object.assign({}, b);
+      var copie = restaurerDates(b);
       delete copie.id;
       premierLot.push(setDoc(doc(db,"benevoles", b.id), copie));
     });
     (data.missions||[]).forEach(function(m){
       if(!m || !m.id) return;
-      var copie = Object.assign({}, m);
+      var copie = restaurerDates(m);
       delete copie.id;
       premierLot.push(setDoc(doc(db,"missions", m.id), copie));
     });
@@ -6309,9 +6387,18 @@
     // et l'import des inscriptions pourrait échouer par pur hasard.
     Promise.all(premierLot).then(function(){
       var lotAffectations = (data.affectations||[]).filter(function(a){ return a && a.id; }).map(function(a){
-        var copie = Object.assign({}, a);
+        var copie = restaurerDates(a);
         delete copie.id;
         return setDoc(doc(db,"affectations", a.id), copie);
+      });
+      // C17 : candidatures du fichier absentes de la base, recréées (une
+      // candidature existante n'est jamais réécrite : les règles ne
+      // permettent que de la créer ou de la supprimer).
+      var idsCandidatures = state.candidatures.map(function(c){ return c.id; });
+      (data.candidatures||[]).filter(function(c){ return c && c.id && idsCandidatures.indexOf(c.id) < 0; }).forEach(function(c){
+        var copieC = restaurerDates(c);
+        delete copieC.id;
+        lotAffectations.push(setDoc(doc(db,"candidatures", c.id), copieC));
       });
       return Promise.all(lotAffectations);
     }).then(function(){
